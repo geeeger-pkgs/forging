@@ -71,11 +71,18 @@ const rareMax =
 console.log(`工具速度（T7+${MAX_ENH}）：镐 ${f(pickMax, 3)} / 战锤 ${f(warMax, 3)}（全技能）`)
 console.log(`符文（T3+T2 异符叠加）：速度 +${f(runeVal('speed', 3) + runeVal('speed', 2), 2)} / 效率 +${f(runeVal('efficiency', 3) + runeVal('efficiency', 2), 2)} / 稀有 +${f(runeVal('rareFind', 3) + runeVal('rareFind', 2), 2)}`)
 console.log(`精通满级：速度 +${perkVal('speed')} / 效率 +${perkVal('efficiency')} / 稀有 +${perkVal('rareFind')}`)
+// v2.1 词缀（10 槽完美上限，见 sim-affixes A 段）+ v2.4 深渊永久速度（8 级 × 1%）
+const affixSpeedCap = 0.192
+const abyssPermSpeed = 0.08
+console.log(`词缀（v2.1，10 槽完美上限）：速度 +${affixSpeedCap}（另有效率 +0.096 / 产量 +0.272 / 稀有 +0.68）`)
+console.log(`深渊永久速度（v2.4，8 级）：+${abyssPermSpeed}`)
 console.log('')
+const speedMaxAll = speedMaxMine + affixSpeedCap + abyssPermSpeed
 console.log(`速度合计（采矿·终局满配）: +${f(speedMaxMine, 3)} → 时长 ×${f(1 / (1 + speedMaxMine), 3)}`)
+console.log(`速度合计（含 v2.1 词缀 + v2.4 深渊永久）: +${f(speedMaxAll, 3)} → 时长 ×${f(1 / (1 + speedMaxAll), 3)}`)
 for (const s of ores.slice(0, 8)) {
-  const tMax = Math.max(config.minActionTimeMs, Math.round(s.baseTimeMs / (1 + speedMaxMine)))
-  const floor = s.baseTimeMs / (1 + speedMaxMine) < config.minActionTimeMs ? ' ⚠触底' : ''
+  const tMax = Math.max(config.minActionTimeMs, Math.round(s.baseTimeMs / (1 + speedMaxAll)))
+  const floor = s.baseTimeMs / (1 + speedMaxAll) < config.minActionTimeMs ? ' ⚠触底' : ''
   console.log(`  ${s.id.padEnd(16)} 基础 ${s.baseTimeMs}ms → 满配 ${tMax}ms${floor}`)
 }
 // v2.1（评审 M2）：效率按真实语义出数——在线是「每轮概率额外产出一份、链式上限 1」的 proc，
@@ -89,7 +96,7 @@ console.log(
   `  ｜离线期望（装备+精通）×(1+${f(effEquip + perkVal('efficiency'), 3)})：符文/精通在线不参与 proc，离线偏乐观（设计取舍）`,
 )
 console.log(`效率合计（含符文/精通）+${f(effMax, 3)}；稀有合计 +${f(rareMax, 3)} → 稀有率 ×${f(1 + rareMax, 3)}`)
-const minBase = config.minActionTimeMs * (1 + speedMaxMine)
+const minBase = config.minActionTimeMs * (1 + speedMaxAll)
 console.log(`250ms 下限触底条件：基础时长 < ${Math.round(minBase)}ms（当前最速动作 ${Math.min(...ores.map((s) => s.baseTimeMs))}ms）→ ${Math.min(...ores.map((s) => s.baseTimeMs)) >= minBase ? '永不触底 ✅' : '可能触底 ⚠'}`)
 
 console.log('')

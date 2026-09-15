@@ -103,7 +103,7 @@ const BEST_RUNES = (() => {
 })()
 
 /** 与 aggregateEquipment 同规则地聚合六项属性（含 +10 / 套装 / 2 枚最优符文 / 精通 / 深渊永久） */
-function computeStats(loadout, { abyssPermanent = false, runes = null } = {}) {
+function computeStats(loadout, { abyssPermanent = false, runes = null, withRunes = true, withPerks = true } = {}) {
   const agg = {
     toolSpeed: { mining: 0, smelting: 0, forging: 0 },
     allSpeed: 0,
@@ -148,17 +148,19 @@ function computeStats(loadout, { abyssPermanent = false, runes = null } = {}) {
   if (best >= 8) agg.efficiency += 0.04
   // 符文：只允许 2 枚（增益槽上限），按权重×数值取最优两枚
   const ranked = BEST_RUNES.map((r) => ({ ...r, weighted: (W[r.effect] ?? 0) * r.value })).sort((a, b) => b.weighted - a.weighted)
-  const chosen = runes ?? [ranked[0], ranked[1]]
+  const chosen = runes ?? (withRunes ? [ranked[0], ranked[1]] : [])
   for (const r of chosen) {
     if (r.effect === 'speed') agg.allSpeed += r.value
     else if (r.effect === 'efficiency') agg.efficiency += r.value
     else if (r.effect === 'rareFind') agg.rareFind += r.value
     else if (r.effect === 'enhanceRate') agg.enhanceRate += r.value
   }
-  agg.allSpeed += perkVal('speed')
-  agg.efficiency += perkVal('efficiency')
-  agg.rareFind += perkVal('rareFind')
-  agg.wisdom += perkVal('wisdom')
+  if (withPerks) {
+    agg.allSpeed += perkVal('speed')
+    agg.efficiency += perkVal('efficiency')
+    agg.rareFind += perkVal('rareFind')
+    agg.wisdom += perkVal('wisdom')
+  }
   if (abyssPermanent) agg.allSpeed += ABYSS.shop.permanentSpeed.perLevel * ABYSS.shop.permanentSpeed.max
   // 战力用的「速度」= 三技能速度的**最大值**（口径明示，见设计 §2.1）
   const speeds = [
@@ -170,6 +172,8 @@ function computeStats(loadout, { abyssPermanent = false, runes = null } = {}) {
 }
 
 const LOADOUTS = {
+  // v2.5 评审 M5：新手（只有起始铜镐）→ 战力不足第 1 层，深渊是**中后期**内容
+  novice: { pick: 'pick_copper' },
   early: {
     pick: 'pick_silver',
     crucible: 'crucible_silver',
@@ -221,7 +225,11 @@ console.log('═'.repeat(78))
 const STATS = {}
 const SCORES = {}
 for (const [key, loadout] of Object.entries(LOADOUTS)) {
-  const st = computeStats(loadout, { abyssPermanent: key === 'end' })
+  const st = computeStats(loadout, {
+    abyssPermanent: key === 'end',
+    withRunes: key !== 'novice',
+    withPerks: key !== 'novice',
+  })
   STATS[key] = st
   SCORES[key] = scoreOf(st)
   console.log(`【${key}】速度 ${f(st.speed, 3)}（挖 ${f(st.toolSpeed.mining, 2)} / 熔 ${f(st.toolSpeed.smelting, 2)} / 锻 ${f(st.toolSpeed.forging, 2)} + 全速 ${f(st.allSpeed, 3)}）`)
@@ -236,12 +244,14 @@ console.log('═'.repeat(78))
 console.log('B. 门槛定档：反解 base → 搜索验证 → ±30% 鲁棒性')
 console.log('═'.repeat(78))
 const exp = ABYSS.targetFloor.end - 1
-const baseFit = SCORES.end / Math.pow(ABYSS.growth, exp)
+// 评审 M4：用**未购买永久速度**的终局 build 反解 base —— 免得「35 层」这个目标依赖先把商店买满
+const endNoPerm = scoreOf(computeStats(LOADOUTS.end, { abyssPermanent: false }))
+const baseFit = endNoPerm / Math.pow(ABYSS.growth, exp)
 console.log(`反解：base = 终局战力 / growth^${exp} = ${f(SCORES.end, 3)} / ${f(Math.pow(ABYSS.growth, exp), 2)} = ${f(baseFit, 4)}`)
 const base = Number(baseFit.toFixed(3))
 console.log(`定档：base = ${base}，growth = ${ABYSS.growth}`)
 // 搜索验证：在 ±3% 的 base 邻域内确认三档都落在目标带
-const bands = { early: [6, 12], mid: [20, 28], end: [32, 38] }
+const bands = { novice: [0, 0], early: [6, 12], mid: [20, 28], end: [32, 38] }
 const searchOk = []
 for (let b = base * 0.97; b <= base * 1.031; b += 0.005) {
   const bb = Number(b.toFixed(3))
@@ -260,6 +270,9 @@ for (const key of Object.keys(SCORES)) {
   const [lo, hi] = bands[key]
   console.log([key.padEnd(8), f(SCORES[key], 3).padStart(8), String(fl).padStart(7), `${lo}~${hi}`.padStart(9), (fl >= lo && fl <= hi ? '✅' : '⚠').padStart(6)].join(' | '))
 }
+console.log('')
+console.log()
+console.log()
 console.log('')
 console.log('鲁棒性：战力 ±30% → 层数漂移')
 for (const key of Object.keys(SCORES)) {

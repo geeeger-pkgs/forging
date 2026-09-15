@@ -370,7 +370,7 @@ const abyss = {
   /** 战力权重（六项加权和；口径逐项见 abyss.ts abyssScore） */
   weights: { speed: 1.0, efficiency: 1.5, quantity: 1.0, rareFind: 0.7, wisdom: 0.5, enhanceRate: 2.0 },
   /** 门槛 = base × growth^(层−1) */
-  base: 2.764,
+  base: 2.736,
   growth: 1.031,
   themes: ['矿脉裂隙', '熔岩回廊', '符文甬道', '无光深渊', '虚空之喉'],
   /** 首通结晶 = base + perFloor × 层 */
