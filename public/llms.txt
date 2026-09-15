@@ -1,0 +1,16 @@
+# Forging
+
+> Forging 是一款纯前端单机放置游戏（Idle Game）：挖掘矿石、熔炼铸锭、锻造装备、强化精进、传承精通；支持离线收益与可安装 PWA。无后端、无账号，进度保存在浏览器本地。
+
+## 核心事实
+- 技术：Vue 3 + Vite + TypeScript，纯客户端（localStorage 存档，含版本迁移链）
+- 循环：开采 → 熔炼 → 锻造 → 强化 → 传承（转生，永久精通加成）
+- 内容：7 档矿石/装备、92 配方、102 物品、52 成就、8 类日常任务、12 符文、6 精通线（含深造）
+- 离线：默认 8 小时（精通最高可扩至 24 小时），离线结算排除临时符文增益
+- 安装：支持 PWA（manifest + Service Worker，首访后即可离线运行）
+
+## 链接
+- [游戏入口](/)
+- [PWA 清单](/manifest.webmanifest)
+- [离线外壳脚本](/sw.js)
+- 参考玩法：[Milky Way Idle](https://www.milkywayidle.com/)

@@ -137,7 +137,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
 <template>
   <aside class="right">
     <section>
-      <h4>装备</h4>
+      <h3>装备</h3>
       <div class="slots">
         <div v-for="s in slots" :key="s.id" class="slot" :class="{ filled: s.inst }">
           <div class="slot-label">{{ s.label }}</div>
@@ -160,7 +160,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
     </section>
 
     <section>
-      <h4>资源</h4>
+      <h3>资源</h3>
       <div v-if="materials.length === 0" class="dim">暂无</div>
       <div v-for="m in materials" :key="m.id" class="row">
         <span class="clickable" @click="inspect(null, m.id)">
@@ -180,7 +180,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
     </section>
 
     <section>
-      <h4>行囊（装备）</h4>
+      <h3>行囊（装备）</h3>
       <div v-if="bagItems.length === 0" class="dim">暂无</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
         <span class="clickable" @click="inspect(b.inst.instanceId)">
@@ -222,7 +222,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
   flex-direction: column;
   gap: 14px;
 }
-h4 {
+h3 {
   margin: 0 0 8px;
   font-size: 13px;
   color: var(--c-text-dim);

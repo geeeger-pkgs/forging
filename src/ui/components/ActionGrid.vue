@@ -50,8 +50,15 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
   transform: translateY(-1px);
 }
 .cell.locked {
-  opacity: 0.38;
   cursor: not-allowed;
+}
+/* v2.0：锁定态不再整体降透明度（对比度达标），仅图标降调、文本用可达标亮度 */
+.cell.locked > :first-child {
+  opacity: 0.5;
+}
+.cell.locked .title,
+.cell.locked .note {
+  color: #868b9e;
 }
 .icon {
   font-size: 30px;

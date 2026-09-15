@@ -187,4 +187,127 @@ for (const r of recipes.filter((x) => x.id.startsWith('craft_rune_speed'))) {
   console.log(`${r.id}: 材料 ${cost} 金 + ${r.baseTimeMs / 1000}s → 成品价值 ${val(out)}（回收${val(out) > cost ? '可套利 ⚠' : '亏本（使用为唯一正解）✅'}）`)
 }
 console.log('离线规则：offline 结算期间 state.buffs 临时清空 → 符文离线无收益、时长照常流逝（无重复使用漏洞 ✅）')
+
+console.log('')
+console.log('═'.repeat(72))
+console.log('F. 进度时间线（v2.0 可玩性证据）：升到目标级所需小时数（链路受限）')
+console.log('   说明：熔炼/锻造/强化必须消耗上游产出 → 按「完整供应链耗时」折算')
+console.log('   基线 = 同档工具无强化；投资 = 同档+5 + 套装4% + 迅捷10级（+19%）')
+console.log('═'.repeat(72))
+const curve = rd('levelCurve.json')
+const multFor = (k) => {
+  let m = curve.bands[0].multiplier
+  for (const b of curve.bands) if (k >= b.fromLevel) m = b.multiplier
+  return m
+}
+const xpToNext = (lv) => {
+  let p = curve.baseXp
+  for (let k = 1; k <= lv - 1; k++) p *= multFor(k)
+  return Math.round(p)
+}
+const xpForLevel = (lv) => {
+  let s = 0
+  for (let l = 1; l < lv; l++) s += xpToNext(l)
+  return s
+}
+
+const NAMES = ['copper', 'iron', 'silver', 'gold', 'mithril', 'starlite', 'void']
+const TIERS = [
+  [1, 9],
+  [9, 19],
+  [19, 34],
+  [34, 49],
+  [49, 64],
+  [64, 79],
+  [79, 100],
+]
+
+function speedProfile(toolSpeed, enh, set40, perks) {
+  return toolSpeed * (1 + 0.029 * enh) + (set40 ? 0.04 : 0) + perks
+}
+
+/** 各技能：band = {from,to,xp,chainMs（含上游供给）} */
+function buildBands(profile) {
+  const enh = profile === 'inv' ? 5 : 0
+  const set40 = profile === 'inv'
+  const perk = profile === 'inv' ? 0.15 : 0
+  const mineBands = []
+  const smeltBands = []
+  const forgeBands = []
+  for (let t = 0; t < 7; t++) {
+    const name = NAMES[t]
+    const site = ores.find((s) => s.id === `${name}_seam`)
+    const mineT = site.baseTimeMs / (1 + speedProfile(items[`pick_${name}`].stats.speed, enh, set40, perk))
+    const smeltT =
+      recipes
+        .find((r) => r.id === `smelt_${name}`)
+        .baseTimeMs / (1 + speedProfile(items[`crucible_${name}`].stats.speed, enh, set40, perk))
+    const smelt = recipes.find((r) => r.id === `smelt_${name}`)
+    const oreCost = smelt.inputs.find((i) => i.itemId === `ore_${name}`).qty
+    const forge = recipes.find((r) => r.id === `forge_pick_${name}`)
+    const ingotCost = forge.inputs.find((i) => i.itemId === `ingot_${name}`).qty
+    const forgeT =
+      forge.baseTimeMs / (1 + speedProfile(items[`hammer_${name}`].stats.speed, enh, set40, perk))
+    const [from, to] = TIERS[t]
+    const orePerAction = (site.yieldMin + site.yieldMax) / 2
+    mineBands.push({ from, to, xp: site.xp, chainMs: mineT })
+    smeltBands.push({ from, to, xp: smelt.xp, chainMs: smeltT + oreCost * (mineT / orePerAction) })
+    forgeBands.push({
+      from,
+      to,
+      xp: forge.xp,
+      chainMs: forgeT + ingotCost * (smeltT + oreCost * (mineT / orePerAction)),
+    })
+  }
+  // 强化：+8 档（5 锭 + 3 精华；精华按稀有掉率 0.11/次折算挖掘次数）
+  const e = enhance.find((x) => x.targetLevel === 8)
+  const enhBands = []
+  for (let t = 0; t < 7; t++) {
+    const name = NAMES[t]
+    const site = ores.find((s) => s.id === `${name}_seam`)
+    const mineT = site.baseTimeMs / (1 + speedProfile(items[`pick_${name}`].stats.speed, enh, set40, perk))
+    const smeltT =
+      recipes
+        .find((r) => r.id === `smelt_${name}`)
+        .baseTimeMs / (1 + speedProfile(items[`crucible_${name}`].stats.speed, enh, set40, perk))
+    const smelt = recipes.find((r) => r.id === `smelt_${name}`)
+    const oreCost = smelt.inputs.find((i) => i.itemId === `ore_${name}`).qty
+    const ingotQty = e.cost.ingots
+    const essenceQty = e.cost.essences
+    const mineActionsPerEssence = 1 / 0.11
+    const enhT = e.baseTimeMs / (1 + speedProfile(0, 0, set40, perk))
+    const [from, to] = TIERS[t]
+    enhBands.push({
+      from,
+      to,
+      xp: e.xpBase * (1 + e.successRate),
+      chainMs: enhT + ingotQty * (smeltT + oreCost * (mineT / 2)) + essenceQty * mineActionsPerEssence * mineT,
+    })
+  }
+  return { 挖掘: mineBands, 熔炼: smeltBands, 锻造: forgeBands, 强化: enhBands }
+}
+
+const baseBands = buildBands('base')
+const invBands = buildBands('inv')
+const targets = [20, 30, 50, 80, 100]
+console.log(['技能'.padEnd(6), ...targets.map((t) => `Lv${t} 基/投`.padStart(12))].join(' | '))
+const hoursFor = (bandsMap, label, target) =>
+  bandsMap[label]
+    .map((b) => ({ ...b, to: Math.min(b.to, target) }))
+    .filter((b) => b.from < target)
+    .reduce((sum, b) => sum + ((xpForLevel(b.to) - xpForLevel(b.from)) / b.xp) * b.chainMs / 3_600_000, 0)
+for (const label of ['挖掘', '熔炼', '锻造', '强化']) {
+  const cells = targets.map((target) => {
+    const base = hoursFor(baseBands, label, target)
+    const inv = hoursFor(invBands, label, target)
+    return `${f(base, 0)}/${f(inv, 0)}h`.padStart(12)
+  })
+  console.log([label.padEnd(6), ...cells].join(' | '))
+}
+const capped = (label, t) => Math.max(hoursFor(baseBands, label, t), hoursFor(invBands, label, t))
+console.log(
+  `混合循环（挖+熔+锻三技能同步推进，锻造为瓶颈）：Lv30 ≈ ${f(capped('锻造', 30), 0)}h（首次传承总等级 120 量级）；` +
+    `Lv50 ≈ ${f(capped('锻造', 50), 0)}h（所有技能 50 档之后进入长尾）`,
+)
+console.log('（强化非主要经验来源，由富余材料自然驱动；未计精通智慧经验加成/符文/自动回收加速，保守上界）')
 EXIT()
