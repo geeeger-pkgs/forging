@@ -64,7 +64,7 @@ function startAction(
   now: number,
 ): GameEvent[] {
   if (count !== null && count < 1) return [{ type: 'blocked', reason: '次数必须 ≥ 1 或设为无限' }]
-  const reason = validateStart(state, ref)
+  const reason = startBlockReason(state, ref)
   if (reason) return [{ type: 'blocked', reason }]
 
   const act: ActiveAction = {
@@ -92,8 +92,8 @@ function stopAction(state: GameState): GameEvent[] {
   return [{ type: 'actionStopped', reason: 'user' }]
 }
 
-/** 开始前校验（等级 / 材料 / 装备 / 强化目标） */
-function validateStart(state: GameState, ref: ActionRef): string | null {
+/** 开始前校验（等级 / 材料 / 装备 / 强化目标）；返回阻塞原因或 null */
+export function startBlockReason(state: GameState, ref: ActionRef): string | null {
   if (ref.kind === 'mine') {
     const site = SITES_BY_ID.get(ref.siteId)
     if (!site) return `未知矿场: ${ref.siteId}`

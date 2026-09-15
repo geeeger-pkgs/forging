@@ -33,3 +33,73 @@ body {
 #app {
   min-height: 100vh;
 }
+
+/* ---------- 通用按钮 ---------- */
+.btn {
+  border: 1px solid var(--c-border);
+  background: var(--c-panel-2);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--c-accent-2);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn.sm {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.btn.primary {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: #1a1204;
+  font-weight: 600;
+}
+.btn.danger {
+  background: transparent;
+  border-color: var(--c-danger);
+  color: var(--c-danger);
+}
+.btn.ghost {
+  background: transparent;
+}
+
+/* ---------- 通用弹层 ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.62);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+}
+.dialog {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  min-width: 380px;
+  max-width: 560px;
+  max-height: 84vh;
+  overflow: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color: var(--c-text);
+}
+.dialog h3 {
+  margin: 0 0 10px;
+}
+.dialog .dim {
+  color: var(--c-text-dim);
+}
+.dialog .bad {
+  color: var(--c-danger);
+}
+
