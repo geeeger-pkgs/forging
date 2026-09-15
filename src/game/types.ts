@@ -394,8 +394,6 @@ export interface SeasonSlot {
   defId: string
   /** 计数基线快照（赛季开始时的计数器值） */
   base: number
-  /** 已达成的最高档位（未达成 = -1） */
-  tier: number
 }
 
 export interface SeasonState {

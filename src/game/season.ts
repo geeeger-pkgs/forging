@@ -42,7 +42,7 @@ export function pickSeasonTasks(index: number): SeasonSlot[] {
   const step = 1 + (((index % n) + n) % n)
   let cursor = ((index % n) + n) % n
   for (let i = 0; i < 3 && i < n; i++) {
-    picked.push({ defId: pool[cursor].id, base: 0, tier: -1 })
+    picked.push({ defId: pool[cursor].id, base: 0 })
     cursor = (cursor + step) % n
     while (picked.some((p) => p.defId === pool[cursor].id) && picked.length < n) cursor = (cursor + 1) % n
   }
