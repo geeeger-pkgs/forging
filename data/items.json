@@ -157,6 +157,38 @@
     "value": 60,
     "stackable": true
   },
+  "expedition_token": {
+    "id": "expedition_token",
+    "name": "远征徽记",
+    "category": "reagent",
+    "enhanceable": false,
+    "value": 200,
+    "stackable": true
+  },
+  "relic_gear": {
+    "id": "relic_gear",
+    "name": "遗物·锈蚀齿轮",
+    "category": "relic",
+    "enhanceable": false,
+    "value": 0,
+    "stackable": true
+  },
+  "relic_shard": {
+    "id": "relic_shard",
+    "name": "遗物·铭文碎片",
+    "category": "relic",
+    "enhanceable": false,
+    "value": 0,
+    "stackable": true
+  },
+  "relic_core": {
+    "id": "relic_core",
+    "name": "遗物·深渊之核",
+    "category": "relic",
+    "enhanceable": false,
+    "value": 0,
+    "stackable": true
+  },
   "pick_copper": {
     "id": "pick_copper",
     "name": "铜镐",

@@ -24,8 +24,10 @@ export type ItemCategory =
   | 'armor'
   | 'jewelry'
   | 'rune'
-  /** v2.1：助剂类材料（重铸石） */
+  /** v2.1：助剂类材料（重铸石 / 远征徽记） */
   | 'reagent'
+  /** v2.2：遗物（value 0，仅作收藏与系统内消耗） */
+  | 'relic'
 
 /** 装备槽位（v1.3 起 10 槽：含项链/戒指） */
 export type SlotId =
@@ -183,6 +185,11 @@ export type AchievementType =
   | 'affixSlots'
   /** v2.1：单件装备的词缀条数（任一件达到即算） */
   | 'affixCount'
+  /** v2.2：伙伴与远征 */
+  | 'companionCount'
+  | 'companionRarity'
+  | 'relicCount'
+  | 'bannerLevel'
 
 export interface AchievementReward {
   gold?: number
@@ -201,6 +208,8 @@ export interface AchievementDef {
   skill?: SkillId
   /** type=itemCount：目标物品 */
   itemId?: ItemId
+  /** type=companionRarity：目标稀有度 */
+  rarity?: CompanionRarity
   target: number
   rewards: AchievementReward[]
 }
@@ -223,6 +232,7 @@ export type TaskCounter =
   | 'totalJewelryForged'
   | 'totalRunesCrafted'
   | 'totalReforges'
+  | 'totalExpeditions'
 
 export interface TaskTemplate {
   id: string
@@ -354,6 +364,113 @@ export interface AffixesDef {
   }
 }
 
+// ---------- 伙伴与远征（v2.2） ----------
+
+export type CompanionRarity = 'common' | 'elite' | 'legend'
+
+export interface CompanionDef {
+  id: string
+  name: string
+  rarity: CompanionRarity
+  /** 战力系数（1.0 / 1.25 / 1.6） */
+  rarityFactor: number
+  startLevel: number
+  desc: string
+}
+
+export type TraitEffect = 'supply' | 'gold' | 'xp' | 'find'
+
+export interface TraitDef {
+  id: string
+  name: string
+  desc: string
+  effect: TraitEffect
+  value: number
+}
+
+export interface CompanionState {
+  level: number
+  xp: number
+  /** 特质 id */
+  trait: string
+}
+
+export type RouteUnlock =
+  | { type: 'companion'; value: number }
+  | { type: 'skill'; skill: SkillId; value: number }
+  | { type: 'totalLevel'; value: number }
+
+export interface ExpeditionRouteDef {
+  id: string
+  name: string
+  unlock: RouteUnlock
+  /** 需求战力（战力不足不阻塞，只降低成功率） */
+  reqPower: number
+  /** 产出锚点：解锁档的采矿金/时（分母口径，不随配装漂移） */
+  anchorGoldPerHour: number
+  /** 毛产出 = 锚点 × ratio */
+  ratio: number
+  tier: Tier
+  supply: { itemId: ItemId; qtyPer8h: number }
+  tokenPer8h: number
+  relic: ItemId | null
+  relicChancePerHour: number
+  stonePer8h: number
+  xpPerHour: number
+  /** 材料本位矿石 */
+  materialItemId: ItemId
+}
+
+export interface ExpeditionsDef {
+  routes: ExpeditionRouteDef[]
+  traits: TraitDef[]
+  hours: number[]
+  goldShare: number
+  team: { base: number; maxPerBanner: number }
+  banner: { maxLevel: number; powerPerLevel: number; cost: { tokens: number; gold: number }[] }
+  recruit: { tokens: number; gold: number; duplicateXp: number }
+  traitReroll: { tokens: number; gold: number }
+  levelCurve: { base: number; exponent: number }
+  failYieldShare: number
+  starter: string
+}
+
+export interface CompanionsDef {
+  companions: CompanionDef[]
+  startLevelCap: number
+}
+
+/** 一次远征的结算产物（离线为期望值，可能含小数 → 领取时按小数结转取整） */
+export interface ExpeditionOutcome {
+  gold: number
+  materials: { itemId: ItemId; qty: number }[]
+  tokens: number
+  relics: { itemId: ItemId; qty: number }[]
+  xp: number
+  /** 成功率判定（在线为真随机；离线为期望，恒等于成功率本身不适用 → 见 planned） */
+  success: boolean
+  /** 期望模式标记（离线结算产物需走小数结转） */
+  expected: boolean
+}
+
+export interface ExpeditionRun {
+  id: number
+  routeId: string
+  hours: number
+  startedAt: number
+  endsAt: number
+  team: string[]
+  /** 完成并已结算（待领取） */
+  done: boolean
+  outcome: ExpeditionOutcome | null
+}
+
+export interface ExpeditionState {
+  runs: ExpeditionRun[]
+  banner: number
+  nextRunId: number
+}
+
 // ---------- 精通（v1.5 转生系统） ----------
 
 export type PerkEffect = 'speed' | 'wisdom' | 'efficiency' | 'rareFind' | 'offlineHours' | 'startLevel'
@@ -407,6 +524,8 @@ export interface ContentTables {
   runes: RuneDef[]
   perks: PerkDef[]
   affixes: AffixesDef
+  companions: CompanionsDef
+  expeditions: ExpeditionsDef
   config: ConfigDef
 }
 
@@ -467,6 +586,8 @@ export interface GameState {
     current: ActiveAction | null
     queue: ActiveAction[]
   }
+  /** v2.2：伙伴（id → 状态） */
+  companions: Record<string, CompanionState>
   /** 队列位总数（1 = 默认；最多 4） */
   queueSlots: number
   /** 符文增益槽（至多 2 个，until 为真实时间戳） */
@@ -487,6 +608,8 @@ export interface GameState {
     loadouts: LoadoutDef[]
     /** v2.1：造装词缀的存档私有盐（阻断外部预计算/垫刀；见 affixes.ts） */
     affixSalt: number
+    /** v2.2：远征（进行中/待领取的 run + 旗帜等级） */
+    expeditions: ExpeditionState
   }
   stats: {
     totalCrafts: number
@@ -507,6 +630,11 @@ export interface GameState {
     /** v2.1：重铸次数与累计产出的「完美词缀」条数（单调递增） */
     totalReforges: number
     perfectAffixes: number
+    /** v2.2：远征/伙伴统计（单调递增） */
+    totalExpeditions: number
+    totalRecruits: number
+    totalRelics: number
+    totalTokensEarned: number
   }
 }
 
@@ -535,6 +663,12 @@ export type Command =
   | { type: 'deleteLoadout'; loadoutId: string }
   /** v2.1：重铸词缀（locks = 保留不重摇的词缀下标） */
   | { type: 'reforge'; instanceId: number; locks: number[] }
+  /** v2.2：远征 */
+  | { type: 'recruitCompanion' }
+  | { type: 'rerollTrait'; companionId: string }
+  | { type: 'dispatchExpedition'; routeId: string; hours: number; team: string[] }
+  | { type: 'claimExpedition'; runId: number }
+  | { type: 'upgradeBanner' }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -547,6 +681,13 @@ export type GameEvent =
   | { type: 'levelUp'; skill: SkillId; level: number }
   | { type: 'enhanceResult'; instanceId: number; from: number; to: number; success: boolean; guarded?: boolean }
   | { type: 'reforged'; instanceId: number; name: string; before: number; after: number }
+  | { type: 'expeditionDispatched'; routeName: string; hours: number }
+  | { type: 'expeditionDone'; routeName: string; hours: number; success: boolean; gold: number }
+  | { type: 'expeditionClaimed'; routeName: string; gold: number }
+  | { type: 'companionRecruited'; name: string; duplicate: boolean }
+  | { type: 'companionLevelUp'; name: string; level: number }
+  | { type: 'traitRerolled'; name: string; trait: string }
+  | { type: 'bannerUpgraded'; level: number }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
   | { type: 'achievementUnlocked'; id: string; name: string }
@@ -565,6 +706,8 @@ export type GameEvent =
 // ---------- 离线结算摘要 ----------
 
 export interface OfflineSummary {
+  /** v2.2：远征结算摘要 */
+  expeditions: { routeName: string; hours: number; success: boolean; gold: number }[]
   elapsedMs: number
   countedMs: number
   rounds: { ref: ActionRef; count: number }[]

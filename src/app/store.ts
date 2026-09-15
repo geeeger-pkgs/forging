@@ -7,6 +7,7 @@ import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
+import { advanceExpeditions } from '../game/expeditions'
 import { dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
 import { settleOffline } from '../game/offline'
@@ -32,7 +33,7 @@ export interface Toast {
 }
 
 /** 主面板视图：四技能 + 传承 + 任务 + 商店 + 成就 + 设置 */
-export type UiView = SkillId | 'prestige' | 'tasks' | 'shop' | 'achievements' | 'settings'
+export type UiView = SkillId | 'prestige' | 'tasks' | 'expedition' | 'shop' | 'achievements' | 'settings'
 
 const TITLE = 'Forging · 挖矿锻造放置游戏'
 
@@ -133,6 +134,27 @@ function handleEvents(events: GameEvent[]): void {
           e.after >= e.before ? 'good' : 'info',
         )
         break
+      case 'expeditionDispatched':
+        pushToast(`🧭 远征出发：${e.routeName}（${e.hours}h）`, 'info')
+        break
+      case 'expeditionDone':
+        pushToast(`🧭 远征完成：${e.routeName}（${e.success ? '成功' : '保底'}）`, e.success ? 'good' : 'info')
+        break
+      case 'expeditionClaimed':
+        pushToast(`🧭 远征结算：${e.routeName} +${e.gold} 金`, 'good')
+        break
+      case 'companionRecruited':
+        pushToast(e.duplicate ? `🧭 ${e.name} 获得经验（重复招募）` : `🧭 新伙伴加入：${e.name}`, 'good')
+        break
+      case 'companionLevelUp':
+        pushToast(`🧭 ${e.name} 升到 Lv${e.level}`, 'good')
+        break
+      case 'traitRerolled':
+        pushToast(`🧭 ${e.name} 特质变为「${e.trait}」`, 'info')
+        break
+      case 'bannerUpgraded':
+        pushToast(`🧭 远征队旗帜升至 ${e.level} 级`, 'good')
+        break
       case 'notice':
         pushToast(e.text, 'info')
         break
@@ -217,6 +239,7 @@ export function startLoop(): void {
   window.setInterval(() => {
     store.now = Date.now()
     const events = simulate(store.state, store.now, { mode: 'online', rng: systemRng() })
+    advanceExpeditions(store.state, store.now, 'online', systemRng(), events)
     events.push(...checkAchievements(store.state))
     events.push(...refreshTasks(store.state, store.now))
     events.push(...checkTasks(store.state))

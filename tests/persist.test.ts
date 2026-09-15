@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SAVE_VERSION, clearSave, importSaveFile, loadGame, saveGame } from '../src/app/persist'
 import { rollAffixes } from '../src/game/affixes'
+import { CONTENT } from '../src/game/content'
 import { addInstance, newGame } from '../src/game/state'
 
 // —— localStorage 桩（node 环境） ——
@@ -208,6 +209,53 @@ describe('存档持久化', () => {
     expect(loaded).not.toBeNull()
     expect(typeof loaded!.meta.affixSalt).toBe('number')
     expect(loaded!.meta.affixSalt).toBeGreaterThan(0)
+  })
+
+  it('v8 → v9（E12）：补齐伙伴/远征/统计；老档无伙伴时补发初始伙伴', () => {
+    const s = newGame('T', 1)
+    const v8 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    delete v8.companions
+    delete (v8.meta as Record<string, unknown>).expeditions
+    const st = v8.stats as Record<string, unknown>
+    delete st.totalExpeditions
+    delete st.totalRecruits
+    delete st.totalRelics
+    delete st.totalTokensEarned
+    localStorage.setItem('forging.save', JSON.stringify({ ...v8, version: 8 }))
+
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(SAVE_VERSION)
+    expect(loaded!.meta.expeditions).toEqual({ runs: [], banner: 0, nextRunId: 1 })
+    expect(loaded!.stats.totalExpeditions).toBe(0)
+    expect(loaded!.stats.totalRecruits).toBe(0)
+    expect(loaded!.stats.totalRelics).toBe(0)
+    expect(loaded!.stats.totalTokensEarned).toBe(0)
+    // 迁移链不补初始伙伴（由 ensureFields 统一补），保证 newGame 与载入一致
+    expect(Object.keys(loaded!.companions).length).toBe(1)
+    expect(loaded!.companions[CONTENT.expeditions.starter]).toBeDefined()
+  })
+
+  it('v1 → v9 全链：远征字段与进行中的 run 往返保留', () => {
+    const s = newGame('T', 1)
+    s.meta.expeditions.runs.push({
+      id: 7,
+      routeId: 'outskirts',
+      hours: 8,
+      startedAt: 1000,
+      endsAt: 1000 + 8 * 3600_000,
+      team: [CONTENT.expeditions.starter],
+      done: false,
+      outcome: null,
+    })
+    s.meta.expeditions.banner = 2
+    s.meta.expeditions.nextRunId = 8
+    saveGame(s)
+    const loaded = loadGame()!
+    expect(loaded.meta.expeditions.banner).toBe(2)
+    expect(loaded.meta.expeditions.runs.length).toBe(1)
+    expect(loaded.meta.expeditions.runs[0].id).toBe(7)
+    expect(loaded.meta.expeditions.nextRunId).toBe(8)
   })
 
   it('v8 往返：词缀与盐完整保留（导出/导入幂等）', () => {

@@ -16,6 +16,9 @@ import type {
   SlotId,
   TaskCounter,
   Tier,
+  CompanionDef,
+  ExpeditionRouteDef,
+  TraitDef,
 } from './types'
 
 import skillsJson from '../../data/skills.json'
@@ -30,6 +33,8 @@ import tasksJson from '../../data/tasks.json'
 import runesJson from '../../data/runes.json'
 import perksJson from '../../data/perks.json'
 import affixesJson from '../../data/affixes.json'
+import companionsJson from '../../data/companions.json'
+import expeditionsJson from '../../data/expeditions.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -59,6 +64,7 @@ const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalJewelryForged',
   'totalRunesCrafted',
   'totalReforges',
+  'totalExpeditions',
 ]
 
 const AFFIX_EFFECTS: readonly AffixEffect[] = [
@@ -140,6 +146,7 @@ export function validateContent(t: ContentTables): string[] {
     if (a.type === 'skillLevel' && (!a.skill || !SKILL_IDS.includes(a.skill))) errs.push(`成就技能非法: ${a.id}`)
     if (a.type === 'itemCount' && (!a.itemId || !hasItem(a.itemId))) errs.push(`成就物品不存在: ${a.id}`)
     if (a.type === 'stat' && !a.stat) errs.push(`成就缺少计数器: ${a.id}`)
+    if (a.type === 'companionRarity' && !a.rarity) errs.push(`成就缺少稀有度: ${a.id}`)
     for (const rw of a.rewards) {
       if (rw.itemId && !hasItem(rw.itemId)) errs.push(`成就奖励物品不存在: ${a.id} -> ${rw.itemId}`)
       if (!rw.gold && !rw.itemId) errs.push(`成就奖励为空: ${a.id}`)
@@ -226,6 +233,65 @@ export function validateContent(t: ContentTables): string[] {
   if (!(t.affixes.reforge.lockGoldFactor > 0)) errs.push('重铸锁定系数非法')
   if (!(t.affixes.reforge.emberstonePerLock >= 1)) errs.push('重铸锁定重铸石消耗非法')
 
+  // 伙伴与远征（v2.2）
+  const compIds = new Set<string>()
+  for (const c of t.companions.companions) {
+    if (compIds.has(c.id)) errs.push(`伙伴 id 重复: ${c.id}`)
+    compIds.add(c.id)
+    if (!(c.rarityFactor >= 1)) errs.push(`伙伴战力系数非法: ${c.id}`)
+    if (!(c.startLevel >= 1)) errs.push(`伙伴初始等级非法: ${c.id}`)
+  }
+  if (t.companions.companions.length === 0) errs.push('伙伴名册为空')
+  if (!compIds.has(t.expeditions.starter)) errs.push(`初始伙伴不在名册中: ${t.expeditions.starter}`)
+
+  const traitIds = new Set<string>()
+  for (const tr of t.expeditions.traits) {
+    if (traitIds.has(tr.id)) errs.push(`特质 id 重复: ${tr.id}`)
+    traitIds.add(tr.id)
+    if (!['supply', 'gold', 'xp', 'find'].includes(tr.effect)) errs.push(`特质效果非法: ${tr.id}`)
+    if (tr.value === 0) errs.push(`特质数值不得为 0: ${tr.id}`)
+  }
+  const hours = t.expeditions.hours
+  if (hours.length < 2) errs.push('远征时长档至少 2 档')
+  for (let i = 1; i < hours.length; i++) if (hours[i] <= hours[i - 1]) errs.push('远征时长档必须递增')
+
+  const routeIds = new Set<string>()
+  const capLevel = t.companions.startLevelCap
+  const maxRarity = Math.max(...t.companions.companions.map((c) => c.rarityFactor))
+  const teamMax = t.expeditions.team.base + t.expeditions.banner.maxLevel * t.expeditions.team.maxPerBanner
+  const bannerMax = Math.pow(1 + t.expeditions.banner.powerPerLevel, t.expeditions.banner.maxLevel)
+  const powerCeiling = teamMax * capLevel * maxRarity * (1 + 0.02 * (capLevel - 1)) * bannerMax
+  for (const r of t.expeditions.routes) {
+    if (routeIds.has(r.id)) errs.push(`路线 id 重复: ${r.id}`)
+    routeIds.add(r.id)
+    // 评审 B1：需求战力必须可达，否则该路线永远无法满成功率
+    if (!(r.reqPower > 0)) errs.push(`路线需求战力非法: ${r.id}`)
+    else if (r.reqPower > powerCeiling) {
+      errs.push(`路线需求战力超出可达上限: ${r.id} -> ${r.reqPower} > ${Math.floor(powerCeiling)}`)
+    }
+    // 评审 B2：产出占比上限（防止远征喧宾夺主）
+    if (!(r.ratio > 0) || r.ratio > 0.25) errs.push(`路线产出占比非法（需 ∈ (0, 0.25]）: ${r.id}`)
+    if (!(r.anchorGoldPerHour > 0)) errs.push(`路线锚点非法: ${r.id}`)
+    if (!hasItem(r.supply.itemId)) errs.push(`路线补给物品不存在: ${r.id} -> ${r.supply.itemId}`)
+    if (!(r.supply.qtyPer8h > 0)) errs.push(`路线补给数量非法: ${r.id}`)
+    if (!hasItem(r.materialItemId)) errs.push(`路线材料物品不存在: ${r.id} -> ${r.materialItemId}`)
+    if (r.relic !== null && !hasItem(r.relic)) errs.push(`路线遗物不存在: ${r.id} -> ${r.relic}`)
+    if (!(r.relicChancePerHour >= 0)) errs.push(`路线遗物概率非法: ${r.id}`)
+    if (r.unlock.type === 'skill' && (!r.unlock.skill || !SKILL_IDS.includes(r.unlock.skill))) {
+      errs.push(`路线解锁技能非法: ${r.id}`)
+    }
+    if (r.unlock.type === 'companion' && !(r.unlock.value >= 1)) errs.push(`路线解锁伙伴数非法: ${r.id}`)
+    // 评审 M3：重铸石远征供给不得超过采矿主来源的量级（≤1.15/时）
+    if (r.stonePer8h / 8 > 1.15) errs.push(`路线重铸石产出超上限（≤1.15/时）: ${r.id}`)
+  }
+  for (const itemId of ['expedition_token', 'relic_gear', 'relic_shard', 'relic_core']) {
+    if (!hasItem(itemId)) errs.push(`缺少 v2.2 物品: ${itemId}`)
+  }
+  if (!(t.expeditions.goldShare >= 0 && t.expeditions.goldShare <= 1)) errs.push('远征金币占比非法')
+  if (!(t.expeditions.failYieldShare >= 0 && t.expeditions.failYieldShare <= 1)) errs.push('远征保底占比非法')
+  if (t.expeditions.banner.cost.length !== t.expeditions.banner.maxLevel) errs.push('旗帜升级曲线长度与上限不符')
+  if (!(t.expeditions.levelCurve.base > 0 && t.expeditions.levelCurve.exponent > 1)) errs.push('伙伴经验曲线非法')
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -250,6 +316,8 @@ export const CONTENT: ContentTables = {
   runes: runesJson,
   perks: perksJson,
   affixes: affixesJson,
+  companions: companionsJson,
+  expeditions: expeditionsJson,
   config: configJson,
 } as unknown as ContentTables
 
@@ -269,6 +337,13 @@ export const TASK_WEEKLY_BY_ID = new Map(CONTENT.tasks.weekly.map((t) => [t.id, 
 export const RUNE_BY_ID: ReadonlyMap<ItemId, RuneDef> = new Map(CONTENT.runes.map((r) => [r.id, r] as const))
 export const PERK_BY_ID = new Map(CONTENT.perks.map((p) => [p.id, p] as const))
 export const AFFIX_BY_ID: ReadonlyMap<string, AffixDef> = new Map(CONTENT.affixes.affixes.map((a) => [a.id, a] as const))
+export const COMPANION_BY_ID: ReadonlyMap<string, CompanionDef> = new Map(
+  CONTENT.companions.companions.map((c) => [c.id, c] as const),
+)
+export const ROUTE_BY_ID: ReadonlyMap<string, ExpeditionRouteDef> = new Map(
+  CONTENT.expeditions.routes.map((r) => [r.id, r] as const),
+)
+export const TRAIT_BY_ID: ReadonlyMap<string, TraitDef> = new Map(CONTENT.expeditions.traits.map((t) => [t.id, t] as const))
 export const MAX_LEVEL = Math.max(...CONTENT.skills.map((s) => s.maxLevel))
 export const MAX_ENHANCE = Math.max(...CONTENT.enhance.map((e) => e.targetLevel))
 

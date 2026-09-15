@@ -10,7 +10,7 @@ import { FORGE_CATEGORIES } from '../src/ui/types'
 
 describe('内容表', () => {
   it('载入并通过校验（模块导入即校验）', () => {
-    expect(Object.keys(CONTENT.items).length).toBe(103)
+    expect(Object.keys(CONTENT.items).length).toBe(107)
     expect(CONTENT.recipes.length).toBe(92)
     expect(CONTENT.enhance.length).toBe(10)
     expect(CONTENT.tutorial.length).toBe(8)

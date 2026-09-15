@@ -72,6 +72,27 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
     case 'affixCount':
       // v2.1：任一件装备的词缀条数达到目标（持有即可，无需装备）
       return state.equipment.some((e) => (e.affixes?.length ?? 0) >= def.target)
+    case 'companionCount':
+      // v2.2：招募到的伙伴数（v2.1 前无此字段的旧档按 0 计）
+      return Object.keys(state.companions ?? {}).length >= def.target
+    case 'companionRarity': {
+      const want = def.rarity
+      if (!want) return false
+      return Object.keys(state.companions ?? {}).some((id) => {
+        const c = CONTENT.companions.companions.find((x) => x.id === id)
+        return c?.rarity === want
+      })
+    }
+    case 'relicCount': {
+      // 持有遗物总数（value 0，不构成金币通道）
+      let n = 0
+      for (const [id, qty] of Object.entries(state.materials ?? {})) {
+        if (itemDef(id).category === 'relic') n += qty
+      }
+      return n >= def.target
+    }
+    case 'bannerLevel':
+      return (state.meta.expeditions?.banner ?? 0) >= def.target
   }
 }
 

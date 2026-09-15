@@ -26,6 +26,14 @@ function close(): void {
         <div v-for="(r, i) in s.rounds" :key="i" class="row">{{ refLabel(r.ref) }} × {{ r.count }}</div>
       </section>
 
+      <section v-if="s.expeditions.length">
+        <h4>远征</h4>
+        <div v-for="(e, i) in s.expeditions" :key="i" class="row">
+          {{ e.routeName }}（{{ e.hours }}h）{{ e.success ? '成功' : '保底' }} · +{{ e.gold }} 金
+          <span class="dim">（待领取）</span>
+        </div>
+      </section>
+
       <section v-if="s.items.length">
         <h4>获得物品</h4>
         <div v-for="it in s.items" :key="it.itemId" class="row">

@@ -60,5 +60,13 @@
   { "id": "affix_slots_6", "name": "词缀学徒", "desc": "装备 6 件词缀完美度 ≥80% 的装备", "type": "affixSlots", "target": 6, "rewards": [{ "gold": 200 }] },
   { "id": "affix_slots_10", "name": "词缀宗师", "desc": "装备 10 件词缀完美度 ≥80% 的装备", "type": "affixSlots", "target": 10, "rewards": [{ "itemId": "essence", "qty": 25 }] },
   { "id": "affix_count_4", "name": "四重奏", "desc": "拥有一件 4 词缀装备（T7 装备）", "type": "affixCount", "target": 4, "rewards": [{ "itemId": "emberstone", "qty": 5 }] },
-  { "id": "item_emberstone_10", "name": "重铸石收藏家", "desc": "同时拥有 10 个重铸石", "type": "itemCount", "itemId": "emberstone", "target": 10, "rewards": [{ "gold": 200 }] }
+  { "id": "item_emberstone_10", "name": "重铸石收藏家", "desc": "同时拥有 10 个重铸石", "type": "itemCount", "itemId": "emberstone", "target": 10, "rewards": [{ "gold": 200 }] },
+  { "id": "exp_first", "name": "初出茅庐", "desc": "完成第 1 次远征", "type": "stat", "stat": "totalExpeditions", "target": 1, "rewards": [{ "itemId": "expedition_token", "qty": 2 }] },
+  { "id": "exp_100", "name": "远征队老兵", "desc": "累计完成 100 次远征", "type": "stat", "stat": "totalExpeditions", "target": 100, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
+  { "id": "companion_6", "name": "全员集结", "desc": "招募全部 6 名伙伴", "type": "companionCount", "target": 6, "rewards": [{ "gold": 3000 }] },
+  { "id": "companion_legend", "name": "传奇同行", "desc": "招募到一名传奇伙伴", "type": "companionRarity", "rarity": "legend", "target": 1, "rewards": [{ "itemId": "expedition_token", "qty": 3 }] },
+  { "id": "relic_first", "name": "遗物初现", "desc": "获得第 1 件遗物", "type": "relicCount", "target": 1, "rewards": [{ "gold": 2000 }] },
+  { "id": "relic_3", "name": "遗物收集者", "desc": "同时持有 3 件遗物", "type": "relicCount", "target": 3, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
+  { "id": "banner_3", "name": "旗手", "desc": "远征队旗帜升到 3 级", "type": "bannerLevel", "target": 3, "rewards": [{ "gold": 20000 }] },
+  { "id": "relic_core_1", "name": "深渊之核", "desc": "获得 1 枚遗物·深渊之核", "type": "itemCount", "itemId": "relic_core", "target": 1, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] }
 ]

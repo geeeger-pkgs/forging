@@ -2,11 +2,12 @@
 // Forging · 存档（localStorage 双槽 + 版本迁移 + 导出/导入）
 // ============================================================
 import { perfectAffixCount, rollAffixes } from '../game/affixes'
+import { CONTENT } from '../game/content'
 import type { EquipInstance, GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 8
+export const SAVE_VERSION = 9
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -121,6 +122,28 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       },
     }
   },
+  // v2.2：伙伴与远征（逐项补默认值；初始伙伴由 ensureFields 统一补，避免与 newGame 分叉）
+  8: (s) => ({
+    ...s,
+    version: 9,
+    companions: (s as unknown as { companions?: GameState['companions'] }).companions ?? {},
+    meta: {
+      ...s.meta,
+      expeditions:
+        (s.meta as unknown as { expeditions?: GameState['meta']['expeditions'] }).expeditions ?? {
+          runs: [],
+          banner: 0,
+          nextRunId: 1,
+        },
+    },
+    stats: {
+      ...s.stats,
+      totalExpeditions: s.stats.totalExpeditions ?? 0,
+      totalRecruits: s.stats.totalRecruits ?? 0,
+      totalRelics: s.stats.totalRelics ?? 0,
+      totalTokensEarned: s.stats.totalTokensEarned ?? 0,
+    },
+  }),
 }
 
 function migrate(s: GameState): GameState {
@@ -138,9 +161,21 @@ function migrate(s: GameState): GameState {
  * v2.1 测评 m5：v8 档若缺 affixSalt，旧实现静默回落 0 → 造装词缀可被外部预计算，此处补齐。
  */
 function ensureFields(s: GameState): GameState {
-  if (typeof s.meta.affixSalt === 'number') return s
-  const salt = newAffixSalt()
-  return { ...s, meta: { ...s.meta, affixSalt: salt } }
+  let out = s
+  if (typeof out.meta.affixSalt !== 'number') {
+    out = { ...out, meta: { ...out.meta, affixSalt: newAffixSalt() } }
+  }
+  if (!out.meta.expeditions) {
+    out = { ...out, meta: { ...out.meta, expeditions: { runs: [], banner: 0, nextRunId: 1 } } }
+  }
+  if (!out.companions) out = { ...out, companions: {} }
+  // v2.2：老档若无任何伙伴，补发初始伙伴（否则远征永久不可用）
+  const starter = CONTENT.expeditions.starter
+  if (Object.keys(out.companions).length === 0 && CONTENT.companions.companions.some((c) => c.id === starter)) {
+    const def = CONTENT.companions.companions.find((c) => c.id === starter) as { startLevel: number }
+    out = { ...out, companions: { ...out.companions, [starter]: { level: def.startLevel, xp: 0, trait: CONTENT.expeditions.traits[0].id } } }
+  }
+  return out
 }
 
 /** 载入（主槽 → 备份槽，均失败返回 null） */

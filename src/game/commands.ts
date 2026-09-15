@@ -12,6 +12,17 @@ import {
   rerollAffixes,
 } from './affixes'
 import { CONTENT, MAX_ENHANCE, RECIPES_BY_ID, SITES_BY_ID, itemDef } from './content'
+import {
+  HOUR_MS,
+  claimExpedition,
+  dispatchBlockReason,
+  recruit,
+  rerollTrait,
+  routeDef,
+  supplyCost,
+  teamSize,
+  upgradeBanner,
+} from './expeditions'
 import { recycleGain } from './economy'
 import { levelInfo } from './level'
 import { refLabel } from './refs'
@@ -88,6 +99,22 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return deleteLoadout(state, cmd.loadoutId)
     case 'reforge':
       return reforgeInstance(state, cmd.instanceId, cmd.locks, rng ?? systemRng())
+    case 'recruitCompanion':
+      return recruitCmd(state, rng ?? systemRng())
+    case 'rerollTrait':
+      return rerollTraitCmd(state, cmd.companionId, rng ?? systemRng())
+    case 'dispatchExpedition':
+      return dispatchExpedition(state, cmd.routeId, cmd.hours, cmd.team, now)
+    case 'claimExpedition': {
+      const events: GameEvent[] = []
+      claimExpedition(state, cmd.runId, events)
+      return events
+    }
+    case 'upgradeBanner': {
+      const events: GameEvent[] = []
+      upgradeBanner(state, events)
+      return events
+    }
   }
 }
 
@@ -381,4 +408,52 @@ export function checkLoadout(state: GameState, loadoutId: string): { label: stri
     if (reason) issues.push({ label: refLabel(a.ref), reason })
   }
   return issues
+}
+
+// ---------------- 远征（v2.2） ----------------
+
+function recruitCmd(state: GameState, rng: Rng): GameEvent[] {
+  const events: GameEvent[] = []
+  recruit(state, rng, events)
+  return events
+}
+
+function rerollTraitCmd(state: GameState, companionId: string, rng: Rng): GameEvent[] {
+  const events: GameEvent[] = []
+  rerollTrait(state, companionId, rng, events)
+  return events
+}
+
+/**
+ * 派遣：**派遣时即扣补给**（离线规则 3）。
+ * 战力不足不是阻塞项（只降低成功率与产出）。
+ */
+function dispatchExpedition(
+  state: GameState,
+  routeId: string,
+  hours: number,
+  team: readonly string[],
+  now: number,
+): GameEvent[] {
+  const reason = dispatchBlockReason(state, routeId, hours)
+  if (reason) return [{ type: 'blocked', reason }]
+  const ids = team.filter((id) => state.companions[id])
+  if (ids.length === 0) return [{ type: 'blocked', reason: '队伍里没有伙伴' }]
+  if (ids.length > teamSize(state)) return [{ type: 'blocked', reason: `队伍上限 ${teamSize(state)} 人` }]
+  const route = routeDef(routeId)
+  const supply = supplyCost(state, route, hours, ids)
+  if (!removeMaterial(state, supply.itemId, supply.qty)) {
+    return [{ type: 'blocked', reason: `补给不足：${itemDef(supply.itemId).name} ×${supply.qty}` }]
+  }
+  state.meta.expeditions.runs.push({
+    id: state.meta.expeditions.nextRunId++,
+    routeId,
+    hours,
+    startedAt: now,
+    endsAt: now + hours * HOUR_MS,
+    team: [...ids],
+    done: false,
+    outcome: null,
+  })
+  return [{ type: 'expeditionDispatched', routeName: route.name, hours }]
 }

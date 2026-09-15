@@ -1,0 +1,53 @@
+{
+  "companions": [
+    {
+      "id": "apprentice",
+      "name": "学徒·小砾",
+      "rarity": "common",
+      "rarityFactor": 1,
+      "startLevel": 1,
+      "desc": "矿镇里长大的孩子，认路比认字快。"
+    },
+    {
+      "id": "prospector",
+      "name": "勘探者·灰岩",
+      "rarity": "common",
+      "rarityFactor": 1,
+      "startLevel": 1,
+      "desc": "一辈子在废矿里找矿脉的老手。"
+    },
+    {
+      "id": "ranger",
+      "name": "游侠·青穗",
+      "rarity": "elite",
+      "rarityFactor": 1.25,
+      "startLevel": 1,
+      "desc": "走过遗迹外围的每一道裂隙。"
+    },
+    {
+      "id": "scholar",
+      "name": "学者·墨衡",
+      "rarity": "elite",
+      "rarityFactor": 1.25,
+      "startLevel": 1,
+      "desc": "为一行铭文能在遗迹里蹲三天。"
+    },
+    {
+      "id": "warden",
+      "name": "守望者·铁誓",
+      "rarity": "legend",
+      "rarityFactor": 1.6,
+      "startLevel": 1,
+      "desc": "深渊前哨的最后一位守望者。"
+    },
+    {
+      "id": "seer",
+      "name": "先知·星屑",
+      "rarity": "legend",
+      "rarityFactor": 1.6,
+      "startLevel": 1,
+      "desc": "据说能听见虚空矿脉的心跳。"
+    }
+  ],
+  "startLevelCap": 30
+}

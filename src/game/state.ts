@@ -7,7 +7,7 @@ import { CONTENT } from './content'
 import type { EquipInstance, GameState, ItemId } from './types'
 
 export function newGame(name: string, now: number): GameState {
-  return {
+  const state: GameState = {
     version: 1,
     character: { name, createdAt: now },
     skills: { mining: 0, smelting: 0, forging: 0, enhancing: 0 },
@@ -19,6 +19,7 @@ export function newGame(name: string, now: number): GameState {
     actions: { current: null, queue: [] },
     queueSlots: CONTENT.config.defaultQueueSlots,
     buffs: [],
+    companions: {},
     flags: {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },
       achievements: { unlocked: [] },
@@ -31,6 +32,7 @@ export function newGame(name: string, now: number): GameState {
       autoRecycle: {},
       loadouts: [],
       affixSalt: (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0,
+      expeditions: { runs: [], banner: 0, nextRunId: 1 },
     },
     stats: {
       totalCrafts: 0,
@@ -48,8 +50,19 @@ export function newGame(name: string, now: number): GameState {
       totalPrestigePointsEarned: 0,
       totalReforges: 0,
       perfectAffixes: 0,
+      totalExpeditions: 0,
+      totalRecruits: 0,
+      totalRelics: 0,
+      totalTokensEarned: 0,
     },
   }
+  // v2.2：初始伙伴（避免「无伙伴→无徽记→无法招募」死锁）
+  const starter = CONTENT.expeditions.starter
+  const starterDef = CONTENT.companions.companions.find((c) => c.id === starter)
+  if (starterDef) {
+    state.companions[starter] = { level: starterDef.startLevel, xp: 0, trait: CONTENT.expeditions.traits[0].id }
+  }
+  return state
 }
 
 // ---------- 材料 ----------

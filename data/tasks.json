@@ -14,6 +14,7 @@
     { "id": "craft_w", "title": "全职工匠", "desc": "熔炼或锻造", "counter": "totalCrafts", "unit": "次", "target": 300, "gold": 500, "essence": 3, "crates": 2 },
     { "id": "enhance_w", "title": "千锤百炼", "desc": "进行强化尝试", "counter": "totalEnhances", "unit": "次", "target": 60, "gold": 600, "essence": 5, "crates": 2 },
     { "id": "gold_w", "title": "财富之路", "desc": "累计获得金币", "counter": "totalGoldEarned", "unit": "金", "target": 8000, "gold": 0, "essence": 5, "crates": 3 },
-    { "id": "reforge_w", "title": "重铸达人", "desc": "重铸装备词缀", "counter": "totalReforges", "unit": "次", "target": 50, "gold": 700, "essence": 5, "crates": 2 }
+    { "id": "reforge_w", "title": "重铸达人", "desc": "重铸装备词缀", "counter": "totalReforges", "unit": "次", "target": 50, "gold": 700, "essence": 5, "crates": 2 },
+    { "id": "exp_w", "title": "远征队长", "desc": "完成远征", "counter": "totalExpeditions", "unit": "次", "target": 30, "gold": 700, "essence": 5, "crates": 2 }
   ]
 }

@@ -3,6 +3,7 @@
 // 规则：cap 8h；复用结算内核；强化不参与；材料不足停止；回线摘要
 // ============================================================
 import { CONTENT } from './content'
+import { advanceExpeditions } from './expeditions'
 import { perkBonuses } from './prestige'
 import { simulate } from './settle'
 import type { ActionRef, GameEvent, GameState, OfflineSummary, SkillId } from './types'
@@ -45,6 +46,8 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   if (state.actions.queue.length !== qBefore) notes.push('队列中的强化动作不参与离线结算，已跳过')
 
   const events: GameEvent[] = []
+  // v2.2：远征推进（离线规则 1：只结算「完成时刻落在 cap 窗口内」的 run；规则 2：不自动续派）
+  advanceExpeditions(state, state.meta.lastSeenAt + counted, 'expectation', null, events)
   // v1.4：临时增益（符文）不参与离线结算——结算期间临时清空 buffs，结束后恢复（照常计时/过期）
   const buffsBackup = state.buffs
   state.buffs = []
@@ -53,6 +56,7 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   state.meta.lastSeenAt = now // 超出 cap 的时长不结转
 
   // ---- 汇总 ----
+  const exped: OfflineSummary['expeditions'] = []
   const roundsMap = new Map<string, { ref: ActionRef; count: number }>()
   const itemsMap = new Map<string, number>()
   const xpMap = new Map<SkillId, number>()
@@ -76,6 +80,9 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
       case 'levelUp':
         levels.push({ skill: ev.skill, level: ev.level })
         break
+      case 'expeditionDone':
+        exped.push({ routeName: ev.routeName, hours: ev.hours, success: ev.success, gold: ev.gold })
+        break
       case 'notice':
         notes.push(ev.text)
         break
@@ -97,11 +104,13 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
     items: [...itemsMap.entries()].map(([itemId, qty]) => ({ itemId, qty })),
     xp: [...xpMap.entries()].map(([skill, xp]) => ({ skill, xp })),
     levels,
+    expeditions: exped,
     notes,
   }
   // 无任何结算内容时不弹摘要（但 lastSeenAt 已推进）
   const empty =
     summary.rounds.length === 0 &&
+    summary.expeditions.length === 0 &&
     summary.items.length === 0 &&
     summary.xp.length === 0 &&
     summary.levels.length === 0 &&
