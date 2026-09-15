@@ -21,7 +21,7 @@ import { openCrate } from './crates'
 import { buyPerk, doPrestige, refundPerk } from './prestige'
 import { rerollTask } from './tasks'
 import { claimTutorial, tutorialProgress } from './tutorial'
-import type { ActionRef, ActiveAction, Command, GameEvent, GameState, ItemId } from './types'
+import type { ActionRef, ActiveAction, Command, GameEvent, GameState, ItemId, LoadoutAction } from './types'
 
 /** 壳层便捷入口：先结算已流逝时间，再应用命令 */
 export function dispatch(state: GameState, cmd: Command, now: number, rng?: Rng): GameEvent[] {
@@ -68,6 +68,14 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return buyPerk(state, cmd.perkId)
     case 'refundPerk':
       return refundPerk(state, cmd.perkId)
+    case 'setAutoRecycle':
+      return setAutoRecycle(state, cmd.itemId, cmd.keep)
+    case 'saveLoadout':
+      return saveLoadout(state, cmd.name)
+    case 'applyLoadout':
+      return applyLoadout(state, cmd.loadoutId, now)
+    case 'deleteLoadout':
+      return deleteLoadout(state, cmd.loadoutId)
   }
 }
 
@@ -211,4 +219,74 @@ function buyQueueSlot(state: GameState): GameEvent[] {
   addGold(state, -cost)
   state.queueSlots += 1
   return [{ type: 'goldGained', amount: -cost }]
+}
+
+// ---------------- 自动化（v1.7） ----------------
+
+function setAutoRecycle(state: GameState, itemId: ItemId, keep: number | null): GameEvent[] {
+  const def = CONTENT.items[itemId]
+  if (!def || !def.stackable) return [{ type: 'blocked', reason: '该物品不支持自动回收' }]
+  if (keep === null) {
+    delete state.meta.autoRecycle[itemId]
+  } else {
+    state.meta.autoRecycle[itemId] = Math.max(0, Math.floor(keep))
+  }
+  return []
+}
+
+function saveLoadout(state: GameState, name: string): GameEvent[] {
+  const actions: LoadoutAction[] = []
+  if (state.actions.current) actions.push({ ref: state.actions.current.ref, count: state.actions.current.remaining })
+  for (const q of state.actions.queue) actions.push({ ref: q.ref, count: q.remaining })
+  if (actions.length === 0) return [{ type: 'blocked', reason: '当前没有可保存的动作' }]
+  const trimmed = name.trim().slice(0, 12) || `预设${state.meta.loadouts.length + 1}`
+  const id = `lo_${Date.now().toString(36)}_${state.meta.loadouts.length}`
+  state.meta.loadouts.push({ id, name: trimmed, actions })
+  return []
+}
+
+function applyLoadout(state: GameState, loadoutId: string, now: number): GameEvent[] {
+  const lo = state.meta.loadouts.find((l) => l.id === loadoutId)
+  if (!lo) return [{ type: 'blocked', reason: '预设不存在' }]
+
+  state.actions.current = null
+  state.actions.queue = []
+  const events: GameEvent[] = []
+  const skipped: string[] = []
+  for (const a of lo.actions) {
+    const reason = startBlockReason(state, a.ref)
+    if (reason) {
+      skipped.push(reason)
+      continue
+    }
+    const act: ActiveAction = {
+      ref: a.ref,
+      remaining: a.count,
+      startedAt: now,
+      durationMs: durationOf(state, a.ref),
+      procMisses: 0,
+    }
+    if (!state.actions.current) {
+      state.actions.current = act
+      events.push({ type: 'actionStarted', ref: a.ref })
+    } else if (state.actions.queue.length < state.queueSlots) {
+      state.actions.queue.push(act)
+    } else {
+      skipped.push('队列已满，剩余动作未加入')
+      break
+    }
+  }
+  if (!state.actions.current) {
+    return [{ type: 'blocked', reason: skipped[0] ?? '预设中没有可执行的动作' }]
+  }
+  if (skipped.length > 0) events.push({ type: 'blocked', reason: `已跳过：${skipped.join('；')}` })
+  events.push({ type: 'loadoutApplied', name: lo.name })
+  return events
+}
+
+function deleteLoadout(state: GameState, loadoutId: string): GameEvent[] {
+  const i = state.meta.loadouts.findIndex((l) => l.id === loadoutId)
+  if (i < 0) return [{ type: 'blocked', reason: '预设不存在' }]
+  state.meta.loadouts.splice(i, 1)
+  return []
 }

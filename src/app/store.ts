@@ -1,10 +1,11 @@
 // ============================================================
 // Forging · 应用层 store（Vue reactive 快照 + dispatch 桥 + 主循环）
 // 约定：UI 组件只读 store.state；一切变更经 cmd() / dispatch
-// 启动顺序（v1.2 Blocker 修正）：载入→迁移→离线结算→任务轮换+基线快照
+// 启动顺序：载入→迁移→离线结算→任务轮换+基线快照→自动回收清扫
 // ============================================================
 import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
+import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
 import { dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
@@ -110,6 +111,9 @@ function handleEvents(events: GameEvent[]): void {
         break
       case 'perkChanged':
         break
+      case 'loadoutApplied':
+        pushToast(`🎯 预设已应用：${e.name}`, 'good')
+        break
       case 'enhanceResult':
         pushToast(
           e.success ? `强化成功：+${e.from} → +${e.to}` : `强化失败：+${e.from} → +${e.to}`,
@@ -173,12 +177,14 @@ export function boot(): void {
   const state = saved ?? newGame('矿工', Date.now())
   store.state = state
   const now = Date.now()
-  // ① 离线结算（不计入今日任务；临时增益不参与——settleOffline 内部临时清空 buffs）
+  // ① 离线结算（不计入今日任务；临时增益不参与）
   const summary = settleOffline(state, now)
-  // ② 任务轮换 + 基线快照（离线收益之前的历史以基线隔离）
+  // ② 任务轮换 + 基线快照
   refreshTasks(state, now)
   checkTasks(state)
   pruneBuffs(state, now)
+  // ③ 自动回收清扫（含离线期间产出）
+  sweepAutoRecycle(state)
   store.summary = summary
   if (summary) {
     for (const n of summary.notes) pushToast(n, 'info')
@@ -194,6 +200,7 @@ export function startLoop(): void {
     events.push(...refreshTasks(store.state, store.now))
     events.push(...checkTasks(store.state))
     pruneBuffs(store.state, store.now)
+    events.push(...sweepAutoRecycle(store.state))
     if (events.length) handleEvents(events)
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)

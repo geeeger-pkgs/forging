@@ -1,21 +1,34 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { exportCurrent, store } from '../../app/store'
+import { cmd, exportCurrent, store } from '../../app/store'
 import { clearSave, importSaveFile, saveGame } from '../../app/persist'
 import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const message = ref('')
+const loadoutName = ref('')
 
-const stats = computed(() => ({
-  gold: store.state.gold,
-  totalValue: totalValue(store.state),
-  crafts: store.state.stats.totalCrafts,
-  enhances: store.state.stats.totalEnhances,
-  days: Math.max(0, (Date.now() - store.state.character.createdAt) / 86400000).toFixed(1),
-  queueSlots: store.state.queueSlots,
-}))
+const stats = computed(() => {
+  const s = store.state
+  return {
+    gold: s.gold,
+    totalValue: totalValue(s),
+    crafts: s.stats.totalCrafts,
+    enhances: s.stats.totalEnhances,
+    actions: s.stats.totalMines + s.stats.totalSmelts + s.stats.totalForges + s.stats.totalEnhances,
+    prestiges: s.stats.totalPrestiges,
+    runes: s.stats.totalRunesCrafted,
+    days: Math.max(0, (Date.now() - s.character.createdAt) / 86400000).toFixed(1),
+    queueSlots: s.queueSlots,
+  }
+})
+
+function saveLoadout(): void {
+  cmd({ type: 'saveLoadout', name: loadoutName.value })
+  loadoutName.value = ''
+  message.value = '已保存当前动作 + 队列为预设'
+}
 
 function onExport(): void {
   exportCurrent()
@@ -61,9 +74,37 @@ function onClear(): void {
         <div class="kv"><span class="dim">总价值</span><span>{{ stats.totalValue }}</span></div>
         <div class="kv"><span class="dim">累计制作</span><span>{{ stats.crafts }}</span></div>
         <div class="kv"><span class="dim">累计强化</span><span>{{ stats.enhances }}</span></div>
+        <div class="kv"><span class="dim">总动作数</span><span>{{ stats.actions }}</span></div>
+        <div class="kv"><span class="dim">传承次数</span><span>{{ stats.prestiges }}</span></div>
+        <div class="kv"><span class="dim">符文制作</span><span>{{ stats.runes }}</span></div>
         <div class="kv"><span class="dim">旅途天数</span><span>{{ stats.days }} 天</span></div>
         <div class="kv"><span class="dim">队列位</span><span>{{ stats.queueSlots }} / {{ CONTENT.config.maxQueueSlots }}</span></div>
       </div>
+    </section>
+
+    <section class="card">
+      <h3>动作预设</h3>
+      <p class="dim">保存当前「执行中动作 + 队列」为一键预设（跨传承保留）；应用时非法动作自动跳过。</p>
+      <div class="actions">
+        <input v-model="loadoutName" class="text-input" placeholder="预设名称（可选）" maxlength="12" />
+        <button class="btn" @click="saveLoadout">保存当前</button>
+      </div>
+      <div v-if="store.state.meta.loadouts.length === 0" class="dim">暂无预设。</div>
+      <div v-for="lo in store.state.meta.loadouts" :key="lo.id" class="lo-row">
+        <span class="lo-name">{{ lo.name }}</span>
+        <span class="dim">{{ lo.actions.length }} 个动作</span>
+        <span class="spacer" />
+        <button class="btn sm" @click="cmd({ type: 'applyLoadout', loadoutId: lo.id })">应用</button>
+        <button class="btn sm" @click="cmd({ type: 'deleteLoadout', loadoutId: lo.id })">删除</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>自动回收</h3>
+      <p class="dim">
+        在右侧「资源」列表点击「自动」为材料设置保留数量：超出部分将被自动卖出换金（含离线产出）。
+        再次点击「自动」可关闭。
+      </p>
     </section>
 
     <section class="card">
@@ -83,8 +124,8 @@ function onClear(): void {
     <section class="card">
       <h3>关于</h3>
       <p class="dim">
-        Forging v0.1.0 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化）<br />
-        参考 Milky Way Idle 的核心循环设计；离线结算上限 {{ CONTENT.config.offlineCapHours }} 小时。
+        Forging v1.7 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 传承）<br />
+        参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。
       </p>
     </section>
   </div>
@@ -95,7 +136,7 @@ function onClear(): void {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 620px;
+  max-width: 640px;
 }
 .card {
   background: var(--c-panel-2);
@@ -111,6 +152,7 @@ function onClear(): void {
   color: var(--c-text-dim);
   font-size: 13px;
   margin: 4px 0;
+  line-height: 1.7;
 }
 .grid {
   display: grid;
@@ -127,8 +169,34 @@ function onClear(): void {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+  align-items: center;
+}
+.text-input {
+  flex: 1;
+  max-width: 260px;
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: var(--font);
+  font-size: 13px;
 }
 .hidden-input {
   display: none;
+}
+.lo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--c-border);
+  font-size: 13px;
+}
+.lo-name {
+  font-weight: 600;
+}
+.spacer {
+  flex: 1;
 }
 </style>

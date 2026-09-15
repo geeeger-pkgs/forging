@@ -27,6 +27,8 @@ export function newGame(name: string, now: number): GameState {
       carry: { items: {} },
       tasks: { dailyDate: '', daily: [], rerollsLeft: 1, paidRerollsLeft: 3, weekKey: '', weekly: null },
       prestige: { points: 0, perks: {} },
+      autoRecycle: {},
+      loadouts: [],
     },
     stats: {
       totalCrafts: 0,

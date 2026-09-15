@@ -103,6 +103,22 @@ function recycleAll(itemId: string, qty: number): void {
   if (qty >= 20 && !window.confirm(`回收全部 ${qty} 个「${itemDef(itemId).name}」？`)) return
   cmd({ type: 'recycleMaterial', itemId, qty })
 }
+function autoKeep(itemId: string): number | undefined {
+  return store.state.meta.autoRecycle[itemId]
+}
+function toggleAuto(itemId: string): void {
+  const cur = store.state.meta.autoRecycle[itemId]
+  if (cur !== undefined) {
+    cmd({ type: 'setAutoRecycle', itemId, keep: null })
+    return
+  }
+  const name = itemDef(itemId).name
+  const input = window.prompt(`自动回收「${name}」：保留数量（超出部分自动卖出，0 = 全部卖出；取消输入则不启用）`, '0')
+  if (input === null) return
+  const keep = Math.floor(Number(input))
+  if (!Number.isFinite(keep)) return
+  cmd({ type: 'setAutoRecycle', itemId, keep: Math.max(0, keep) })
+}
 function recycleInstance(instanceId: number): void {
   cmd({ type: 'recycleInstance', instanceId })
 }
@@ -154,6 +170,9 @@ function inspect(instanceId: number | null, itemId?: string): void {
         <span class="qty">×{{ m.qty }}</span>
         <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
         <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
+        <button class="btn sm" :class="{ primary: autoKeep(m.id) !== undefined }" @click="toggleAuto(m.id)">
+          {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '自动' }}
+        </button>
         <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
         <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
         <button class="btn sm" @click="recycleAll(m.id, m.qty)">全部</button>

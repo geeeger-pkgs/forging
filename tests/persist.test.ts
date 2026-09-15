@@ -81,7 +81,7 @@ describe('存档持久化', () => {
     expect(await importSaveFile(wrongShape)).toBeNull()
   })
 
-  it('v1 → v6 链式迁移：补齐成就/计数/任务/饰品/符文/传承（保留旧数据）', () => {
+  it('v1 → v7 链式迁移：补齐成就/计数/任务/饰品/符文/传承/自动化（保留旧数据）', () => {
     const v1 = {
       version: 1,
       character: { name: '旧档', createdAt: 1 },
@@ -100,7 +100,7 @@ describe('存档持久化', () => {
     localStorage.setItem('forging.save', JSON.stringify(v1))
     const loaded = loadGame()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(6)
+    expect(loaded!.version).toBe(7)
     expect(loaded!.stats.totalMines).toBe(0)
     expect(loaded!.stats.totalCrafts).toBe(7)
     expect(loaded!.stats.totalGoldEarned).toBe(0)
@@ -111,13 +111,15 @@ describe('存档持久化', () => {
     expect(loaded!.buffs).toEqual([])
     expect(loaded!.meta.prestige.points).toBe(0)
     expect(loaded!.meta.prestige.perks).toEqual({})
+    expect(loaded!.meta.autoRecycle).toEqual({})
+    expect(loaded!.meta.loadouts).toEqual([])
     expect(loaded!.flags.achievements.unlocked).toEqual([])
     expect(loaded!.flags.tutorial.current).toBe(3)
     expect(loaded!.materials['ore_copper']).toBe(9)
     expect(loaded!.meta.tasks.daily).toEqual([]) // 待首启 refreshTasks 生成
   })
 
-  it('v2 → v6 链式迁移：补齐任务/饰品/符文/传承计数', () => {
+  it('v2 → v7 链式迁移：补齐任务/饰品/符文/传承/自动化计数', () => {
     const s = newGame('V2', 1)
     const v2 = { ...s, version: 2 }
     delete (v2 as Record<string, unknown>).meta // 重建 v2 形态
@@ -127,7 +129,7 @@ describe('存档持久化', () => {
     delete (v2 as Record<string, unknown>).buffs
     localStorage.setItem('forging.save', JSON.stringify(v2))
     const loaded = loadGame()
-    expect(loaded!.version).toBe(6)
+    expect(loaded!.version).toBe(7)
     expect(loaded!.stats.totalMines).toBe(5)
     expect(loaded!.stats.totalSmelts).toBe(0)
     expect(loaded!.stats.totalTasksDone).toBe(0)
@@ -135,6 +137,8 @@ describe('存档持久化', () => {
     expect(loaded!.stats.totalPrestiges).toBe(0)
     expect(loaded!.buffs).toEqual([])
     expect(loaded!.meta.prestige.points).toBe(0)
+    expect(loaded!.meta.autoRecycle).toEqual({})
+    expect(loaded!.meta.loadouts).toEqual([])
     expect(loaded!.meta.tasks.paidRerollsLeft).toBe(3)
   })
 

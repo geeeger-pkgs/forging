@@ -310,6 +310,23 @@ export interface PrestigeState {
   perks: Record<string, number>
 }
 
+// ---------- 自动化（v1.7） ----------
+
+/** 动作预设（保存当前动作 + 队列，一键重放） */
+export interface LoadoutAction {
+  ref: ActionRef
+  count: number | null
+}
+
+export interface LoadoutDef {
+  id: string
+  name: string
+  actions: LoadoutAction[]
+}
+
+/** 自动回收：itemId → 保留数量（卖出超出部分） */
+export type AutoRecycleMap = Record<string, number>
+
 export interface ContentTables {
   skills: SkillDef[]
   ores: OreSiteDef[]
@@ -394,6 +411,10 @@ export interface GameState {
     carry: OfflineCarry
     tasks: TaskState
     prestige: PrestigeState
+    /** v1.7：自动回收（itemId → 保留数量） */
+    autoRecycle: AutoRecycleMap
+    /** v1.7：动作预设 */
+    loadouts: LoadoutDef[]
   }
   stats: {
     totalCrafts: number
@@ -433,6 +454,10 @@ export type Command =
   | { type: 'prestige' }
   | { type: 'buyPerk'; perkId: string }
   | { type: 'refundPerk'; perkId: string }
+  | { type: 'setAutoRecycle'; itemId: ItemId; keep: number | null }
+  | { type: 'saveLoadout'; name: string }
+  | { type: 'applyLoadout'; loadoutId: string }
+  | { type: 'deleteLoadout'; loadoutId: string }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -453,6 +478,7 @@ export type GameEvent =
   | { type: 'buffActivated'; name: string; until: number }
   | { type: 'prestigeDone'; points: number }
   | { type: 'perkChanged'; perkId: string }
+  | { type: 'loadoutApplied'; name: string }
   | { type: 'goldGained'; amount: number }
   | { type: 'blocked'; reason: string }
 
