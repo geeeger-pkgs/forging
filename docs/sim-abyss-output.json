@@ -1,0 +1,126 @@
+{
+  "abyss": {
+    "staminaMax": 12,
+    "staminaRegenMinutes": 10,
+    "weights": {
+      "speed": 1,
+      "efficiency": 1.5,
+      "quantity": 1,
+      "rareFind": 0.7,
+      "wisdom": 0.5,
+      "enhanceRate": 2
+    },
+    "base": 0.45,
+    "growth": 1.086,
+    "themes": [
+      "矿脉裂隙",
+      "熔岩回廊",
+      "符文甬道",
+      "无光深渊",
+      "虚空之喉"
+    ],
+    "shop": {
+      "rerollTicket": {
+        "crystal": 120,
+        "note": "定向重铸券：重铸时指定一条词缀 id 保底出现（回应 v2.2 测评建议）"
+      },
+      "relicExchange": {
+        "crystal": 240,
+        "note": "遗物兑换（补齐图鉴 100% 的最后一块）"
+      },
+      "permanentSpeed": {
+        "crystal": 200,
+        "levels": 5,
+        "perLevel": 0.01,
+        "note": "永久 +1% 速度 / 级（最多 5 级）"
+      },
+      "title": {
+        "crystal": 300,
+        "note": "称号「深渊行者」（展示用）"
+      }
+    },
+    "firstClearCrystalBase": 10,
+    "firstClearCrystalPerFloor": 2
+  },
+  "reach": {
+    "early": 9,
+    "mid": 24,
+    "end": 35
+  },
+  "targets": {
+    "early": [
+      7,
+      10
+    ],
+    "mid": [
+      20,
+      25
+    ],
+    "end": [
+      30,
+      36
+    ]
+  },
+  "builds": {
+    "early": {
+      "name": "前期（T3 无词缀）",
+      "caps": {
+        "speed": 0.5,
+        "efficiency": 0.2,
+        "quantity": 0.05,
+        "rareFind": 0.1,
+        "wisdom": 0.05,
+        "enhanceRate": 0
+      },
+      "score": 0.9450000000000001,
+      "reach": 9
+    },
+    "mid": {
+      "name": "中期（T5 +5 套装）",
+      "caps": {
+        "speed": 1.4,
+        "efficiency": 0.6,
+        "quantity": 0.3,
+        "rareFind": 0.5,
+        "wisdom": 0.4,
+        "enhanceRate": 0.05
+      },
+      "score": 3.25,
+      "reach": 24
+    },
+    "end": {
+      "name": "终局满配（+10/符文/精通/词缀）",
+      "caps": {
+        "speed": 3.04,
+        "efficiency": 1.58,
+        "quantity": 0.27,
+        "rareFind": 1.84,
+        "wisdom": 1.09,
+        "enhanceRate": 0.12
+      },
+      "score": 7.753,
+      "reach": 35
+    }
+  },
+  "reqAt": {
+    "1": 0.45,
+    "5": 0.6259387161672002,
+    "10": 0.9455422537048633,
+    "15": 1.4283349638696168,
+    "20": 2.1576410372129367,
+    "25": 3.25932989335566,
+    "30": 4.923539722549972,
+    "35": 7.437493040807158,
+    "40": 11.235067827056302
+  },
+  "crystalToFloor": {
+    "5": 80,
+    "9": 180,
+    "15": 390,
+    "24": 840,
+    "30": 1230,
+    "35": 1610,
+    "40": 2040
+  },
+  "shopTotal": 2500
+}
