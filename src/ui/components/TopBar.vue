@@ -8,6 +8,8 @@ import ProgressBar from './ProgressBar.vue'
 
 const cur = computed(() => store.state.actions.current)
 const queue = computed(() => store.state.actions.queue)
+const shownQueue = computed(() => queue.value.slice(0, 4))
+const overflow = computed(() => Math.max(0, queue.value.length - 4))
 const tl = computed(() => totalLevel(store.state.skills))
 const tv = computed(() => totalValue(store.state))
 const remainSec = computed(() => {
@@ -36,9 +38,10 @@ const remainSec = computed(() => {
 
       <div v-if="queue.length" class="queue">
         <span class="qlabel">队列</span>
-        <span v-for="(q, i) in queue" :key="i" class="qitem">
+        <span v-for="(q, i) in shownQueue" :key="i" class="qitem">
           {{ refLabel(q.ref) }}<em v-if="q.remaining !== null">×{{ q.remaining }}</em>
         </span>
+        <span v-if="overflow" class="qitem">+{{ overflow }} 项</span>
         <button class="btn sm" @click="cmd({ type: 'clearQueue' })">清空</button>
       </div>
     </div>

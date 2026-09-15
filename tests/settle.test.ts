@@ -136,4 +136,19 @@ describe('在线结算', () => {
     expect(s.flags.tutorial.current).toBe(2)
     expect(claimEvents.some((e) => e.type === 'tutorialRewarded')).toBe(true)
   })
+
+  it('领奖后新步骤条件已满足时立即判定（总等级类目标）', () => {
+    const s = newGame('T', 0)
+    s.skills.mining = 2000 // 足够高的总等级
+    s.flags.tutorial.current = 8
+    s.flags.tutorial.completed = [7]
+    const events = claimTutorial(s, 7)
+    expect(s.flags.tutorial.completed).toContain(8)
+    expect(events.some((e) => e.type === 'tutorialGoalMet' && e.step === 8)).toBe(true)
+
+    const claim8 = claimTutorial(s, 8)
+    expect(s.queueSlots).toBe(2) // 第 8 步奖励：队列位 +1
+    expect(claim8.some((e) => e.type === 'tutorialRewarded' && e.step === 8)).toBe(true)
+    expect(s.flags.tutorial.current).toBe(9)
+  })
 })

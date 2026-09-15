@@ -10,6 +10,7 @@ const desc = computed<ActionDesc | null>(() =>
 )
 
 const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
+const queueFull = computed(() => store.state.actions.queue.length >= store.state.queueSlots)
 
 const infinite = ref(true)
 const count = ref(1)
@@ -103,7 +104,14 @@ function start(mode: 'now' | 'enqueue'): void {
         </div>
         <div class="right-actions">
           <button class="btn" @click="closeDialog">取消</button>
-          <button class="btn ghost" :disabled="!desc.canStart" @click="start('enqueue')">加入队列</button>
+          <button
+            class="btn ghost"
+            :disabled="!desc.canStart || queueFull"
+            :title="queueFull ? '队列已满：先升级队列位或清空队列' : ''"
+            @click="start('enqueue')"
+          >
+            加入队列
+          </button>
           <button class="btn primary" :disabled="!desc.canStart" @click="start('now')">开始</button>
         </div>
       </footer>

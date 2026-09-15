@@ -1,0 +1,83 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { SAVE_VERSION, clearSave, importSaveFile, loadGame, saveGame } from '../src/app/persist'
+import { newGame } from '../src/game/state'
+
+// —— localStorage 桩（node 环境） ——
+function makeStorage() {
+  const map = new Map<string, string>()
+  return {
+    getItem: (k: string): string | null => map.get(k) ?? null,
+    setItem: (k: string, v: string): void => {
+      map.set(k, String(v))
+    },
+    removeItem: (k: string): void => {
+      map.delete(k)
+    },
+    clear: (): void => map.clear(),
+    key: (i: number): string | null => [...map.keys()][i] ?? null,
+    get length(): number {
+      return map.size
+    },
+  }
+}
+
+beforeEach(() => {
+  Object.defineProperty(globalThis, 'localStorage', { value: makeStorage(), configurable: true })
+})
+
+describe('存档持久化', () => {
+  it('保存 → 载入 往返一致（关键字段）', () => {
+    const s = newGame('打磨测试', 1000)
+    s.materials['ore_copper'] = 42
+    s.gold = 33
+    saveGame(s)
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.character.name).toBe('打磨测试')
+    expect(loaded!.materials['ore_copper']).toBe(42)
+    expect(loaded!.gold).toBe(33)
+    expect(loaded!.version).toBe(SAVE_VERSION)
+  })
+
+  it('主槽损坏时回退备份槽', () => {
+    const a = newGame('A', 1)
+    a.gold = 1
+    saveGame(a) // 主槽 = A
+    const b = newGame('B', 2)
+    b.gold = 2
+    saveGame(b) // 备份槽 = A，主槽 = B
+    localStorage.setItem('forging.save', '{broken json')
+    const loaded = loadGame()
+    expect(loaded!.character.name).toBe('A')
+    expect(loaded!.gold).toBe(1)
+  })
+
+  it('两槽皆无效 → null', () => {
+    localStorage.setItem('forging.save', 'xxx')
+    localStorage.setItem('forging.save.bak', 'yyy')
+    expect(loadGame()).toBeNull()
+  })
+
+  it('clearSave 清空两槽', () => {
+    const s = newGame('C', 3)
+    saveGame(s)
+    saveGame(s)
+    clearSave()
+    expect(loadGame()).toBeNull()
+  })
+
+  it('importSaveFile：合法导入 / 非法拒绝 / 结构不符拒绝', async () => {
+    const s = newGame('Import', 5)
+    s.gold = 99
+    const good = new File([JSON.stringify(s)], 'forging-save.json', { type: 'application/json' })
+    const imported = await importSaveFile(good)
+    expect(imported!.character.name).toBe('Import')
+    expect(imported!.gold).toBe(99)
+
+    const notJson = new File(['not json'], 'bad.json', { type: 'application/json' })
+    expect(await importSaveFile(notJson)).toBeNull()
+
+    const wrongShape = new File([JSON.stringify({ version: 1 })], 'wrong.json')
+    expect(await importSaveFile(wrongShape)).toBeNull()
+  })
+})

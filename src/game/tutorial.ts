@@ -76,5 +76,7 @@ export function claimTutorial(state: GameState, step: number): GameEvent[] {
     t.progress = 0
   }
   events.push({ type: 'tutorialRewarded', step })
+  // 新步骤若条件已满足（如“总等级”类目标），立即判定达成
+  events.push(...tutorialCheckTotalLevel(state))
   return events
 }

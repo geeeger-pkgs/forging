@@ -57,8 +57,8 @@ function unequip(slot: SlotId): void {
 function equipInstance(instanceId: number): void {
   cmd({ type: 'equip', instanceId })
 }
-function recycleMaterial(itemId: string): void {
-  cmd({ type: 'recycleMaterial', itemId, qty: 1 })
+function recycleMaterial(itemId: string, qty: number): void {
+  cmd({ type: 'recycleMaterial', itemId, qty })
 }
 function recycleInstance(instanceId: number): void {
   cmd({ type: 'recycleInstance', instanceId })
@@ -96,7 +96,8 @@ function recycleInstance(instanceId: number): void {
         <span class="icon">{{ m.icon }}</span>
         <span class="name">{{ m.name }}</span>
         <span class="qty">×{{ m.qty }}</span>
-        <button class="btn sm" @click="recycleMaterial(m.id)">回收1</button>
+        <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
+        <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
       </div>
     </section>
 
