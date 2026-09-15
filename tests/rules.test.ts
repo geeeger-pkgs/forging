@@ -70,6 +70,29 @@ describe('动作时长与速度', () => {
   it('速度下限保护可用（minActionTimeMs 参数存在）', () => {
     expect(CONTENT.config.minActionTimeMs).toBe(250)
   })
+
+  it('套装加成（v1.2）：≥5 件同档 +4% 全速；8 件再 +4% 效率', () => {
+    const s = newGame('T', 0)
+    equip(s, 'pick_iron')
+    equip(s, 'crucible_iron')
+    equip(s, 'hammer_iron')
+    equip(s, 'helmet_iron')
+    equip(s, 'chest_iron')
+    const agg5 = aggregateEquipment(s)
+    expect(agg5.setTier).toBe(2)
+    expect(agg5.setCount).toBe(5)
+    expect(agg5.allSpeed).toBeCloseTo(0.04)
+    expect(agg5.efficiency).toBeCloseTo(0)
+
+    equip(s, 'legs_iron')
+    equip(s, 'boots_iron')
+    equip(s, 'sword_iron')
+    const agg8 = aggregateEquipment(s)
+    expect(agg8.setCount).toBe(8)
+    expect(agg8.allSpeed).toBeCloseTo(0.04)
+    // 套装 0.04 + 铁剑效率 0.03 + 铁靴效率 0.02
+    expect(agg8.efficiency).toBeCloseTo(0.09)
+  })
 })
 
 describe('经验与消耗', () => {

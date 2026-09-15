@@ -31,6 +31,8 @@ export interface Toast {
 /** 主面板视图：四技能 + 任务 + 商店 + 成就 + 设置 */
 export type UiView = SkillId | 'tasks' | 'shop' | 'achievements' | 'settings'
 
+const TITLE = 'Forging · 挖矿锻造放置游戏'
+
 export const store = reactive({
   /** 内核状态（可序列化对象；模块加载后由 boot() 注入） */
   state: null as unknown as GameState,
@@ -41,9 +43,26 @@ export const store = reactive({
     view: 'mining' as UiView,
     dialogRef: null as ActionRef | null,
     forgeCategory: 'tool' as 'tool' | 'weapon' | 'armor',
+    searchText: '',
+    inspectItemId: null as string | null,
   },
   now: Date.now(),
 })
+
+// ---------------- 未读提醒（页面隐藏时） ----------------
+
+let unread = 0
+
+function markUnread(): void {
+  unread += 1
+  document.title = `(${unread}) ${TITLE}`
+}
+
+function clearUnread(): void {
+  if (unread === 0) return
+  unread = 0
+  document.title = TITLE
+}
 
 // ---------------- 事件 → 提示 ----------------
 
@@ -69,9 +88,11 @@ function handleEvents(events: GameEvent[]): void {
         break
       case 'achievementUnlocked':
         pushToast(`🏆 成就达成：${e.name}`, 'good')
+        if (document.hidden) markUnread()
         break
       case 'taskCompleted':
         pushToast(`📋 任务完成：${e.title}`, 'good')
+        if (document.hidden) markUnread()
         break
       case 'tasksRotated':
         pushToast(e.period === 'daily' ? '📋 每日任务已刷新' : '📋 周常任务已刷新', 'info')
@@ -120,6 +141,10 @@ export function setView(v: UiView): void {
   store.ui.view = v
 }
 
+export function inspectItem(id: string | null): void {
+  store.ui.inspectItemId = id
+}
+
 // ---------------- 启动与主循环 ----------------
 
 let lastSaveAt = 0
@@ -161,6 +186,10 @@ export function startLoop(): void {
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)
   window.addEventListener('beforeunload', () => saveNow())
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) clearUnread()
+  })
+  window.addEventListener('focus', clearUnread)
 }
 
 /** 导出存档（设置面板使用） */

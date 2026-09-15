@@ -39,6 +39,9 @@ export interface AggregatedStats {
   quantity: number
   wisdom: number
   rareFind: number
+  /** 套装（v1.2）：件数最多的同档位（≥3 时展示） */
+  setTier: number | null
+  setCount: number
 }
 
 export function aggregateEquipment(state: GameState): AggregatedStats {
@@ -49,13 +52,17 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     quantity: 0,
     wisdom: 0,
     rareFind: 0,
+    setTier: null,
+    setCount: 0,
   }
+  const tierCount = new Map<number, number>()
   for (const slot of SLOT_IDS) {
     const instId = state.slots[slot]
     if (instId === undefined) continue
     const inst = state.equipment.find((e) => e.instanceId === instId)
     if (!inst) continue
     const def = itemDef(inst.itemId)
+    if (def.tier) tierCount.set(def.tier, (tierCount.get(def.tier) ?? 0) + 1)
     const s = def.stats
     if (!s) continue
     const enhMult = def.category === 'tool' ? 1 + ENH_TOOL * inst.enhanceLevel : 1 + ENH_OTHER * inst.enhanceLevel
@@ -69,6 +76,21 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     if (s.wisdom) agg.wisdom += s.wisdom * enhMult
     if (s.rareFind) agg.rareFind += s.rareFind * enhMult
   }
+
+  // 套装加成（v1.2 重设计）：件数最多的同档装备
+  //   ≥3 件：展示进度；≥5 件：+4% 全技能速度；8 件（全套）：再 +4% 效率
+  let bestTier: number | null = null
+  let bestCount = 0
+  for (const [tier, count] of tierCount) {
+    if (count > bestCount) {
+      bestTier = tier
+      bestCount = count
+    }
+  }
+  agg.setTier = bestCount >= 3 ? bestTier : null
+  agg.setCount = bestCount
+  if (bestCount >= 5) agg.allSpeed += 0.04
+  if (bestCount >= 8) agg.efficiency += 0.04
   return agg
 }
 

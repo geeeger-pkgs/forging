@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
+import { totalValue } from '../../game/economy'
 import { totalLevel } from '../../game/level'
 import { refLabel } from '../../game/refs'
-import { totalValue } from '../../game/economy'
+import { fmtNum } from '../icons'
 import ProgressBar from './ProgressBar.vue'
 
 const cur = computed(() => store.state.actions.current)
@@ -22,8 +23,8 @@ const remainSec = computed(() => {
 <template>
   <header class="top">
     <div class="left">
-      <span class="gold">💰 {{ store.state.gold }}</span>
-      <span class="dim">总价值 {{ tv }}</span>
+      <span class="gold">💰 {{ fmtNum(store.state.gold) }}</span>
+      <span class="dim">总价值 {{ fmtNum(tv) }}</span>
     </div>
 
     <div class="center">

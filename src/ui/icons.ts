@@ -32,3 +32,10 @@ export function fmtDuration(ms: number): string {
 export function fmtPct(x: number): string {
   return `${(x * 100).toFixed(2)}%`
 }
+
+/** 大数字缩写（万/亿；仅用于展示） */
+export function fmtNum(n: number): string {
+  if (n >= 1e8) return `${(n / 1e8).toFixed(2)} 亿`
+  if (n >= 1e4) return `${(n / 1e4).toFixed(2)} 万`
+  return String(Math.round(n))
+}

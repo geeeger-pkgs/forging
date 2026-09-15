@@ -55,8 +55,14 @@ function recipeCard(r: RecipeDef): ActionCard {
   }
 }
 
+/** 配方搜索过滤（QoL） */
+function match(name: string): boolean {
+  const q = store.ui.searchText.trim()
+  return q === '' || name.includes(q)
+}
+
 const smeltCards = computed<ActionCard[]>(() =>
-  CONTENT.recipes.filter((r) => r.skill === 'smelting').map(recipeCard),
+  CONTENT.recipes.filter((r) => r.skill === 'smelting' && match(r.name)).map(recipeCard),
 )
 
 const forgeCats = [
@@ -67,7 +73,7 @@ const forgeCats = [
 
 const forgeCards = computed<ActionCard[]>(() =>
   CONTENT.recipes
-    .filter((r) => r.skill === 'forging' && r.category === store.ui.forgeCategory)
+    .filter((r) => r.skill === 'forging' && r.category === store.ui.forgeCategory && match(r.name))
     .map(recipeCard),
 )
 
@@ -87,6 +93,7 @@ function pick(card: ActionCard): void {
     </template>
 
     <template v-else-if="view === 'smelting'">
+      <input v-model="store.ui.searchText" class="search" placeholder="搜索配方名称…" />
       <ActionGrid :cards="smeltCards" @pick="pick" />
     </template>
 
@@ -101,6 +108,7 @@ function pick(card: ActionCard): void {
         >
           {{ c.label }}
         </button>
+        <input v-model="store.ui.searchText" class="search search-inline" placeholder="搜索配方名称…" />
       </div>
       <ActionGrid :cards="forgeCards" @pick="pick" />
     </template>
@@ -109,16 +117,16 @@ function pick(card: ActionCard): void {
       <EnhancePanel />
     </template>
 
-    <template v-else-if="view === 'shop'">
-      <ShopPanel />
-    </template>
-
     <template v-else-if="view === 'tasks'">
       <TasksPanel />
     </template>
 
     <template v-else-if="view === 'achievements'">
       <AchievementsPanel />
+    </template>
+
+    <template v-else-if="view === 'shop'">
+      <ShopPanel />
     </template>
 
     <template v-else>
@@ -140,6 +148,7 @@ h2 {
 }
 .tabs {
   display: flex;
+  align-items: center;
   gap: 6px;
   margin-bottom: 12px;
 }
@@ -157,5 +166,20 @@ h2 {
   background: var(--c-accent-2);
   border-color: var(--c-accent-2);
   color: #fff;
+}
+.search {
+  display: block;
+  width: 240px;
+  margin-bottom: 12px;
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: var(--font);
+  font-size: 13px;
+}
+.search-inline {
+  margin: 0 0 0 auto;
 }
 </style>
