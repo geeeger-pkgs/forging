@@ -1,0 +1,220 @@
+{
+  "codex": {
+    "items": 104,
+    "recipes": 92,
+    "affixes": 9,
+    "companions": 6,
+    "relics": 3,
+    "ores": 8,
+    "total": 222,
+    "milestones": [
+      {
+        "m": 0.25,
+        "need": 56,
+        "gold": 1250,
+        "essence": 10,
+        "tokens": 0,
+        "value": 1400
+      },
+      {
+        "m": 0.5,
+        "need": 111,
+        "gold": 5000,
+        "essence": 20,
+        "tokens": 3,
+        "value": 5900
+      },
+      {
+        "m": 0.75,
+        "need": 167,
+        "gold": 11250,
+        "essence": 30,
+        "tokens": 3,
+        "value": 12300
+      },
+      {
+        "m": 1,
+        "need": 222,
+        "gold": 20000,
+        "essence": 40,
+        "tokens": 10,
+        "value": 22600
+      }
+    ]
+  },
+  "season": {
+    "days": 14,
+    "levels": 20,
+    "renownPerLevel": 4,
+    "fullLevelRenown": 80,
+    "maxRenown": 120,
+    "tierRenown": {
+      "bronze": 10,
+      "silver": 20,
+      "gold": 40
+    },
+    "targets": {
+      "mine": {
+        "bronze": 4000,
+        "silver": 9000,
+        "gold": 18000
+      },
+      "craft": {
+        "bronze": 1000,
+        "silver": 2400,
+        "gold": 4800
+      },
+      "gold": {
+        "bronze": 250000,
+        "silver": 500000,
+        "gold": 800000
+      },
+      "enhance": {
+        "bronze": 120,
+        "silver": 320,
+        "gold": 600
+      },
+      "expedition": {
+        "bronze": 15,
+        "silver": 30,
+        "gold": 45
+      },
+      "reforge": {
+        "bronze": 15,
+        "silver": 35,
+        "gold": 60
+      }
+    }
+  },
+  "rewards": {
+    "levelTotalValue": 66675,
+    "levelTokens": 16,
+    "codexValue": 42200,
+    "codexTokens": 16,
+    "totalValue": 108875,
+    "tokenInject": 32,
+    "tokenInjectShare": 0.3047619047619048
+  },
+  "feasibility": [
+    {
+      "offline": "always",
+      "scenario": "bronze3",
+      "hoursMid": 22.399425982235805,
+      "hoursEnd": 21.472688864615115,
+      "budget": 336,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "always",
+      "scenario": "silver3",
+      "hoursMid": 48.764879099545,
+      "hoursEnd": 50.16377264680402,
+      "budget": 336,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "always",
+      "scenario": "full",
+      "hoursMid": 66.56104190998536,
+      "hoursEnd": 73.72398207088779,
+      "budget": 336,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "always",
+      "scenario": "gold2",
+      "hoursMid": 82.74227168344815,
+      "hoursEnd": 98.32754529360804,
+      "budget": 336,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "twice",
+      "scenario": "bronze3",
+      "hoursMid": 22.399425982235805,
+      "hoursEnd": 21.472688864615115,
+      "budget": 224,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "twice",
+      "scenario": "silver3",
+      "hoursMid": 48.764879099545,
+      "hoursEnd": 50.16377264680402,
+      "budget": 224,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "twice",
+      "scenario": "full",
+      "hoursMid": 66.56104190998536,
+      "hoursEnd": 73.72398207088779,
+      "budget": 224,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "twice",
+      "scenario": "gold2",
+      "hoursMid": 82.74227168344815,
+      "hoursEnd": 98.32754529360804,
+      "budget": 224,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "once",
+      "scenario": "bronze3",
+      "hoursMid": 22.399425982235805,
+      "hoursEnd": 21.472688864615115,
+      "budget": 112,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "once",
+      "scenario": "silver3",
+      "hoursMid": 48.764879099545,
+      "hoursEnd": 50.16377264680402,
+      "budget": 112,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "once",
+      "scenario": "full",
+      "hoursMid": 66.56104190998536,
+      "hoursEnd": 73.72398207088779,
+      "budget": 112,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": true
+    },
+    {
+      "offline": "once",
+      "scenario": "gold2",
+      "hoursMid": 82.74227168344815,
+      "hoursEnd": 98.32754529360804,
+      "budget": 112,
+      "okMid": true,
+      "okEnd": true,
+      "okSilent": false
+    }
+  ]
+}

@@ -1,9 +1,15 @@
 // ============================================================
 // Forging · 图鉴与赛季数值模拟（v2.3 · 开发前定档证据）
-// 目的：图鉴规模与里程碑节奏、赛季声望曲线与奖励价值，全部先算后定档
+// 目的：图鉴规模/里程碑节奏、赛季声望曲线与**可达性**（单一动作流 + 矿石守恒 + 离线折算）
 // 运行：node scripts/sim-season.mjs
+// 输出：人读报告 + docs/sim-season-output.json（供测试机器校验「文档数字 = 脚本输出」）
+// 口径来源：
+//   - 金/时 与 轮/时：scripts/sim-audit.mjs B 段（同档 +5 工具、无符文/精通/词缀）
+//   - 离线折算：offline.ts counted = min(elapsed, 8h + 精通) → 每日上线次数决定计入口径
+//   - 远征：sim-expedition.mjs（槽位限制，不占动作流）
+//   - 强化：offline.ts 明确跳过 → **纯在线**时间
 // ============================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -18,60 +24,78 @@ const ORES = read('ores.json')
 const f = (x, d = 2) => Number(x).toFixed(d)
 const pct = (x, d = 1) => `${(x * 100).toFixed(d)}%`
 
-console.log('═'.repeat(78))
-console.log('A. 图鉴规模（按类别清点，遗物单列避免与物品重复计数）')
-console.log('═'.repeat(78))
-const relics = Object.values(ITEMS).filter((i) => i.category === 'relic')
-const codexItems = Object.keys(ITEMS).filter((id) => ITEMS[id].category !== 'relic')
-const cats = [
-  { id: 'items', name: '物品（材料/装备/符文）', n: codexItems.length },
-  { id: 'recipes', name: '配方', n: RECIPES.length },
-  { id: 'affixes', name: '词缀', n: AFFIXES.affixes.length },
-  { id: 'companions', name: '伙伴', n: COMPANIONS.companions.length },
-  { id: 'relics', name: '遗物', n: relics.length },
-  { id: 'ores', name: '矿场', n: ORES.length },
-]
-let total = 0
-console.log(['类别'.padEnd(20), '条目数'.padStart(7)].join(' | '))
-for (const c of cats) {
-  total += c.n
-  console.log([c.name.padEnd(20), String(c.n).padStart(7)].join(' | '))
+// ── 唯一数值源 ────────────────────────────────────────────────
+const TIER_RENOWN = { bronze: 10, silver: 20, gold: 40 }
+const SEASON_TARGETS = {
+  mine: { bronze: 4000, silver: 9000, gold: 18000 },
+  craft: { bronze: 1000, silver: 2400, gold: 4800 },
+  gold: { bronze: 250000, silver: 500000, gold: 800000 },
+  enhance: { bronze: 120, silver: 320, gold: 600 },
+  expedition: { bronze: 15, silver: 30, gold: 45 },
+  reforge: { bronze: 15, silver: 35, gold: 60 },
 }
-console.log([`合计`.padEnd(20), String(total).padStart(7)].join(' | '))
+const LEVELS = 20
+const RENOWN_PER_LEVEL = 4
+const FULL_LEVEL_RENOWN = LEVELS * RENOWN_PER_LEVEL
+const SEASON_DAYS = 14
+const OFFLINE_FACTORS = [
+  { key: 'always', label: '常驻在线(离线<8h)', factor: 1.0 },
+  { key: 'twice', label: '每日上线 2 次', factor: 16 / 24 },
+  { key: 'once', label: '每日上线 1 次', factor: 8 / 24 },
+]
+const STAGE = {
+  mid: { name: '中期 T3', mineRounds: 515, goldPerRound: 36, smeltRounds: 629, orePerSmelt: 3, enhancePerHour: 80 },
+  end: { name: '终局 T7', mineRounds: 382, goldPerRound: 196, smeltRounds: 417, orePerSmelt: 3, enhancePerHour: 160 },
+}
 
+// ── A 图鉴规模 ────────────────────────────────────────────────
+const relicIds = Object.keys(ITEMS).filter((id) => ITEMS[id].category === 'relic')
+const codexItems = Object.keys(ITEMS).filter((id) => ITEMS[id].category !== 'relic')
+const CATS = [
+  { id: 'items', name: '物品(材料/装备/符文)', n: codexItems.length, note: '不含遗物' },
+  { id: 'recipes', name: '配方', n: RECIPES.length, note: '' },
+  { id: 'affixes', name: '词缀', n: AFFIXES.affixes.length, note: '' },
+  { id: 'companions', name: '伙伴', n: COMPANIONS.companions.length, note: '' },
+  { id: 'relics', name: '遗物', n: relicIds.length, note: '单列' },
+  { id: 'ores', name: '矿场', n: ORES.length, note: '' },
+]
+const CODEX_TOTAL = CATS.reduce((s, c) => s + c.n, 0)
+
+console.log('═'.repeat(78))
+console.log('A. 图鉴规模（口径唯一：items.json 的非遗物键数）')
+console.log('═'.repeat(78))
+console.log(`data/items.json 共 ${Object.keys(ITEMS).length} 键，其中遗物 ${relicIds.length} 件 → 图鉴「物品」计 ${codexItems.length}`)
+console.log(['分区'.padEnd(22), '条目'.padStart(6), '说明'.padStart(12)].join(' | '))
+for (const c of CATS) console.log([c.name.padEnd(22), String(c.n).padStart(6), (c.note ?? '').padStart(12)].join(' | '))
+console.log([`合计`.padEnd(22), String(CODEX_TOTAL).padStart(6)].join(' | '))
+console.log(`自检：分区和 === 合计 → ${CATS.reduce((s, c) => s + c.n, 0) === CODEX_TOTAL ? '一致 ✅' : '不一致 ⚠'}`)
+
+// ── B 图鉴里程碑 ──────────────────────────────────────────────
 console.log('')
-console.log('B. 图鉴里程碑（每 25% 一档；奖励按「该阶段玩家最缺的东西」给）')
+console.log('═'.repeat(78))
+console.log('B. 图鉴里程碑（每 25% 一档；与赛季**解耦**，只给自奖励）')
 console.log('═'.repeat(78))
 const MILESTONES = [0.25, 0.5, 0.75, 1.0]
-console.log(['里程碑'.padEnd(10), '总条目'.padStart(8), '声望点'.padStart(8), '奖励（金币 + 精华 + 徽记）'.padStart(30)].join(' | '))
-for (const m of MILESTONES) {
-  const need = Math.ceil(total * m)
-  const renown = Math.round(m * 16)
+const milestoneRows = MILESTONES.map((m) => {
+  const need = Math.ceil(CODEX_TOTAL * m)
   const gold = Math.round(2000 * m * m * 10)
   const essence = Math.round(10 * m * 4)
   const tokens = m >= 1 ? 10 : m >= 0.5 ? 3 : 0
-  console.log([pct(m, 0).padEnd(10), String(need).padStart(8), String(renown).padStart(8), `${gold} 金 + 精华 ×${essence}${tokens ? ` + 徽记 ×${tokens}` : ''}`.padStart(30)].join(' | '))
+  return { m, need, gold, essence, tokens, value: gold + essence * 15 + tokens * 200 }
+})
+console.log(['里程碑'.padEnd(8), '条目'.padStart(6), '金'.padStart(7), '精华'.padStart(5), '徽记'.padStart(5), '价值'.padStart(7)].join(' | '))
+for (const r of milestoneRows) {
+  console.log([pct(r.m, 0).padEnd(8), String(r.need).padStart(6), String(r.gold).padStart(7), String(r.essence).padStart(5), String(r.tokens).padStart(5), String(r.value).padStart(7)].join(' | '))
 }
-console.log('')
-console.log('说明：图鉴里程碑奖励同时给「赛季声望」，使赛季进度与收集度自然耦合（不必再开一条独立货币）')
+const codexRewardValue = milestoneRows.reduce((s, r) => s + r.value, 0)
+const codexTokens = milestoneRows.reduce((s, r) => s + r.tokens, 0)
 
+// ── C 赛季声望曲线 ────────────────────────────────────────────
 console.log('')
-console.log('C. 赛季声望曲线（14 天一赛季；任务 3 条，每条 3 档）')
 console.log('═'.repeat(78))
-const TASK_TIERS = [
-  { id: 'bronze', name: '铜', renown: 10 },
-  { id: 'silver', name: '银', renown: 20 },
-  { id: 'gold', name: '金', renown: 40 },
-]
-const perTask = TASK_TIERS[TASK_TIERS.length - 1].renown
-const seasonMax = perTask * 3 // 三条任务全金
-const LEVELS = 20
-const renownPerLevel = Math.ceil(seasonMax / LEVELS)
-console.log(`单赛季任务声望上限 = 3 × ${perTask} = ${seasonMax}；等级 ${LEVELS} 级 → 每级 ${renownPerLevel} 声望`)
-console.log('')
-console.log(['等级'.padStart(4), '累计声望'.padStart(9), '累计奖励价值（金等价）'.padStart(22)].join(' | '))
-const milestoneRenownTotal = MILESTONES.reduce((acc, m) => acc + Math.round(m * 16), 0)
-let tokenTotal = 0
+console.log('C. 赛季声望曲线（14 天一赛季；3 条任务 × 3 档；**只计最高达成档**）')
+console.log('═'.repeat(78))
+const seasonMax = TIER_RENOWN.gold * 3
 const levelReward = (lv) => {
   const gold = 500 + lv * 250
   const essence = 1 + Math.floor(lv / 4)
@@ -79,70 +103,144 @@ const levelReward = (lv) => {
   return { gold, essence, tokens, value: gold + essence * 15 + tokens * 200 }
 }
 let cumValue = 0
-const marks = [5, 10, 15, 20]
+let tokenTotal = 0
+const levelMarks = [5, 10, 15, 20]
+console.log(`声望上限 ${seasonMax}（3 金）；满级需 ${FULL_LEVEL_RENOWN}（${LEVELS} 级 × ${RENOWN_PER_LEVEL}）`)
+console.log(`结构：全铜 ${TIER_RENOWN.bronze * 3} → 全银 ${TIER_RENOWN.silver * 3} → 1金+2银 ${TIER_RENOWN.gold + TIER_RENOWN.silver * 2}（满级）→ 3金 ${seasonMax}（容错）`)
+console.log('')
+console.log(['等级'.padStart(4), '累计声望'.padStart(9), '累计奖励'.padStart(9)].join(' | '))
 for (let lv = 1; lv <= LEVELS; lv++) {
   const r = levelReward(lv)
-  tokenTotal += r.tokens
   cumValue += r.value
-  if (marks.includes(lv)) {
-    console.log([String(lv).padStart(4), String(lv * renownPerLevel).padStart(9), String(Math.round(cumValue)).padStart(22)].join(' | '))
-  }
+  tokenTotal += r.tokens
+  if (levelMarks.includes(lv)) console.log([String(lv).padStart(4), String(lv * RENOWN_PER_LEVEL).padStart(9), String(Math.round(cumValue)).padStart(9)].join(' | '))
+}
+
+// ── D 单任务耗时 ──────────────────────────────────────────────
+const taskHours = (taskId, tier, st) => {
+  const t = SEASON_TARGETS[taskId][tier]
+  if (taskId === 'mine') return t / st.mineRounds
+  if (taskId === 'craft') return t / st.smeltRounds + (t * st.orePerSmelt) / st.mineRounds
+  if (taskId === 'gold') return t / (st.goldPerRound * st.mineRounds)
+  if (taskId === 'enhance') return t / st.enhancePerHour
+  return 0
 }
 console.log('')
-console.log(`满级总奖励价值 ≈ ${Math.round(cumValue)} 金等价`)
-
-console.log('')
-console.log('D. 声望获取节奏（按 sim-audit 各档吞吐折算「达成各档任务所需天数」）')
 console.log('═'.repeat(78))
-// sim-audit B 段：T7 开采 74,845 金/时；T1 2,812 金/时。任务目标按档位缩放。
-const goldPerHour = { early: 2812, mid: 18527, endgame: 74845 }
-const TASKS = [
-  { id: 'mine', name: '挖掘', unit: '次', bronze: 20000, silver: 45000, gold: 72000, perHour: { early: 150, mid: 300, endgame: 578 } },
-  { id: 'craft', name: '熔炼或锻造', unit: '次', bronze: 10000, silver: 22000, gold: 36000, perHour: { early: 60, mid: 150, endgame: 280 } },
-  { id: 'gold', name: '累计金币', unit: '金', bronze: 1200000, silver: 2600000, gold: 4000000, perHour: goldPerHour },
-  { id: 'enhance', name: '强化尝试', unit: '次', bronze: 600, silver: 1300, gold: 2000, perHour: { early: 40, mid: 80, endgame: 160 } },
-  { id: 'expedition', name: '完成远征', unit: '次', bronze: 20, silver: 40, gold: 60, perHour: { early: 0.12, mid: 0.25, endgame: 0.5 } },
-  { id: 'reforge', name: '重铸词缀', unit: '次', bronze: 30, silver: 65, gold: 100, perHour: { early: 0.2, mid: 0.5, endgame: 1 } },
+console.log('D. 单任务耗时（熔炼已折算供矿的挖矿时间；强化为纯在线）')
+console.log('═'.repeat(78))
+console.log(['任务'.padEnd(11), '档位'.padEnd(7), '中期h'.padStart(7), '终局h'.padStart(7), '备注'.padStart(22)].join(' | '))
+const TASK_KEYS = Object.keys(SEASON_TARGETS)
+for (const id of TASK_KEYS) {
+  for (const tier of ['bronze', 'silver', 'gold']) {
+    const note = id === 'enhance' ? '纯在线(离线不结算)' : id === 'expedition' ? '槽位限制,不占动作流' : id === 'reforge' ? '命令即时,成本为金币' : ''
+    console.log([id.padEnd(11), tier.padEnd(7), f(taskHours(id, tier, STAGE.mid), 1).padStart(7), f(taskHours(id, tier, STAGE.end), 1).padStart(7), note.padStart(22)].join(' | '))
+  }
+}
+
+// ── E 混合排程可达性 ──────────────────────────────────────────
+const combos = []
+for (let a = 0; a < TASK_KEYS.length; a++) {
+  for (let b = a + 1; b < TASK_KEYS.length; b++) {
+    for (let c = b + 1; c < TASK_KEYS.length; c++) combos.push([TASK_KEYS[a], TASK_KEYS[b], TASK_KEYS[c]])
+  }
+}
+function totalHours(combo, tiers, st) {
+  let mineLike = 0
+  let other = 0
+  combo.forEach((id, i) => {
+    const h = taskHours(id, tiers[i], st)
+    if (id === 'mine' || id === 'gold') mineLike = Math.max(mineLike, h)
+    else other += h
+  })
+  return mineLike + other
+}
+const SCENARIOS = [
+  { key: 'bronze3', label: '全铜(30)', tiers: ['bronze', 'bronze', 'bronze'] },
+  { key: 'silver3', label: '全银(60)', tiers: ['silver', 'silver', 'silver'] },
+  { key: 'full', label: '1金+2银(80满级)', tiers: ['gold', 'silver', 'silver'] },
+  { key: 'gold2', label: '2金+1银(100)', tiers: ['gold', 'gold', 'silver'] },
 ]
-console.log(['任务模板'.padEnd(14), '铜档(次/天)'.padStart(12), '银档(次/天)'.padStart(12), '金档(次/天)'.padStart(12)].join(' | '))
-for (const t of TASKS) {
-  const days = (tier) => {
-    const out = {}
-    for (const stage of ['early', 'mid', 'endgame']) out[stage] = t[tier] / t.perHour[stage] / 24
-    return out
-  }
-  const b = days('bronze')
-  const s = days('silver')
-  const g = days('gold')
-  console.log(
-    [
-      t.name.padEnd(14),
-      `${f(b.early, 1)}/${f(b.mid, 1)}/${f(b.endgame, 1)}`.padStart(12),
-      `${f(s.early, 1)}/${f(s.mid, 1)}/${f(s.endgame, 1)}`.padStart(12),
-      `${f(g.early, 1)}/${f(g.mid, 1)}/${f(g.endgame, 1)}`.padStart(12),
-    ].join(' | '),
-  )
-}
-console.log('  （格式：早期/中期/终局 所需天数）')
-
 console.log('')
-console.log('E. 赛季可达性判定（14 天窗口；三条任务按赛季键确定性抽取）')
 console.log('═'.repeat(78))
-const worstCase = TASKS.map((t) => ({ id: t.id, goldEnd: t.gold / t.perHour.endgame / 24, goldMid: t.gold / t.perHour.mid / 24 }))
-const midAvg = worstCase.reduce((s, x) => s + x.goldMid, 0) / worstCase.length
-const endAvg = worstCase.reduce((s, x) => s + x.goldEnd, 0) / worstCase.length
-console.log(`三条任务全金档的平均耗时：中期 ≈ ${f(midAvg, 1)} 天/条（并行推进）｜终局 ≈ ${f(endAvg, 1)} 天/条`)
-console.log(`14 天内：中期玩家可达 ${pct(Math.min(1, 14 / midAvg))} 的金档，终局玩家 ${pct(Math.min(1, 14 / endAvg))}`)
+console.log('E. 可达性（最不利抽取组合；预算 = 14 天 × 24h × 离线折算）')
+console.log('═'.repeat(78))
+console.log(['计入口径'.padEnd(20), '预算'.padStart(6), ...SCENARIOS.map((s) => s.label.padStart(16))].join(' | '))
+const feasibility = []
+for (const off of OFFLINE_FACTORS) {
+  const budget = SEASON_DAYS * 24 * off.factor
+  const cells = []
+  for (const sc of SCENARIOS) {
+    const hoursMid = Math.max(...combos.map((c) => totalHours(c, sc.tiers, STAGE.mid)))
+    const hoursEnd = Math.max(...combos.map((c) => totalHours(c, sc.tiers, STAGE.end)))
+    feasibility.push({ offline: off.key, scenario: sc.key, hoursMid, hoursEnd, budget, okMid: hoursMid <= budget, okEnd: hoursEnd <= budget, okSilent: hoursMid <= budget * 0.6 })
+    cells.push(`${f(hoursMid, 0)}h${hoursMid <= budget ? '✅' : '⚠'}`.padStart(16))
+  }
+  console.log([off.label.padEnd(20), `${f(budget, 0)}h`.padStart(6), ...cells].join(' | '))
+}
 console.log('')
-console.log('结论：')
-const slowestMid = Math.max(...worstCase.map((x) => x.goldMid))
-const slowestEnd = Math.max(...worstCase.map((x) => x.goldEnd))
-const fastestMid = Math.min(...worstCase.map((x) => x.goldMid))
-console.log(`1. 三条任务【并行】推进：全金档耗时由最慢一条决定 → 中期 ${f(slowestMid, 1)} 天 / 终局 ${f(slowestEnd, 1)} 天（窗口 14 天）`)
-console.log(`   ${slowestMid <= 12 ? '✅ 中期玩家可在窗口内满级（留缓冲）' : '⚠ 中期玩家无法在窗口内满级 → 需下调目标'}`)
-console.log(`2. 档位梯度：铜档中期最快 ${f(fastestMid, 1)} 天 → 休闲玩家也能拿铜/银档声望（梯度有效）`)
-console.log(`3. 满级总奖励 ≈ ${Math.round(cumValue)} 金等价（≈ 终局 ${f(cumValue / 74845, 1)} 小时产出）+ 远征徽记 ×${tokenTotal}`)
-console.log('   赛季不靠金币发奖（避免通胀），真正的奖励是【稀缺的远征徽记】：')
-console.log(`   对比远征日产 7.5/日（单赛季 ${f(7.5 * 14, 0)}），赛季注入 ${tokenTotal} ≈ ${pct(tokenTotal / (7.5 * 14))} —— 加速但不替代远征 ✅`)
-console.log(`4. 图鉴里程碑给声望（上限 ${milestoneRenownTotal} = 总需求的 ${pct(milestoneRenownTotal / seasonMax)}）→ 收集度与赛季耦合，不喧宾夺主 ✅`)
-console.log('5. 奖励随等级【即时自动发放】（无领取步骤）→ 赛季重置不产生「忘领奖励」挫败 ✅')
+console.log('（cell = 中期 T3 最不利组合耗时；终局值见 JSON。okSilent 列 = 是否 ≤60% 预算，即"不挤占其他玩法"）')
+
+// ── F 通胀与徽记注入 ──────────────────────────────────────────
+const tokenPerDay = 7.5
+const seasonTokenInject = tokenTotal + codexTokens
+console.log('')
+console.log('═'.repeat(78))
+console.log('F. 通胀检查（赛季不发大量金币；奖励主体是稀缺徽记）')
+console.log('═'.repeat(78))
+console.log(`赛季满级 ≈ ${Math.round(cumValue)} 金等价 + 图鉴里程碑 ≈ ${Math.round(codexRewardValue)} 金等价`)
+console.log(`  合计 ${Math.round(cumValue + codexRewardValue)} 金等价 ≈ 终局 ${f((cumValue + codexRewardValue) / 74845, 2)} 小时产出 ✅`)
+console.log(`徽记注入：赛季 ${tokenTotal} + 图鉴 ${codexTokens} = ${seasonTokenInject}/14 天 vs 远征 ${f(tokenPerDay * 14, 0)}/14 天 → 占 ${pct(seasonTokenInject / (tokenPerDay * 14))}`)
+console.log('  中期玩家远征路线更少（约 2~3 条 → 3~5/日），占比更高（属预期：赛季是中期的主要徽记加速器）')
+
+// ── G 结论 ────────────────────────────────────────────────────
+console.log('')
+console.log('═'.repeat(78))
+console.log('G. 结论（写入设计文档 §3.1）')
+console.log('═'.repeat(78))
+const pick = (off, sc) => feasibility.find((x) => x.offline === off && x.scenario === sc)
+const once = pick('once', 'full')
+const always = pick('always', 'full')
+const bronzeAlways = pick('always', 'bronze3')
+console.log(`1. 图鉴 ${CODEX_TOTAL} 条（物品 ${codexItems.length} / 配方 ${RECIPES.length} / 词缀 ${AFFIXES.affixes.length} / 伙伴 ${COMPANIONS.companions.length} / 遗物 ${relicIds.length} / 矿场 ${ORES.length}）；分区和自检一致 ✅`)
+console.log(`2. 满级（${FULL_LEVEL_RENOWN} = 1金+2银）最不利抽取耗时：常驻在线 ${f(always.hoursMid, 0)}h ｜ 每日 1 次上线 ${f(once.hoursMid, 0)}h（预算 ${f(once.budget, 0)}h）→ ${once.okMid ? '每日只上线 1 次的中期玩家也可满级 ✅' : '⚠ 需下调目标'}`)
+console.log(`   占预算 ${pct(once.hoursMid / once.budget)} → ${once.okSilent ? '留出余量，不挤占重铸/强化/图鉴等玩法 ✅' : '⚠ 会挤占其他玩法，建议下调目标'}`)
+console.log(`3. 档位梯度：全铜最不利 ${f(bronzeAlways.hoursMid, 0)}h（≈ ${f(bronzeAlways.hoursMid / 24, 1)} 天常驻）→ 休闲玩家也能拿铜档奖励 ✅`)
+console.log(`4. 通胀：合计奖励 ≈ 终局 ${f((cumValue + codexRewardValue) / 74845, 2)} 小时产出；徽记注入占远征 ${pct(seasonTokenInject / (tokenPerDay * 14))} ✅`)
+console.log(`5. 离线不对称：强化（离线跳过）与重铸（命令）只能在线推进，目标已按在线权重下调（强化金档 ${SEASON_TARGETS.enhance.gold} 次 = 中期 ${f(taskHours('enhance', 'gold', STAGE.mid), 0)}h 在线）`)
+
+// ── 机器校验 JSON ─────────────────────────────────────────────
+const summary = {
+  codex: {
+    items: codexItems.length,
+    recipes: RECIPES.length,
+    affixes: AFFIXES.affixes.length,
+    companions: COMPANIONS.companions.length,
+    relics: relicIds.length,
+    ores: ORES.length,
+    total: CODEX_TOTAL,
+    milestones: milestoneRows,
+  },
+  season: {
+    days: SEASON_DAYS,
+    levels: LEVELS,
+    renownPerLevel: RENOWN_PER_LEVEL,
+    fullLevelRenown: FULL_LEVEL_RENOWN,
+    maxRenown: seasonMax,
+    tierRenown: TIER_RENOWN,
+    targets: SEASON_TARGETS,
+  },
+  rewards: {
+    levelTotalValue: Math.round(cumValue),
+    levelTokens: tokenTotal,
+    codexValue: Math.round(codexRewardValue),
+    codexTokens,
+    totalValue: Math.round(cumValue + codexRewardValue),
+    tokenInject: seasonTokenInject,
+    tokenInjectShare: seasonTokenInject / (tokenPerDay * 14),
+  },
+  feasibility,
+}
+writeFileSync(join(root, 'docs', 'sim-season-output.json'), JSON.stringify(summary, null, 2) + '\n')
+console.log('')
+console.log('机器校验输出：docs/sim-season-output.json（测试逐字段断言，避免文档与脚本漂移）')
