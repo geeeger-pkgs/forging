@@ -29,7 +29,7 @@ const ABYSS = {
   staminaRegenMinutes: 30, // 1 点 / 30 分钟 = 2/时 = 48/日（理论）；溢出丢弃
   weights: { speed: 1.0, efficiency: 1.5, quantity: 1.0, rareFind: 0.7, wisdom: 0.5, enhanceRate: 2.0 },
   targetFloor: { end: 35 },
-  growth: 1.0275, // 由「三档战力只差 2.03×」反推：2.03^(1/26 层) ≈ 1.0275
+  growth: 1.031, // 由「三档战力差 2.225×」反推：2.225^(1/26 层) ≈ 1.031（符文按 2 槽修正后重解）
   themes: ['矿脉裂隙', '熔岩回廊', '符文甬道', '无光深渊', '虚空之喉'],
   firstClearCrystal: (floor) => 10 + 2 * floor,
   repeatCrystal: (floor) => 1 + Math.floor(floor / 20),
@@ -44,6 +44,7 @@ const ABYSS = {
 }
 
 // ── 理论满配（由内容表反算，与内核同公式） ────────────────────
+const W = ABYSS.weights
 const ENH_TOOL = 0.029
 const ENH_OTHER = 0.05
 const MAX_ENH = 10
@@ -72,20 +73,37 @@ function slotAffixBonus(itemId) {
     .map((id) => AFFIXES.affixes.find((a) => a.id === id))
     .filter(Boolean)
     .map((a) => ({ effect: a.effect, value: affixMaxAt(a, item.tier) }))
-    .sort((x, y) => y.value - x.value)
+    .sort((x, y) => (W[y.effect] ?? 0) * y.value - (W[x.effect] ?? 0) * x.value) // 按分数贡献排序（Minor 处置）
     .slice(0, n)
   const out = {}
   for (const v of picked) out[v.effect] = (out[v.effect] ?? 0) + v.value
   return out
 }
-const runeVal = (effect, tier) => RUNES.find((r) => r.id === `rune_${effect}_${tier}`)?.value ?? 0
+const runeVal = (effect, tier) => {
+  const r = RUNES.find((x) => x.id === `rune_${effect.toLowerCase()}_${tier}`)
+  if (!r) throw new Error('未知符文: ' + effect + '/' + tier) // 不再静默漏计（复审 B2）
+  return r.value
+}
 const perkVal = (effect) => {
   const p = PERKS.find((x) => x.effect === effect)
   return p ? p.perPoint * p.max : 0
 }
 
-/** 与 aggregateEquipment 同规则地聚合六项属性（含 +10 / 套装 / 符文 / 精通 / 深渊永久） */
-function computeStats(loadout, { abyssPermanent = false } = {}) {
+/** 符文只允许 2 个增益槽（内核 slots=2）→ 按「权重×数值」选最优两枚（评审 B2 修正） */
+const BEST_RUNES = (() => {
+  const cands = []
+  for (const eff of ['speed', 'efficiency', 'rarefind', 'enhance']) {
+    for (const tier of [1, 2, 3]) {
+      const value = runeVal(eff, tier)
+      const kind = eff === 'rarefind' ? 'rareFind' : eff === 'enhance' ? 'enhanceRate' : eff
+      cands.push({ effect: kind, value, score: W?.[kind] ?? 0 })
+    }
+  }
+  return cands
+})()
+
+/** 与 aggregateEquipment 同规则地聚合六项属性（含 +10 / 套装 / 2 枚最优符文 / 精通 / 深渊永久） */
+function computeStats(loadout, { abyssPermanent = false, runes = null } = {}) {
   const agg = {
     toolSpeed: { mining: 0, smelting: 0, forging: 0 },
     allSpeed: 0,
@@ -128,10 +146,18 @@ function computeStats(loadout, { abyssPermanent = false } = {}) {
   for (const c of tierCount.values()) best = Math.max(best, c)
   if (best >= 5) agg.allSpeed += 0.04
   if (best >= 8) agg.efficiency += 0.04
-  agg.allSpeed += runeVal('speed', 3) + runeVal('speed', 2) + perkVal('speed')
-  agg.efficiency += runeVal('efficiency', 3) + runeVal('efficiency', 2) + perkVal('efficiency')
-  agg.rareFind += runeVal('rareFind', 3) + runeVal('rareFind', 2) + perkVal('rareFind')
-  agg.enhanceRate += runeVal('enhance', 3)
+  // 符文：只允许 2 枚（增益槽上限），按权重×数值取最优两枚
+  const ranked = BEST_RUNES.map((r) => ({ ...r, weighted: (W[r.effect] ?? 0) * r.value })).sort((a, b) => b.weighted - a.weighted)
+  const chosen = runes ?? [ranked[0], ranked[1]]
+  for (const r of chosen) {
+    if (r.effect === 'speed') agg.allSpeed += r.value
+    else if (r.effect === 'efficiency') agg.efficiency += r.value
+    else if (r.effect === 'rareFind') agg.rareFind += r.value
+    else if (r.effect === 'enhanceRate') agg.enhanceRate += r.value
+  }
+  agg.allSpeed += perkVal('speed')
+  agg.efficiency += perkVal('efficiency')
+  agg.rareFind += perkVal('rareFind')
   agg.wisdom += perkVal('wisdom')
   if (abyssPermanent) agg.allSpeed += ABYSS.shop.permanentSpeed.perLevel * ABYSS.shop.permanentSpeed.max
   // 战力用的「速度」= 三技能速度的**最大值**（口径明示，见设计 §2.1）
@@ -181,7 +207,6 @@ const LOADOUTS = {
     ring: 'ring_mithril',
   },
 }
-const W = ABYSS.weights
 const scoreOf = (stats) => Object.entries(W).reduce((s, [k, w]) => s + w * (stats[k] ?? 0), 0)
 const reqAt = (floor, base) => base * Math.pow(ABYSS.growth, floor - 1)
 const reachWith = (sc, base) => {
@@ -331,7 +356,7 @@ console.log('F. 兼容性与结论')
 console.log('═'.repeat(78))
 console.log('1. 即时判定：不占动作流、不消耗材料 → 与挖/熔/锻/强化/远征/赛季零冲突')
 console.log('2. 离线只回体力（溢出丢弃）、不自动挑战 → 一条规则 + 单调守卫')
-console.log('3. 结晶不可回收/不可换金；唯一永久加成 +5% 速度（满配 +304% → +309%，远不触 250ms 下限）')
+console.log('3. 结晶不可回收/不可换金；唯一永久加成 +8% 速度（满配 +304% → +312%，远不触 250ms 下限）')
 console.log(`4. 战力（内容表反算）：前期 ${f(SCORES.early, 2)} / 中期 ${f(SCORES.mid, 2)} / 终局 ${f(SCORES.end, 2)} → 可达 ${reach.early} / ${reach.mid} / ${reach.end} 层`)
 console.log(`5. 经济：首轮 ${firstTier}，终局首通覆盖 ${f((endFirst / firstTier) * 100, 0)}%，缺口靠扫荡（常驻 ${f(gap / perSweep / regenPerDay, 1)} 天 / 每日 2 次 ${f(gap / perSweep / (2 * ABYSS.staminaMax), 1)} 天）+ 价格递增的永续 sink`)
 

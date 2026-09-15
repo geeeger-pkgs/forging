@@ -10,8 +10,8 @@
       "wisdom": 0.5,
       "enhanceRate": 2
     },
-    "growth": 1.0275,
-    "base": 3.185,
+    "growth": 1.031,
+    "base": 2.764,
     "themes": [
       "矿脉裂隙",
       "熔岩回廊",
@@ -52,39 +52,39 @@
     "repeatCrystalPerFloor": 20
   },
   "scores": {
-    "early": 3.9250000000000003,
-    "mid": 6.2512,
-    "end": 8.011400000000002
+    "early": 3.671,
+    "mid": 5.9552000000000005,
+    "end": 7.805400000000001
   },
   "stats": {
     "early": {
-      "speed": 1.635,
-      "efficiency": 0.755,
-      "quantity": 0.165,
-      "rareFind": 0.5,
-      "wisdom": 0.845,
-      "enhanceRate": 0.11
+      "speed": 1.409,
+      "efficiency": 0.355,
+      "quantity": 0.30900000000000005,
+      "rareFind": 1.3399999999999999,
+      "wisdom": 0.685,
+      "enhanceRate": 0.07
     },
     "mid": {
-      "speed": 2.3445,
-      "efficiency": 1.0898,
+      "speed": 2.1665,
+      "efficiency": 0.7618000000000001,
       "quantity": 0.658,
-      "rareFind": 1.07,
-      "wisdom": 1.23,
-      "enhanceRate": 0.125
+      "rareFind": 1.7900000000000003,
+      "wisdom": 1.05,
+      "enhanceRate": 0.105
     },
     "end": {
-      "speed": 2.9075000000000006,
-      "efficiency": 1.3946,
+      "speed": 2.6575,
+      "efficiency": 1.1146,
       "quantity": 0.932,
-      "rareFind": 1.45,
+      "rareFind": 2.1700000000000004,
       "wisdom": 1.6300000000000001,
-      "enhanceRate": 0.125
+      "enhanceRate": 0.105
     }
   },
   "reach": {
-    "early": 8,
-    "mid": 25,
+    "early": 10,
+    "mid": 26,
     "end": 35
   },
   "bands": {
@@ -101,20 +101,20 @@
       38
     ]
   },
-  "baseSearchHits": 39,
+  "baseSearchHits": 34,
   "singleStatReach": {
-    "early": 2,
+    "early": 5,
     "mid": 5,
     "end": 5
   },
   "reqAt": {
-    "1": 3.185,
-    "9": 3.956982057921866,
-    "15": 4.656451290843797,
-    "24": 5.944174349221682,
-    "30": 6.994916306486934,
-    "35": 8.011091189665823,
-    "40": 9.174889196261645
+    "1": 2.764,
+    "9": 3.5286400656179873,
+    "15": 4.237984389554238,
+    "24": 5.578113415843869,
+    "30": 6.699452803319345,
+    "35": 7.804276690484785,
+    "40": 9.091299909071227
   },
   "crystalToFloor": {
     "9": 180,
