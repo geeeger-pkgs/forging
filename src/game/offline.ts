@@ -81,7 +81,7 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
         levels.push({ skill: ev.skill, level: ev.level })
         break
       case 'expeditionDone':
-        exped.push({ routeName: ev.routeName, hours: ev.hours, success: ev.success, gold: ev.gold })
+        exped.push({ routeName: ev.routeName, hours: ev.hours, success: ev.success, gold: ev.gold, expected: ev.expected })
         break
       case 'notice':
         notes.push(ev.text)

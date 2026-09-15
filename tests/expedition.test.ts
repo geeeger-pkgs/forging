@@ -417,3 +417,39 @@ describe('路线解锁文案（E3 补充）', () => {
     expect(routeUnlockReason(s, R('oldmine'))).toBeNull()
   })
 })
+
+describe('离线语义补强（并行 run / 期望标记）', () => {
+  it('多条不同路线的 run 可在同一窗口内各自结算', () => {
+    const s = newGame('T', 0)
+    withCompanions(s, ['apprentice'])
+    s.skills.mining = 1e12
+    s.skills.forging = 1e12
+    s.materials['ingot_copper'] = 999
+    s.materials['ingot_iron'] = 999
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 4, team: ['apprentice'] }, 0, mulberry32(1))
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'oldmine', hours: 4, team: ['apprentice'] }, 0, mulberry32(2))
+    expect(s.meta.expeditions.runs.length).toBe(2)
+    advanceExpeditions(s, 5 * HOUR_MS, 'expectation', null)
+    expect(s.meta.expeditions.runs.filter((r) => r.done).length).toBe(2)
+    expect(s.stats.totalExpeditions).toBe(2)
+  })
+
+  it('离线结算的 run 标记 expected=true（摘要如实标注「按期望结算」）', () => {
+    const s = newGame('T', 0)
+    withCompanions(s, ['apprentice'])
+    s.materials['ingot_copper'] = 999
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 4, team: ['apprentice'] }, 0, mulberry32(1))
+    s.meta.lastSeenAt = 0
+    const summary = settleOffline(s, 5 * HOUR_MS)!
+    expect(summary.expeditions[0].expected).toBe(true)
+  })
+
+  it('在线结算的 run 标记 expected=false', () => {
+    const s = newGame('T', 0)
+    withCompanions(s, ['apprentice'])
+    s.materials['ingot_copper'] = 999
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 1, team: ['apprentice'] }, 0, mulberry32(1))
+    advanceExpeditions(s, 2 * HOUR_MS, 'online', mulberry32(5))
+    expect(s.meta.expeditions.runs[0].outcome?.expected).toBe(false)
+  })
+})

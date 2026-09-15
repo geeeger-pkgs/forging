@@ -682,7 +682,7 @@ export type GameEvent =
   | { type: 'enhanceResult'; instanceId: number; from: number; to: number; success: boolean; guarded?: boolean }
   | { type: 'reforged'; instanceId: number; name: string; before: number; after: number }
   | { type: 'expeditionDispatched'; routeName: string; hours: number }
-  | { type: 'expeditionDone'; routeName: string; hours: number; success: boolean; gold: number }
+  | { type: 'expeditionDone'; routeName: string; hours: number; success: boolean; gold: number; expected: boolean }
   | { type: 'expeditionClaimed'; routeName: string; gold: number }
   | { type: 'companionRecruited'; name: string; duplicate: boolean }
   | { type: 'companionLevelUp'; name: string; level: number }
@@ -707,7 +707,7 @@ export type GameEvent =
 
 export interface OfflineSummary {
   /** v2.2：远征结算摘要 */
-  expeditions: { routeName: string; hours: number; success: boolean; gold: number }[]
+  expeditions: { routeName: string; hours: number; success: boolean; gold: number; expected: boolean }[]
   elapsedMs: number
   countedMs: number
   rounds: { ref: ActionRef; count: number }[]

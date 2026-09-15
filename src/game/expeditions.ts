@@ -230,6 +230,7 @@ export function advanceExpeditions(
       hours: run.hours,
       success: run.outcome.success,
       gold: Math.round(run.outcome.gold),
+      expected: run.outcome.expected,
     })
   }
 }

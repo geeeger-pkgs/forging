@@ -29,7 +29,7 @@ function close(): void {
       <section v-if="s.expeditions.length">
         <h4>远征</h4>
         <div v-for="(e, i) in s.expeditions" :key="i" class="row">
-          {{ e.routeName }}（{{ e.hours }}h）{{ e.success ? '成功' : '保底' }} · +{{ e.gold }} 金
+          {{ e.routeName }}（{{ e.hours }}h）<template v-if="e.expected">按期望结算</template><template v-else>{{ e.success ? '成功' : '保底' }}</template> · +{{ e.gold }} 金
           <span class="dim">（待领取）</span>
         </div>
       </section>
