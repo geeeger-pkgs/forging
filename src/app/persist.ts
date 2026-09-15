@@ -2,12 +2,13 @@
 // Forging · 存档（localStorage 双槽 + 版本迁移 + 导出/导入）
 // ============================================================
 import { perfectAffixCount, rollAffixes } from '../game/affixes'
+import { checkCodexBackfill } from '../game/codex'
 import { CONTENT } from '../game/content'
 import type { EquipInstance, GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 9
+export const SAVE_VERSION = 10
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -144,6 +145,18 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       totalTokensEarned: s.stats.totalTokensEarned ?? 0,
     },
   }),
+  // v2.3：图鉴与赛季（codex 空串起步 + season 未解锁态 + 里程碑记录；冷启动回溯在 loadGame 后执行）
+  9: (s) => ({
+    ...s,
+    version: 10,
+    codex: (s as unknown as { codex?: GameState['codex'] }).codex ?? { items: '', recipes: '', affixes: '', ores: '' },
+    season:
+      (s as unknown as { season?: GameState['season'] }).season ?? { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
+    meta: {
+      ...s.meta,
+      codexMilestones: (s.meta as unknown as { codexMilestones?: string }).codexMilestones ?? '',
+    },
+  }),
 }
 
 function migrate(s: GameState): GameState {
@@ -169,6 +182,9 @@ function ensureFields(s: GameState): GameState {
     out = { ...out, meta: { ...out.meta, expeditions: { runs: [], banner: 0, nextRunId: 1 } } }
   }
   if (!out.companions) out = { ...out, companions: {} }
+  if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
+  if (!out.season) out = { ...out, season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] } }
+  if (typeof out.meta.codexMilestones !== 'string') out = { ...out, meta: { ...out.meta, codexMilestones: '' } }
   // v2.2：老档若无任何伙伴，补发初始伙伴（否则远征永久不可用）
   const starter = CONTENT.expeditions.starter
   if (Object.keys(out.companions).length === 0 && CONTENT.companions.companions.some((c) => c.id === starter)) {
@@ -188,7 +204,9 @@ export function loadGame(): GameState | null {
       if (isValidSave(data)) {
         // 拒绝高于当前版本的存档（防止旧客户端破坏新档）
         if (data.version > SAVE_VERSION) continue
-        return ensureFields(migrate(data))
+        const state = ensureFields(migrate(data))
+    checkCodexBackfill(state)
+    return state
       }
     } catch {
       // 尝试下一槽位

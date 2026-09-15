@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { TASK_DAILY_BY_ID, TASK_WEEKLY_BY_ID, itemDef } from '../../game/content'
-import { PAID_REROLL_COST, msToNextDay, taskProgress } from '../../game/tasks'
+import { msToNextDay, PAID_REROLL_COST, taskProgress } from '../../game/tasks'
+import { msToSeasonEnd, seasonUnlocked, seasonView } from '../../game/season'
 import type { TaskSlot } from '../../game/types'
 
 interface TaskDefLite {
@@ -38,6 +39,16 @@ const weekly = computed(() => {
   return w ? rowsOf([w], TASK_WEEKLY_BY_ID) : []
 })
 const tasks = computed(() => store.state.meta.tasks)
+
+// v2.3：赛季摘要（发现性——完整面板在图鉴页）
+const seasonOn = computed(() => seasonUnlocked(store.state))
+const season = computed(() => (seasonOn.value ? seasonView(store.state, store.now) : null))
+const seasonLeft = computed(() => {
+  const ms = msToSeasonEnd(store.now)
+  const d = Math.floor(ms / 86400000)
+  const h = Math.floor((ms % 86400000) / 3600000)
+  return d > 0 ? `${d} 天 ${h} 小时` : `${h} 小时`
+})
 const nextIn = computed(() => {
   const ms = msToNextDay(store.now)
   const h = Math.floor(ms / 3600000)
@@ -62,6 +73,10 @@ function reroll(index: number): void {
 
 <template>
   <div class="tasks">
+    <p v-if="season" class="summary season-line">
+      🗓 第 {{ season.index }} 赛季 · 剩余 {{ seasonLeft }} · 声望等级 {{ season.level }} / {{ season.maxLevel }}
+      （{{ season.renown }} / {{ season.maxRenown }} 声望）→ 详见「图鉴」页
+    </p>
     <p class="summary">
       每日任务 · {{ tasks.dailyDate }}（{{ nextIn }}后刷新）<br />
       重掷：免费 {{ tasks.rerollsLeft }} 次 · 付费 {{ tasks.paidRerollsLeft }} 次（{{ PAID_REROLL_COST }} 金币/次）<br />
@@ -104,6 +119,10 @@ function reroll(index: number): void {
   flex-direction: column;
   gap: 10px;
   max-width: 720px;
+}
+.season-line {
+  border-left: 3px solid var(--c-accent-2);
+  padding-left: 8px;
 }
 .summary {
   margin: 0 0 2px;

@@ -3,6 +3,7 @@
 // 约定：内核函数原地修改传入的 state（调用方持有可变更副本）
 // ============================================================
 import { perfectAffixCount, rollAffixes } from './affixes'
+import { recordAffix, recordItem } from './codex'
 import { CONTENT } from './content'
 import type { EquipInstance, GameState, ItemId } from './types'
 
@@ -20,6 +21,8 @@ export function newGame(name: string, now: number): GameState {
     queueSlots: CONTENT.config.defaultQueueSlots,
     buffs: [],
     companions: {},
+    codex: { items: '', recipes: '', affixes: '', ores: '' },
+    season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
     flags: {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },
       achievements: { unlocked: [] },
@@ -33,6 +36,7 @@ export function newGame(name: string, now: number): GameState {
       loadouts: [],
       affixSalt: (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0,
       expeditions: { runs: [], banner: 0, nextRunId: 1 },
+      codexMilestones: '',
     },
     stats: {
       totalCrafts: 0,
@@ -71,8 +75,13 @@ export function materialCount(state: GameState, itemId: ItemId): number {
   return state.materials[itemId] ?? 0
 }
 
+/**
+ * 材料入库的**唯一入口**。
+ * v2.3：图鉴在此登记（源头登记，评审 B5——材料会被消耗，"事后扫描"看不到瞬态）
+ */
 export function addMaterial(state: GameState, itemId: ItemId, qty: number): void {
   state.materials[itemId] = materialCount(state, itemId) + qty
+  recordItem(state, itemId)
 }
 
 /** 扣除材料；不足则不扣除并返回 false */
@@ -101,6 +110,9 @@ export function addInstance(state: GameState, itemId: ItemId, enhanceLevel = 0):
   const affixes = rollAffixes(itemId, id, state.meta.affixSalt ?? 0)
   state.equipment.push({ instanceId: id, itemId, enhanceLevel, affixes })
   state.stats.perfectAffixes += perfectAffixCount(itemId, affixes)
+  // v2.3：图鉴登记（源头；含教学/成就奖励发放的装备）
+  recordItem(state, itemId)
+  for (const a of affixes) recordAffix(state, a.id)
   return id
 }
 

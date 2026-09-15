@@ -268,3 +268,50 @@ describe('存档持久化', () => {
     expect(loaded.meta.affixSalt).toBe(s.meta.affixSalt)
   })
 })
+
+describe('v2.3 迁移（S10）', () => {
+  it('v9 → v10：补齐图鉴与赛季字段；赛季为未解锁态', () => {
+    const s = newGame('T', 1)
+    const v9 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    delete v9.codex
+    delete v9.season
+    delete (v9.meta as Record<string, unknown>).codexMilestones
+    localStorage.setItem('forging.save', JSON.stringify({ ...v9, version: 9 }))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(SAVE_VERSION)
+    expect(loaded!.codex).toEqual({ items: '', recipes: '', affixes: '', ores: '' })
+    expect(loaded!.season).toEqual({ index: -1, renown: 0, rewardedLevel: 0, tasks: [] })
+    expect(loaded!.meta.codexMilestones).toBe('')
+  })
+
+  it('v9 → v10：冷启动回溯登记持有物（配方/词缀历史不回溯）', () => {
+    const s = newGame('T', 1)
+    addInstance(s, 'pick_copper')
+    s.materials['ore_iron'] = 5
+    const v9 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    v9.codex = { items: '', recipes: '', affixes: '', ores: '' }
+    localStorage.setItem('forging.save', JSON.stringify({ ...v9, version: 9 }))
+    const loaded = loadGame()!
+    expect(loaded.codex.items).toContain('ore_iron')
+    expect(loaded.codex.items).toContain('pick_copper')
+    expect(loaded.codex.recipes).toBe('')
+  })
+
+  it('v1 → v10 全链：赛季与图鉴字段齐全，进行中的远征保留', () => {
+    const s = newGame('T', 1)
+    const v1 = {
+      ...s,
+      version: 1,
+      stats: { totalCrafts: 1 },
+      meta: { lastSeenAt: 1, carry: { items: {} } },
+      flags: { tutorial: { current: 1, progress: 0, completed: [], claimed: [] } },
+    }
+    localStorage.setItem('forging.save', JSON.stringify(v1))
+    const loaded = loadGame()!
+    expect(loaded.version).toBe(SAVE_VERSION)
+    expect(loaded.codex).toBeDefined()
+    expect(loaded.season.index).toBe(-1)
+    expect(Object.keys(loaded.companions).length).toBe(1)
+  })
+})

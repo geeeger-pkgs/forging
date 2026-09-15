@@ -68,5 +68,11 @@
   { "id": "relic_first", "name": "遗物初现", "desc": "获得第 1 件遗物", "type": "relicCount", "target": 1, "rewards": [{ "gold": 2000 }] },
   { "id": "relic_3", "name": "遗物收集者", "desc": "同时持有 3 件遗物", "type": "relicCount", "target": 3, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
   { "id": "banner_3", "name": "旗手", "desc": "远征队旗帜升到 3 级", "type": "bannerLevel", "target": 3, "rewards": [{ "gold": 20000 }] },
-  { "id": "relic_core_1", "name": "深渊之核", "desc": "获得 1 枚遗物·深渊之核", "type": "itemCount", "itemId": "relic_core", "target": 1, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] }
+  { "id": "relic_core_1", "name": "深渊之核", "desc": "获得 1 枚遗物·深渊之核", "type": "itemCount", "itemId": "relic_core", "target": 1, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
+  { "id": "codex_25", "name": "初识图鉴", "desc": "图鉴收集度达到 25%", "type": "codexPercent", "target": 25, "rewards": [{ "gold": 800 }] },
+  { "id": "codex_50", "name": "博闻强识", "desc": "图鉴收集度达到 50%", "type": "codexPercent", "target": 50, "rewards": [{ "itemId": "essence", "qty": 10 }] },
+  { "id": "codex_75", "name": "博物学者", "desc": "图鉴收集度达到 75%", "type": "codexPercent", "target": 75, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
+  { "id": "codex_100", "name": "百科全书", "desc": "图鉴收集度达到 100%", "type": "codexPercent", "target": 100, "rewards": [{ "gold": 30000 }, { "itemId": "expedition_token", "qty": 20 }] },
+  { "id": "season_max", "name": "赛季圆满", "desc": "赛季声望等级达到 20 级", "type": "seasonLevel", "target": 20, "rewards": [{ "gold": 10000 }, { "itemId": "expedition_token", "qty": 10 }] },
+  { "id": "season_gold3", "name": "三线全金", "desc": "单赛季三条任务全部达成金档（120 声望）", "type": "seasonLevel", "target": 20, "rewards": [{ "itemId": "expedition_token", "qty": 10 }] }
 ]

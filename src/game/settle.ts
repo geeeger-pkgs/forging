@@ -7,6 +7,7 @@
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
 import { REFORGE_STONE, perfectScore } from './affixes'
+import { recordOre, recordRecipe } from './codex'
 import { buffBonuses } from './buffs'
 import { perkBonuses } from './prestige'
 import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
@@ -140,7 +141,8 @@ function applyRewards(
       const base = randInt(rng, min, max)
       const qty = Math.round(base * (1 + agg.quantity))
       grantItem(state, itemId, qty, events)
-      events.push(...tutorialProgress(state, 'mineItem', qty, { itemId }))
+      recordOre(state, ref.siteId)
+    events.push(...tutorialProgress(state, 'mineItem', qty, { itemId }))
     } else {
       const expected = ((min + max) / 2) * (1 + agg.quantity) * (1 + eff)
       grantExpected(state, itemId, expected, events)
@@ -187,6 +189,7 @@ function applyRewards(
   grantRareDrops(state, recipe.rareDrops, rare, mode, rng, events, agg.stoneFind)
   const xpMul = (1 + wisdom) * (mode === 'expectation' ? 1 + eff : 1)
   grantXp(state, recipe.skill, xpOf(ref) * xpMul, events)
+  recordRecipe(state, recipe.id)
   state.stats.totalCrafts += 1
   if (recipe.skill === 'smelting') state.stats.totalSmelts += 1
   else if (recipe.skill === 'forging') state.stats.totalForges += 1

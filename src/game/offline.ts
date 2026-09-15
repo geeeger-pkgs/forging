@@ -3,7 +3,9 @@
 // 规则：cap 8h；复用结算内核；强化不参与；材料不足停止；回线摘要
 // ============================================================
 import { CONTENT } from './content'
+import { checkCodexMilestones } from './codex'
 import { advanceExpeditions } from './expeditions'
+import { checkSeason } from './season'
 import { perkBonuses } from './prestige'
 import { simulate } from './settle'
 import type { ActionRef, GameEvent, GameState, OfflineSummary, SkillId } from './types'
@@ -54,6 +56,9 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   simulate(state, state.meta.lastSeenAt + counted, { mode: 'expectation', events, maxRounds: 200_000 })
   state.buffs = buffsBackup
   state.meta.lastSeenAt = now // 超出 cap 的时长不结转
+  // v2.3：赛季进度与图鉴里程碑（计数器单调递增，天然含离线产出；强化/重铸离线不增长）
+  checkSeason(state)
+  events.push(...checkCodexMilestones(state))
 
   // ---- 汇总 ----
   const exped: OfflineSummary['expeditions'] = []

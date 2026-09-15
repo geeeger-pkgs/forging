@@ -8,6 +8,7 @@ import { FORGE_CATEGORIES, type ActionCard } from '../types'
 import AchievementsPanel from './AchievementsPanel.vue'
 import ActionGrid from './ActionGrid.vue'
 import EnhancePanel from './EnhancePanel.vue'
+import CodexPanel from './CodexPanel.vue'
 import ExpeditionPanel from './ExpeditionPanel.vue'
 import PrestigePanel from './PrestigePanel.vue'
 import SceneCanvas from './SceneCanvas.vue'
@@ -20,6 +21,7 @@ const title = computed(() => {
   if (view.value === 'prestige') return '传承'
   if (view.value === 'tasks') return '任务'
   if (view.value === 'expedition') return '远征'
+  if (view.value === 'codex') return '图鉴与赛季'
   if (view.value === 'shop') return '商店'
   if (view.value === 'achievements') return '成就'
   if (view.value === 'settings') return '设置'
@@ -127,6 +129,10 @@ function pick(card: ActionCard): void {
 
     <template v-else-if="view === 'expedition'">
       <ExpeditionPanel />
+    </template>
+
+    <template v-else-if="view === 'codex'">
+      <CodexPanel />
     </template>
 
     <template v-else-if="view === 'achievements'">

@@ -7,6 +7,8 @@ import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
+import { checkCodexMilestones } from '../game/codex'
+import { checkSeason, refreshSeason } from '../game/season'
 import { advanceExpeditions } from '../game/expeditions'
 import { dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
@@ -33,7 +35,7 @@ export interface Toast {
 }
 
 /** 主面板视图：四技能 + 传承 + 任务 + 商店 + 成就 + 设置 */
-export type UiView = SkillId | 'prestige' | 'tasks' | 'expedition' | 'shop' | 'achievements' | 'settings'
+export type UiView = SkillId | 'prestige' | 'tasks' | 'expedition' | 'codex' | 'shop' | 'achievements' | 'settings'
 
 const TITLE = 'Forging · 挖矿锻造放置游戏'
 
@@ -155,6 +157,16 @@ function handleEvents(events: GameEvent[]): void {
       case 'bannerUpgraded':
         pushToast(`🧭 远征队旗帜升至 ${e.level} 级`, 'good')
         break
+      case 'codexMilestone':
+        pushToast(`📖 图鉴里程碑 ${Math.round(e.pct * 100)}%（+${e.gold} 金）`, 'good')
+        if (document.hidden) markUnread()
+        break
+      case 'seasonLevelUp':
+        pushToast(`🗓 赛季声望等级 ${e.level}，奖励已发放`, 'good')
+        break
+      case 'seasonRotated':
+        pushToast(`🗓 新赛季开始（第 ${e.index} 赛季）`, 'info')
+        break
       case 'notice':
         pushToast(e.text, 'info')
         break
@@ -173,8 +185,12 @@ function handleEvents(events: GameEvent[]): void {
 // ---------------- 命令入口 ----------------
 
 export function cmd(command: Command): void {
-  const events = dispatch(store.state, command, Date.now())
+  const now = Date.now()
+  const events = dispatch(store.state, command, now)
+  events.push(...checkSeason(store.state))
+  events.push(...refreshSeason(store.state, now))
   events.push(...checkAchievements(store.state))
+  events.push(...checkCodexMilestones(store.state))
   events.push(...refreshTasks(store.state, Date.now()))
   events.push(...checkTasks(store.state))
   handleEvents(events)
@@ -222,11 +238,15 @@ export function boot(): void {
   const now = Date.now()
   // ① 离线结算（不计入今日任务；临时增益不参与）
   const summary = settleOffline(state, now)
-  // ② 任务轮换 + 基线快照
+  // ② 赛季/任务轮换 + 基线快照（赛季先结算旧季再轮换）
+  checkSeason(state)
+  refreshSeason(state, now)
   refreshTasks(state, now)
   checkTasks(state)
   pruneBuffs(state, now)
-  // ③ 自动回收清扫（含离线期间产出）
+  // ③ 图鉴里程碑（必须早于自动回收：否则 keep:0 的玩家采集物在登记前就被卖掉）
+  checkCodexMilestones(state)
+  // ④ 自动回收清扫（含离线期间产出）
   sweepAutoRecycle(state)
   store.summary = summary
   if (summary) {
@@ -240,7 +260,11 @@ export function startLoop(): void {
     store.now = Date.now()
     const events = simulate(store.state, store.now, { mode: 'online', rng: systemRng() })
     advanceExpeditions(store.state, store.now, 'online', systemRng(), events)
+    // v2.3 次序契约：先结算赛季（旧赛季）再轮换，随后成就与图鉴里程碑，最后由调用方做自动回收
+    events.push(...checkSeason(store.state))
+    events.push(...refreshSeason(store.state, store.now))
     events.push(...checkAchievements(store.state))
+    events.push(...checkCodexMilestones(store.state))
     events.push(...refreshTasks(store.state, store.now))
     events.push(...checkTasks(store.state))
     pruneBuffs(store.state, store.now)

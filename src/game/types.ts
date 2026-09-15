@@ -186,6 +186,9 @@ export type AchievementType =
   /** v2.1：单件装备的词缀条数（任一件达到即算） */
   | 'affixCount'
   /** v2.2：伙伴与远征 */
+  /** v2.3：图鉴收集度（百分比）与赛季等级 */
+  | 'codexPercent'
+  | 'seasonLevel'
   | 'companionCount'
   | 'companionRarity'
   | 'relicCount'
@@ -364,6 +367,74 @@ export interface AffixesDef {
   }
 }
 
+// ---------- 图鉴与赛季（v2.3） ----------
+
+/** 图鉴登记（逗号分隔 id 串，压缩存档体积；伙伴/遗物由 companions 与材料表推导） */
+export interface CodexState {
+  items: string
+  recipes: string
+  affixes: string
+  ores: string
+}
+
+export type SeasonTier = 'bronze' | 'silver' | 'gold'
+
+export interface SeasonTemplateDef {
+  id: string
+  title: string
+  desc: string
+  counter: TaskCounter
+  unit: string
+  /** 三档目标（铜/银/金） */
+  targets: [number, number, number]
+}
+
+/** 赛季任务槽（独立结构：不复用 TaskSlot——tasks.ts 的 defOf 只认 daily/weekly） */
+export interface SeasonSlot {
+  defId: string
+  /** 计数基线快照（赛季开始时的计数器值） */
+  base: number
+  /** 已达成的最高档位（未达成 = -1） */
+  tier: number
+}
+
+export interface SeasonState {
+  /** 赛季序号（floor((now − epoch)/14d)）；仅前向轮换 */
+  index: number
+  renown: number
+  /** 已发奖到的等级（单调不回退，保证幂等） */
+  rewardedLevel: number
+  tasks: SeasonSlot[]
+}
+
+export interface CodexMilestoneDef {
+  pct: number
+  gold: number
+  essence: number
+  tokens: number
+}
+
+export interface SeasonDef {
+  /** 赛季纪元（UTC ms） */
+  epoch: number
+  days: number
+  unlockTotalLevel: number
+  levels: number
+  renownPerLevel: number
+  tierRenown: Record<SeasonTier, number>
+  levelReward: {
+    goldBase: number
+    goldPerLevel: number
+    essenceBase: number
+    essencePerFour: number
+    tokenEvery: number
+    tokenAmount: number
+    maxLevelTokens: number
+  }
+  templates: SeasonTemplateDef[]
+  codexMilestones: CodexMilestoneDef[]
+}
+
 // ---------- 伙伴与远征（v2.2） ----------
 
 export type CompanionRarity = 'common' | 'elite' | 'legend'
@@ -526,6 +597,7 @@ export interface ContentTables {
   affixes: AffixesDef
   companions: CompanionsDef
   expeditions: ExpeditionsDef
+  season: SeasonDef
   config: ConfigDef
 }
 
@@ -588,6 +660,9 @@ export interface GameState {
   }
   /** v2.2：伙伴（id → 状态） */
   companions: Record<string, CompanionState>
+  /** v2.3：图鉴与赛季（赛季未解锁时 season.index = -1） */
+  codex: CodexState
+  season: SeasonState
   /** 队列位总数（1 = 默认；最多 4） */
   queueSlots: number
   /** 符文增益槽（至多 2 个，until 为真实时间戳） */
@@ -610,6 +685,8 @@ export interface GameState {
     affixSalt: number
     /** v2.2：远征（进行中/待领取的 run + 旗帜等级） */
     expeditions: ExpeditionState
+    /** v2.3：图鉴里程碑已发奖档位（pct 列表，逗号分隔；幂等） */
+    codexMilestones: string
   }
   stats: {
     totalCrafts: number
@@ -688,6 +765,9 @@ export type GameEvent =
   | { type: 'companionLevelUp'; name: string; level: number }
   | { type: 'traitRerolled'; name: string; trait: string }
   | { type: 'bannerUpgraded'; level: number }
+  | { type: 'codexMilestone'; pct: number; gold: number }
+  | { type: 'seasonLevelUp'; level: number }
+  | { type: 'seasonRotated'; index: number }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
   | { type: 'achievementUnlocked'; id: string; name: string }

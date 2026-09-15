@@ -24,6 +24,7 @@ import {
   teamSize,
   upgradeBanner,
 } from './expeditions'
+import { recordAffix } from './codex'
 import { recycleGain } from './economy'
 import { levelInfo } from './level'
 import { refLabel } from './refs'
@@ -386,6 +387,7 @@ function reforgeInstance(
   }
 
   inst.affixes = next
+  for (const a of next) recordAffix(state, a.id)
   state.stats.totalReforges += 1
   return [
     { type: 'goldGained', amount: -cost.gold },

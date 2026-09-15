@@ -3,6 +3,8 @@
 // 规则：达成即自动解锁并发放奖励（幂等）；由 settle 与 commands 定期调用
 // ============================================================
 import { perfectScore } from './affixes'
+import { codexProgress } from './codex'
+import { levelForRenown } from './season'
 import { CONTENT, itemDef } from './content'
 import { totalValue } from './economy'
 import { levelInfo } from './level'
@@ -91,6 +93,14 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       }
       return n >= def.target
     }
+    case 'codexPercent': {
+      // v2.3：图鉴收集度（目标为百分比整数，如 25/50/75/100）
+      const { pct } = codexProgress(state)
+      return pct * 100 >= def.target
+    }
+    case 'seasonLevel':
+      // v2.3：赛季等级（未解锁时 season.index = -1）
+      return state.season.index >= 0 && levelForRenown(state.season.renown) >= def.target
     case 'bannerLevel':
       return (state.meta.expeditions?.banner ?? 0) >= def.target
   }

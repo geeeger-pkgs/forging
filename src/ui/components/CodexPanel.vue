@@ -1,0 +1,289 @@
+<script setup lang="ts">
+// ============================================================
+// 图鉴与赛季（v2.3）：上半部 6 分区收集度 + 里程碑；下半部赛季（声望/任务三档）
+// ============================================================
+import { computed, ref } from 'vue'
+import { store } from '../../app/store'
+import { codexIds, codexMilestonesClaimed, codexProgress } from '../../game/codex'
+import { CONTENT, itemDef } from '../../game/content'
+import { msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
+import type { CodexCategory } from '../../game/codex'
+
+const open = ref<string | null>(null)
+
+const progress = computed(() => codexProgress(store.state))
+const claimed = computed(() => codexMilestonesClaimed(store.state))
+
+/** 分区未解锁条目（展开时显示；伙伴/遗物/配方/词缀/矿场都给出可读名称） */
+function missingOf(cat: CodexCategory): string[] {
+  const found = codexIds(store.state, cat.id)
+  if (cat.id === 'items') {
+    return Object.keys(CONTENT.items)
+      .filter((id) => itemDef(id).category !== 'relic' && !found.has(id))
+      .map((id) => itemDef(id).name)
+  }
+  if (cat.id === 'recipes') {
+    return CONTENT.recipes.filter((r) => !found.has(r.id)).map((r) => r.name)
+  }
+  if (cat.id === 'affixes') {
+    return CONTENT.affixes.affixes.filter((a) => !found.has(a.id)).map((a) => a.name)
+  }
+  if (cat.id === 'companions') {
+    return CONTENT.companions.companions.filter((c) => !found.has(c.id)).map((c) => c.name)
+  }
+  if (cat.id === 'relics') {
+    return Object.keys(CONTENT.items)
+      .filter((id) => itemDef(id).category === 'relic' && !found.has(id))
+      .map((id) => itemDef(id).name)
+  }
+  return CONTENT.ores.filter((o) => !found.has(o.id)).map((o) => o.name)
+}
+
+function pctText(x: number): string {
+  return `${(x * 100).toFixed(1)}%`
+}
+
+const unlocked = computed(() => seasonUnlocked(store.state))
+const season = computed(() => seasonView(store.state, store.now))
+const msLeft = computed(() => msToSeasonEnd(store.now))
+
+function fmtLeft(ms: number): string {
+  const days = Math.floor(ms / 86400000)
+  const hours = Math.floor((ms % 86400000) / 3600000)
+  return days > 0 ? `${days} 天 ${hours} 小时` : `${hours} 小时`
+}
+
+function tierLabel(tier: number): string {
+  return tier < 0 ? '未达成' : ['铜', '银', '金'][tier]
+}
+
+const renownTarget = computed(() => renownForLevel(season.value.level + 1))
+</script>
+
+<template>
+  <div class="codex">
+    <section class="card">
+      <h3>
+        图鉴
+        <span class="dim">
+          已收集 {{ progress.found }} / {{ progress.total }}（{{ pctText(progress.pct) }}）
+        </span>
+      </h3>
+      <p class="dim">
+        图鉴记录「曾经拥有/做过」的内容：物品与装备在产出瞬间登记（哪怕随后被消耗或回收），
+        配方在首次制作成功时登记，词缀在造装或重铸出现时登记。点击分区可查看未收集项。
+      </p>
+      <div class="cats">
+        <div v-for="c in progress.categories" :key="c.id" class="cat">
+          <div class="chead" @click="open = open === c.id ? null : c.id">
+            <b>{{ c.name }}</b>
+            <span class="spacer" />
+            <span class="dim small">{{ c.found }} / {{ c.total }} · {{ pctText(c.total ? c.found / c.total : 0) }}</span>
+          </div>
+          <div class="bar"><i :style="{ width: (c.total ? (c.found / c.total) * 100 : 0) + '%' }" /></div>
+          <div v-if="open === c.id" class="missing small">
+            <template v-if="missingOf(c).length === 0"><span class="good">已收集完整 ✅</span></template>
+            <template v-else>
+              <span class="dim">未收集（{{ missingOf(c).length }}）：</span>
+              <span class="dim">{{ missingOf(c).slice(0, 40).join('、') }}{{ missingOf(c).length > 40 ? ' …' : '' }}</span>
+            </template>
+          </div>
+        </div>
+      </div>
+      <div class="milestones">
+        <div v-for="m in CONTENT.season.codexMilestones" :key="m.pct" class="ms" :class="{ done: claimed.has(String(m.pct)) }">
+          <b>{{ Math.round(m.pct * 100) }}%</b>
+          <span class="dim small">
+            {{ m.gold }} 金 + 精华 ×{{ m.essence }}<template v-if="m.tokens"> + 徽记 ×{{ m.tokens }}</template>
+          </span>
+          <span class="spacer" />
+          <span class="small" :class="claimed.has(String(m.pct)) ? 'good' : 'dim'">
+            {{ claimed.has(String(m.pct)) ? '已发放' : progress.pct >= m.pct ? '可达成' : '未达成' }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>
+        赛季
+        <span class="dim">
+          <template v-if="unlocked">第 {{ season.index }} 赛季 · 剩余 {{ fmtLeft(msLeft) }}</template>
+          <template v-else>总等级 {{ CONTENT.season.unlockTotalLevel }} 解锁（当前 {{ '' }}未达成）</template>
+        </span>
+      </h3>
+      <template v-if="unlocked">
+        <div class="level">
+          <b>声望 {{ season.renown }} / {{ season.maxRenown }}</b>
+          <span class="dim small">等级 {{ season.level }} / {{ season.maxLevel }}（下一级需 {{ renownTarget }}）</span>
+        </div>
+        <div class="bar"><i :style="{ width: season.pct * 100 + '%' }" /></div>
+        <p class="dim small">
+          每 14 天轮换：3 条任务从 6 条模板中按赛季确定性抽取；每档**只计最高达成**（不叠加）；
+          达到等级即时发放奖励。挖掘/熔炼/锻造/金币/远征离线照常推进，标记「需在线」的任务离线不增长。
+        </p>
+        <div class="tasks">
+          <div v-for="t in season.tasks" :key="t.defId" class="task">
+            <div class="thead">
+              <b>{{ t.title }}</b>
+              <span class="dim small">{{ t.desc }}</span>
+              <span v-if="t.onlineOnly" class="badge">需在线</span>
+              <span class="spacer" />
+              <span class="small" :class="t.tier >= 0 ? 'good' : 'dim'">{{ tierLabel(t.tier) }} · {{ t.renown }} 声望</span>
+            </div>
+            <div class="tiers small">
+              <span v-for="(target, i) in t.targets" :key="i" :class="{ reached: t.tier >= i }">
+                {{ ['铜', '银', '金'][i] }} {{ target.toLocaleString() }}{{ t.unit }}
+              </span>
+            </div>
+            <div class="bar"><i :style="{ width: Math.min(1, t.progress / t.targets[2]) * 100 + '%' }" /></div>
+            <div class="dim small">当前进度 {{ Math.round(t.progress).toLocaleString() }}{{ t.unit }}</div>
+          </div>
+        </div>
+      </template>
+      <p v-else class="dim">
+        赛季系统在中后期解锁（总等级 {{ CONTENT.season.unlockTotalLevel }}）：每 14 天轮换 3 条长线任务，
+        完成后获得声望与等级奖励（金币/精华/远征徽记）。图鉴收集度独立发奖，不受此门槛影响。
+      </p>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.codex {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 720px;
+}
+.card {
+  background: var(--c-panel-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+.dim {
+  color: var(--c-text-dim);
+  font-size: 13px;
+  margin: 4px 0;
+}
+.small {
+  font-size: 12px;
+}
+.good {
+  color: var(--c-success);
+}
+.bad {
+  color: var(--c-danger);
+}
+.spacer {
+  flex: 1;
+}
+.cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+.cat {
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.chead {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.bar {
+  height: 5px;
+  background: var(--c-bg-deep);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 5px 0;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--c-accent-2);
+}
+.missing {
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.milestones {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ms {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  border-top: 1px dashed var(--c-border);
+  padding-top: 4px;
+}
+.ms.done b {
+  color: var(--c-success);
+}
+.level {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+}
+.tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.task {
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.thead {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+.tiers {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0;
+  color: var(--c-text-dim);
+}
+.tiers .reached {
+  color: var(--c-success);
+}
+.badge {
+  font-size: 10px;
+  border: 1px solid var(--c-danger);
+  color: var(--c-danger);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+@media (max-width: 900px) {
+  .codex {
+    max-width: none;
+  }
+  .cats,
+  .tasks {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

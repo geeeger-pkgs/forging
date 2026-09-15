@@ -329,9 +329,41 @@ const expeditions = {
 
 const companionsDef = { companions, startLevelCap: 30 }
 
+// ---------------- 图鉴与赛季（v2.3） ----------------
+// 数值口径：docs/design-v2.3.md（先模拟后定档，scripts/sim-season.mjs → docs/sim-season-output.json）
+const season = {
+  /** 赛季纪元（UTC 2026-01-01T00:00:00Z）；seasonIndex = floor((now − epoch) / 14d)，且仅当前向轮换 */
+  epoch: 1767225600000,
+  days: 14,
+  /** 解锁门槛：总等级 */
+  unlockTotalLevel: 60,
+  levels: 20,
+  renownPerLevel: 4,
+  tierRenown: { bronze: 10, silver: 20, gold: 40 },
+  /** 每级奖励（即时自动发放） */
+  levelReward: { goldBase: 500, goldPerLevel: 250, essenceBase: 1, essencePerFour: 1, tokenEvery: 5, tokenAmount: 2, maxLevelTokens: 10 },
+  /** 任务模板（计数器复用既有 TaskCounter） */
+  templates: [
+    { id: 's_mine', title: '深层采掘', desc: '挖掘任意矿脉', counter: 'totalMines', unit: '次', targets: [4000, 9000, 18000] },
+    { id: 's_craft', title: '炉火不熄', desc: '熔炼或锻造', counter: 'totalCrafts', unit: '次', targets: [1000, 2400, 4800] },
+    { id: 's_gold', title: '财富积累', desc: '累计获得金币', counter: 'totalGoldEarned', unit: '金', targets: [250000, 500000, 800000] },
+    { id: 's_enhance', title: '锤炼不止', desc: '强化尝试（需在线）', counter: 'totalEnhances', unit: '次', targets: [120, 320, 600] },
+    { id: 's_expedition', title: '远行不辍', desc: '完成远征', counter: 'totalExpeditions', unit: '次', targets: [15, 30, 45] },
+    { id: 's_reforge', title: '精益求精', desc: '重铸词缀（需在线）', counter: 'totalReforges', unit: '次', targets: [15, 35, 60] },
+  ],
+  /** 图鉴里程碑（每 25%；与赛季解耦，只给自奖励） */
+  codexMilestones: [
+    { pct: 0.25, gold: 1250, essence: 10, tokens: 0 },
+    { pct: 0.5, gold: 5000, essence: 20, tokens: 3 },
+    { pct: 0.75, gold: 11250, essence: 30, tokens: 3 },
+    { pct: 1.0, gold: 20000, essence: 40, tokens: 10 },
+  ],
+}
+
 // ---------------- 输出 ----------------
 writeFileSync(join(dataDir, 'companions.json'), JSON.stringify(companionsDef, null, 2) + '\n')
 writeFileSync(join(dataDir, 'expeditions.json'), JSON.stringify(expeditions, null, 2) + '\n')
+writeFileSync(join(dataDir, 'season.json'), JSON.stringify(season, null, 2) + '\n')
 void TIER_SUFFIX
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
@@ -342,4 +374,5 @@ const itemCount = Object.keys(items).length
 console.log(`[gen-content] items: ${itemCount}（材料 18 + 装备 ${itemCount - 18 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}`)
 console.log(`[gen-content] affixes: ${AFFIXES.length}（4 池）`)
 console.log(`[gen-content] companions: ${companions.length}（按 ${companionsDef.startLevelCap} 级上限）｜ routes: ${routes.length} × ${expeditions.hours.length} 档`)
-console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json')
+console.log(`[gen-content] season: ${season.days} 天 / ${season.levels} 级 / ${season.templates.length} 模板`)
+console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json, data/season.json')

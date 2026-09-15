@@ -55,6 +55,10 @@ function claim(): void {
         <span class="icon">🧭</span>
         <span class="body"><span class="name">远征</span></span>
       </button>
+      <button class="item" :class="{ active: store.ui.view === 'codex' }" @click="setView('codex')">
+        <span class="icon">📖</span>
+        <span class="body"><span class="name">图鉴</span></span>
+      </button>
       <button class="item" :class="{ active: store.ui.view === 'shop' }" @click="setView('shop')">
         <span class="icon">🛒</span>
         <span class="body"><span class="name">商店</span></span>

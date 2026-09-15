@@ -35,6 +35,7 @@ import perksJson from '../../data/perks.json'
 import affixesJson from '../../data/affixes.json'
 import companionsJson from '../../data/companions.json'
 import expeditionsJson from '../../data/expeditions.json'
+import seasonJson from '../../data/season.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -292,6 +293,35 @@ export function validateContent(t: ContentTables): string[] {
   if (t.expeditions.banner.cost.length !== t.expeditions.banner.maxLevel) errs.push('旗帜升级曲线长度与上限不符')
   if (!(t.expeditions.levelCurve.base > 0 && t.expeditions.levelCurve.exponent > 1)) errs.push('伙伴经验曲线非法')
 
+  // 图鉴与赛季（v2.3）
+  const s = t.season
+  if (!(s.days >= 1)) errs.push('赛季天数非法')
+  if (!(s.levels >= 1) || !(s.renownPerLevel >= 1)) errs.push('赛季等级/声望配置非法')
+  if (!(s.epoch > 0)) errs.push('赛季纪元非法')
+  if (!(s.unlockTotalLevel >= 0)) errs.push('赛季解锁门槛非法')
+  for (const tier of ['bronze', 'silver', 'gold'] as const) {
+    if (!(s.tierRenown[tier] > 0)) errs.push(`赛季档位声望非法: ${tier}`)
+  }
+  if (s.templates.length < 4) errs.push('赛季模板至少 4 条（保证 3 条抽取有余量）')
+  const tplIds = new Set<string>()
+  for (const tpl of s.templates) {
+    if (tplIds.has(tpl.id)) errs.push(`赛季模板 id 重复: ${tpl.id}`)
+    tplIds.add(tpl.id)
+    if (!TASK_COUNTERS.includes(tpl.counter)) errs.push(`赛季模板计数器非法: ${tpl.id} -> ${tpl.counter}`)
+    if (tpl.targets.length !== 3) errs.push(`赛季模板目标档数非法: ${tpl.id}`)
+    for (let i = 1; i < tpl.targets.length; i++) {
+      if (tpl.targets[i] <= tpl.targets[i - 1]) errs.push(`赛季目标必须递增: ${tpl.id}`)
+    }
+  }
+  const ms = s.codexMilestones
+  if (ms.length === 0) errs.push('图鉴里程碑为空')
+  for (let i = 0; i < ms.length; i++) {
+    if (!(ms[i].pct > 0) || ms[i].pct > 1) errs.push(`图鉴里程碑比例非法: #${i}`)
+    if (i > 0 && ms[i].pct <= ms[i - 1].pct) errs.push('图鉴里程碑比例必须递增')
+    if (!(ms[i].gold >= 0 && ms[i].essence >= 0 && ms[i].tokens >= 0)) errs.push(`图鉴里程碑奖励非法: #${i}`)
+  }
+  if (!(s.levelReward.goldBase >= 0 && s.levelReward.tokenEvery >= 1)) errs.push('赛季等级奖励配置非法')
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -318,6 +348,7 @@ export const CONTENT: ContentTables = {
   affixes: affixesJson,
   companions: companionsJson,
   expeditions: expeditionsJson,
+  season: seasonJson,
   config: configJson,
 } as unknown as ContentTables
 
