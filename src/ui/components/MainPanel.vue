@@ -8,9 +8,15 @@ import { itemIcon } from '../icons'
 import type { ActionCard } from '../types'
 import ActionGrid from './ActionGrid.vue'
 import EnhancePanel from './EnhancePanel.vue'
+import SettingsPanel from './SettingsPanel.vue'
+import ShopPanel from './ShopPanel.vue'
 
-const skill = computed(() => store.ui.activeSkill)
-const title = computed(() => skillName(skill.value))
+const view = computed(() => store.ui.view)
+const title = computed(() => {
+  if (view.value === 'shop') return '商店'
+  if (view.value === 'settings') return '设置'
+  return skillName(view.value)
+})
 
 const miningCards = computed<ActionCard[]>(() => {
   const lv = levelInfo(store.state.skills.mining).level
@@ -63,15 +69,15 @@ function pick(card: ActionCard): void {
   <main class="main">
     <h2>{{ title }}</h2>
 
-    <template v-if="skill === 'mining'">
+    <template v-if="view === 'mining'">
       <ActionGrid :cards="miningCards" @pick="pick" />
     </template>
 
-    <template v-else-if="skill === 'smelting'">
+    <template v-else-if="view === 'smelting'">
       <ActionGrid :cards="smeltCards" @pick="pick" />
     </template>
 
-    <template v-else-if="skill === 'forging'">
+    <template v-else-if="view === 'forging'">
       <div class="tabs">
         <button
           v-for="c in forgeCats"
@@ -86,8 +92,16 @@ function pick(card: ActionCard): void {
       <ActionGrid :cards="forgeCards" @pick="pick" />
     </template>
 
-    <template v-else>
+    <template v-else-if="view === 'enhancing'">
       <EnhancePanel />
+    </template>
+
+    <template v-else-if="view === 'shop'">
+      <ShopPanel />
+    </template>
+
+    <template v-else>
+      <SettingsPanel />
     </template>
   </main>
 </template>

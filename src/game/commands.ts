@@ -178,13 +178,18 @@ function recycleInstance(state: GameState, instanceId: number): GameEvent[] {
 
 // ---------------- 队列扩容 ----------------
 
-function buyQueueSlot(state: GameState): GameEvent[] {
+/** 下一个队列位的价格；无可购买位返回 null（上限 / 教程位未领） */
+export function nextQueueSlotCost(state: GameState): number | null {
   const cfg = CONTENT.config
-  if (state.queueSlots >= cfg.maxQueueSlots) return [{ type: 'blocked', reason: '队列已达上限' }]
+  if (state.queueSlots >= cfg.maxQueueSlots) return null
   const tutorialGrant = state.flags.tutorial.claimed.includes(8) ? 1 : 0
   const purchased = Math.max(0, state.queueSlots - cfg.defaultQueueSlots - tutorialGrant)
-  const cost = cfg.queueSlotCosts[purchased]
-  if (cost === undefined) return [{ type: 'blocked', reason: '没有更多可购买的队列位' }]
+  return cfg.queueSlotCosts[purchased] ?? null
+}
+
+function buyQueueSlot(state: GameState): GameEvent[] {
+  const cost = nextQueueSlotCost(state)
+  if (cost === null) return [{ type: 'blocked', reason: '没有更多可购买的队列位' }]
   if (state.gold < cost) return [{ type: 'blocked', reason: `金币不足（需要 ${cost}）` }]
   addGold(state, -cost)
   state.queueSlots += 1

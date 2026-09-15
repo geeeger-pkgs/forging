@@ -25,6 +25,9 @@ export interface Toast {
   kind: 'info' | 'good' | 'bad'
 }
 
+/** 主面板视图：四技能 + 商店 + 设置 */
+export type UiView = SkillId | 'shop' | 'settings'
+
 export const store = reactive({
   /** 内核状态（可序列化对象；模块加载后由 boot() 注入） */
   state: null as unknown as GameState,
@@ -32,7 +35,7 @@ export const store = reactive({
   summary: null as OfflineSummary | null,
   toasts: [] as Toast[],
   ui: {
-    activeSkill: 'mining' as SkillId,
+    view: 'mining' as UiView,
     dialogRef: null as ActionRef | null,
     forgeCategory: 'tool' as 'tool' | 'weapon' | 'armor',
   },
@@ -95,8 +98,8 @@ export function closeDialog(): void {
   store.ui.dialogRef = null
 }
 
-export function setSkill(id: SkillId): void {
-  store.ui.activeSkill = id
+export function setView(v: UiView): void {
+  store.ui.view = v
 }
 
 // ---------------- 启动与主循环 ----------------
@@ -137,4 +140,9 @@ export function startLoop(): void {
 /** 导出存档（设置面板使用） */
 export function exportCurrent(): void {
   exportSave(store.state)
+}
+
+// 开发模式调试句柄（用于验收与排障；生产构建不暴露）
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__forging = store
 }

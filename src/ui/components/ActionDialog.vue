@@ -2,11 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import { closeDialog, cmd, store } from '../../app/store'
 import { describeAction, type ActionDesc } from '../../app/describe'
+import { nextQueueSlotCost } from '../../game/commands'
 import { fmtDuration, fmtPct, itemIcon } from '../icons'
 
 const desc = computed<ActionDesc | null>(() =>
   store.ui.dialogRef ? describeAction(store.state, store.ui.dialogRef) : null,
 )
+
+const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
 
 const infinite = ref(true)
 const count = ref(1)
@@ -93,9 +96,16 @@ function start(mode: 'now' | 'enqueue'): void {
       <p v-if="desc.blockReason" class="reason bad">⚠ {{ desc.blockReason }}</p>
 
       <footer>
-        <button class="btn" @click="closeDialog">取消</button>
-        <button class="btn ghost" :disabled="!desc.canStart" @click="start('enqueue')">加入队列</button>
-        <button class="btn primary" :disabled="!desc.canStart" @click="start('now')">开始</button>
+        <div class="left-actions">
+          <button v-if="nextSlotCost !== null" class="btn ghost sm" @click="cmd({ type: 'buyQueueSlot' })">
+            ＋队列位（{{ nextSlotCost }}💰）
+          </button>
+        </div>
+        <div class="right-actions">
+          <button class="btn" @click="closeDialog">取消</button>
+          <button class="btn ghost" :disabled="!desc.canStart" @click="start('enqueue')">加入队列</button>
+          <button class="btn primary" :disabled="!desc.canStart" @click="start('now')">开始</button>
+        </div>
       </footer>
     </div>
   </div>
@@ -103,7 +113,7 @@ function start(mode: 'now' | 'enqueue'): void {
 
 <style scoped>
 .action-dialog {
-  width: 420px;
+  width: 440px;
 }
 header {
   display: flex;
@@ -149,8 +159,13 @@ header h3 {
 }
 footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
   margin-top: 14px;
+}
+.right-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

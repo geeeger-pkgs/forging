@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { cmd, setSkill, store } from '../../app/store'
+import { cmd, setView, store } from '../../app/store'
 import { CONTENT, TUTORIAL_BY_STEP } from '../../game/content'
 import { levelInfo } from '../../game/level'
 import { skillIcon } from '../icons'
@@ -32,8 +32,8 @@ function claim(): void {
       v-for="s in skills"
       :key="s.id"
       class="item"
-      :class="{ active: store.ui.activeSkill === s.id }"
-      @click="setSkill(s.id)"
+      :class="{ active: store.ui.view === s.id }"
+      @click="setView(s.id)"
     >
       <span class="icon">{{ skillIcon(s.id) }}</span>
       <span class="body">
@@ -41,6 +41,17 @@ function claim(): void {
         <span class="xpbar"><i :style="{ width: (s.pct * 100).toFixed(1) + '%' }" /></span>
       </span>
     </button>
+
+    <div class="tools">
+      <button class="item" :class="{ active: store.ui.view === 'shop' }" @click="setView('shop')">
+        <span class="icon">🛒</span>
+        <span class="body"><span class="name">商店</span></span>
+      </button>
+      <button class="item" :class="{ active: store.ui.view === 'settings' }" @click="setView('settings')">
+        <span class="icon">⚙️</span>
+        <span class="body"><span class="name">设置</span></span>
+      </button>
+    </div>
 
     <div v-if="tutorial" class="tutorial">
       <div class="t-title">📘 教程 · {{ tutorial.step.title }}</div>
@@ -112,6 +123,14 @@ function claim(): void {
   display: block;
   height: 100%;
   background: var(--c-accent-2);
+}
+.tools {
+  margin-top: 6px;
+  border-top: 1px solid var(--c-border);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .tutorial {
   margin-top: auto;

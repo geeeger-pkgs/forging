@@ -3,11 +3,13 @@ import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { totalLevel } from '../../game/level'
 import { refLabel } from '../../game/refs'
+import { totalValue } from '../../app/describe'
 import ProgressBar from './ProgressBar.vue'
 
 const cur = computed(() => store.state.actions.current)
 const queue = computed(() => store.state.actions.queue)
 const tl = computed(() => totalLevel(store.state.skills))
+const tv = computed(() => totalValue(store.state))
 const remainSec = computed(() => {
   const c = cur.value
   if (!c) return ''
@@ -19,6 +21,7 @@ const remainSec = computed(() => {
   <header class="top">
     <div class="left">
       <span class="gold">💰 {{ store.state.gold }}</span>
+      <span class="dim">总价值 {{ tv }}</span>
     </div>
 
     <div class="center">
@@ -58,7 +61,9 @@ const remainSec = computed(() => {
   min-height: 56px;
 }
 .left {
-  min-width: 120px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
 }
 .gold {
   color: var(--c-accent);
