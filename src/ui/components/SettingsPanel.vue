@@ -2,12 +2,21 @@
 import { computed, ref } from 'vue'
 import { cmd, exportCurrent, store } from '../../app/store'
 import { clearSave, importSaveFile, saveGame } from '../../app/persist'
+import { checkLoadout } from '../../game/commands'
 import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const message = ref('')
 const loadoutName = ref('')
+const appVersion = __APP_VERSION__
+
+/** 预设预检（v1.9）：应用前展示每个动作的阻塞原因 */
+const loadoutIssues = computed(() => {
+  const map: Record<string, { label: string; reason: string }[]> = {}
+  for (const lo of store.state.meta.loadouts) map[lo.id] = checkLoadout(store.state, lo.id)
+  return map
+})
 
 const stats = computed(() => {
   const s = store.state
@@ -85,17 +94,28 @@ function onClear(): void {
     <section class="card">
       <h3>动作预设</h3>
       <p class="dim">保存当前「执行中动作 + 队列」为一键预设（跨传承保留）；应用时非法动作自动跳过。</p>
+      <p class="dim">应用前会自动预检，无法执行的动作会在此处列出缺失原因。</p>
       <div class="actions">
         <input v-model="loadoutName" class="text-input" placeholder="预设名称（可选）" maxlength="12" />
         <button class="btn" @click="saveLoadout">保存当前</button>
       </div>
       <div v-if="store.state.meta.loadouts.length === 0" class="dim">暂无预设。</div>
-      <div v-for="lo in store.state.meta.loadouts" :key="lo.id" class="lo-row">
-        <span class="lo-name">{{ lo.name }}</span>
-        <span class="dim">{{ lo.actions.length }} 个动作</span>
-        <span class="spacer" />
-        <button class="btn sm" @click="cmd({ type: 'applyLoadout', loadoutId: lo.id })">应用</button>
-        <button class="btn sm" @click="cmd({ type: 'deleteLoadout', loadoutId: lo.id })">删除</button>
+      <div v-for="lo in store.state.meta.loadouts" :key="lo.id" class="lo-block">
+        <div class="lo-row">
+          <span class="lo-name">{{ lo.name }}</span>
+          <span class="dim">
+            {{ lo.actions.length }} 个动作 · 可执行
+            {{ lo.actions.length - (loadoutIssues[lo.id]?.length ?? 0) }}
+          </span>
+          <span class="spacer" />
+          <button class="btn sm" @click="cmd({ type: 'applyLoadout', loadoutId: lo.id })">应用</button>
+          <button class="btn sm" @click="cmd({ type: 'deleteLoadout', loadoutId: lo.id })">删除</button>
+        </div>
+        <div v-if="loadoutIssues[lo.id]?.length" class="lo-issues">
+          <span v-for="(iss, k) in loadoutIssues[lo.id]" :key="k" class="issue">
+            ⚠ {{ iss.label }}：{{ iss.reason }}
+          </span>
+        </div>
       </div>
     </section>
 
@@ -127,8 +147,9 @@ function onClear(): void {
     <section class="card">
       <h3>关于</h3>
       <p class="dim">
-        Forging v1.7 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 传承）<br />
-        参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。
+        Forging v1.9 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 传承）<br />
+        参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。<br />
+        构建：{{ appVersion }}
       </p>
     </section>
   </div>
@@ -195,6 +216,23 @@ function onClear(): void {
   padding: 6px 0;
   border-bottom: 1px dashed var(--c-border);
   font-size: 13px;
+}
+.lo-block {
+  border-bottom: 1px dashed var(--c-border);
+}
+.lo-block .lo-row {
+  border-bottom: none;
+}
+.lo-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0 8px 2px;
+}
+.issue {
+  color: var(--c-warn, #e8b84b);
+  font-size: 12px;
+  line-height: 1.6;
 }
 .lo-name {
   font-weight: 600;

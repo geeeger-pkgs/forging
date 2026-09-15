@@ -3,7 +3,13 @@ import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { CONTENT } from '../../game/content'
 import { totalLevel } from '../../game/level'
-import { PRESTIGE_MIN_LEVEL, prestigePointsFor, prestigeUnlocked } from '../../game/prestige'
+import {
+  PRESTIGE_MIN_LEVEL,
+  perkMaxLevel,
+  perkNextCost,
+  prestigePointsFor,
+  prestigeUnlocked,
+} from '../../game/prestige'
 
 const total = computed(() => totalLevel(store.state.skills))
 const unlocked = computed(() => prestigeUnlocked(store.state))
@@ -13,6 +19,8 @@ const perks = computed(() =>
   CONTENT.perks.map((p) => ({
     def: p,
     level: store.state.meta.prestige.perks[p.id] ?? 0,
+    cap: perkMaxLevel(p),
+    next: perkNextCost(p, store.state.meta.prestige.perks[p.id] ?? 0),
   })),
 )
 
@@ -47,16 +55,24 @@ function confirmPrestige(): void {
     <section class="card">
       <h3>精通殿堂 <span class="pts">可用精通点 {{ points }}</span></h3>
       <p class="dim">购买/退款即时生效，退款免费；效果永久保留，跨传承累计。</p>
+      <p class="dim">
+        深造：基础上限后可继续购买至 2 倍，深造部分每级价格 ×2（例：迅捷 20 → 40 级）。
+      </p>
       <div class="grid">
-        <div v-for="p in perks" :key="p.def.id" class="perk" :class="{ maxed: p.level >= p.def.max }">
+        <div
+          v-for="p in perks"
+          :key="p.def.id"
+          class="perk"
+          :class="{ maxed: p.level >= p.cap, over: p.level > p.def.max }"
+        >
           <div class="perk-head">
-            <span class="perk-name">{{ p.def.name }}</span>
-            <span class="perk-lv">{{ p.level }} / {{ p.def.max }}</span>
+            <span class="perk-name">{{ p.def.name }}<span v-if="p.level > p.def.max" class="tag">深造</span></span>
+            <span class="perk-lv">{{ p.level }} / {{ p.cap }}</span>
           </div>
-          <div class="dim">{{ p.def.desc }} · {{ p.def.cost }} 点/级</div>
+          <div class="dim">{{ p.def.desc }} · 下一级 {{ p.next }} 点<span v-if="p.next > p.def.cost">（深造 ×2）</span></div>
           <div class="perk-actions">
             <button class="btn sm" :disabled="p.level <= 0" @click="cmd({ type: 'refundPerk', perkId: p.def.id })">− 退款</button>
-            <button class="btn sm" :disabled="p.level >= p.def.max" @click="cmd({ type: 'buyPerk', perkId: p.def.id })">+ 购买</button>
+            <button class="btn sm" :disabled="p.level >= p.cap" @click="cmd({ type: 'buyPerk', perkId: p.def.id })">+ 购买</button>
           </div>
         </div>
       </div>
@@ -128,6 +144,20 @@ function confirmPrestige(): void {
 }
 .perk.maxed {
   border-color: var(--c-success);
+}
+.perk.over {
+  border-color: var(--c-accent-2);
+}
+.tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 400;
+  border: 1px solid var(--c-accent-2);
+  border-radius: 4px;
+  color: var(--c-accent-2);
+  vertical-align: 1px;
 }
 .perk-head {
   display: flex;

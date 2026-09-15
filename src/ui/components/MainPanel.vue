@@ -194,6 +194,9 @@ h2 {
 @media (max-width: 900px) {
   .main {
     padding: 10px 12px;
+    /* v1.9：交给外层 .body 单滚动，避免嵌套滚动区 */
+    flex: none;
+    overflow-y: visible;
   }
   .tabs {
     flex-wrap: wrap;

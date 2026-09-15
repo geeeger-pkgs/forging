@@ -28,6 +28,11 @@ import TopBar from './ui/components/TopBar.vue'
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
+  /* v1.9：iOS PWA 全屏安全区（刘海/底部横条） */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 .body {
   display: flex;

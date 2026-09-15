@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sweepAutoRecycle } from '../src/game/automation'
-import { applyCommand } from '../src/game/commands'
+import { applyCommand, checkLoadout } from '../src/game/commands'
 import { newGame } from '../src/game/state'
 import type { ActiveAction, GameState } from '../src/game/types'
 
@@ -127,5 +127,31 @@ describe('自动化（v1.7）：动作预设', () => {
     expect(
       applyCommand(s, { type: 'applyLoadout', loadoutId: 'nope' }, NOW).some((e) => e.type === 'blocked'),
     ).toBe(true)
+  })
+
+  it('预检（v1.9）：合法预设无问题；缺材料/超容量时列出原因', () => {
+    const s = newGame('T', 0)
+    withActions(s)
+    applyCommand(s, { type: 'saveLoadout', name: 'P' }, NOW)
+    const id = s.meta.loadouts[0].id
+
+    // 铜矿开采合法；smelt_copper 缺矿 → 1 条问题
+    let issues = checkLoadout(s, id)
+    expect(issues).toHaveLength(1)
+    expect(issues[0].label).toContain('铜')
+    expect(issues[0].reason).toContain('材料不足')
+
+    // 补足材料后无问题
+    s.materials['ore_copper'] = 10
+    expect(checkLoadout(s, id)).toHaveLength(0)
+
+    // 追加第 3 个动作 → 超出容量（queueSlots=1 → 容量 2）
+    s.meta.loadouts[0].actions.push({ ref: { kind: 'mine', siteId: 'copper_seam' }, count: 1 })
+    issues = checkLoadout(s, id)
+    expect(issues).toHaveLength(1)
+    expect(issues[0].reason).toContain('超出队容量')
+
+    // 未知预设
+    expect(checkLoadout(s, 'nope')).toHaveLength(1)
   })
 })

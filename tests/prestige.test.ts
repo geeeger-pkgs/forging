@@ -109,6 +109,36 @@ describe('传承系统（v1.5）', () => {
     expect(b.startLevel).toBeCloseTo(2)
   })
 
+  it('精通深造（v1.9）：基础上限后价格 ×2、上限 ×2、退款对称', () => {
+    const s = newGame('T', 0)
+    const swift = CONTENT.perks.find((p) => p.id === 'swift')!
+    s.meta.prestige.points = 1_000_000
+    for (let i = 0; i < swift.max; i++) buyPerk(s, 'swift')
+    expect(s.meta.prestige.perks['swift']).toBe(swift.max)
+
+    // 深造就第一级：花费 ×2
+    const before = s.meta.prestige.points
+    buyPerk(s, 'swift')
+    expect(s.meta.prestige.perks['swift']).toBe(swift.max + 1)
+    expect(before - s.meta.prestige.points).toBe(swift.cost * 2)
+    expect(perkBonuses(s).speed).toBeCloseTo(0.015 * (swift.max + 1))
+
+    // 退款：深造级返 ×2，基础级返 ×1
+    refundPerk(s, 'swift')
+    expect(s.meta.prestige.points).toBe(before)
+    const mid = s.meta.prestige.points
+    refundPerk(s, 'swift')
+    expect(s.meta.prestige.points).toBe(mid + swift.cost)
+
+    // 买满深造至 2 倍上限后阻塞
+    s.meta.prestige.points = 1_000_000
+    for (let i = swift.max - 1; i < swift.max * 2; i++) {
+      expect(buyPerk(s, 'swift').some((e) => e.type === 'blocked')).toBe(false)
+    }
+    expect(s.meta.prestige.perks['swift']).toBe(swift.max * 2)
+    expect(buyPerk(s, 'swift').some((e) => e.type === 'blocked')).toBe(true)
+  })
+
   it('起点精通在下次传承生效（技能起始 Lv3）', () => {
     const s = newGame('T', 0)
     s.meta.prestige.points = 2

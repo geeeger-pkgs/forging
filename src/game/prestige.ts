@@ -4,12 +4,32 @@
 // 结算：精通点 = ⌊总等级 ÷ 10⌋ + 每个满级技能 +1
 // 重置：技能等级/经验（至起点精通加成）、当前动作、队列
 // 保留：材料/装备/金币/成就/任务/队列位/增益
+// v1.9 深造：基础上限后可继续购买（价格 ×2），上限 = 基础上限 ×2
 // ============================================================
 import { CONTENT, MAX_LEVEL, PERK_BY_ID } from './content'
 import { levelInfo, totalLevel, xpForLevel } from './level'
-import type { GameEvent, GameState, SkillId } from './types'
+import type { GameEvent, GameState, PerkDef, SkillId } from './types'
 
 export const PRESTIGE_MIN_LEVEL = CONTENT.config.prestigeUnlockLevel || 120
+
+/** 深造倍率：基础上限 ×2；超出部分的每级成本 ×2 */
+export const PERK_OVERDRIVE_MULT = 2
+export const PERK_OVERDRIVE_COST_MULT = 2
+
+/** 精通上限（含深造） */
+export function perkMaxLevel(def: PerkDef): number {
+  return def.max * PERK_OVERDRIVE_MULT
+}
+
+/** 下一级价格（基础上限内 = cost；深造部分 = cost ×2） */
+export function perkNextCost(def: PerkDef, currentLevel: number): number {
+  return currentLevel < def.max ? def.cost : def.cost * PERK_OVERDRIVE_COST_MULT
+}
+
+/** 已购买的第 level 级（level ≥ 1）当时的成本（退款用） */
+export function perkLevelCost(def: PerkDef, level: number): number {
+  return level <= def.max ? def.cost : def.cost * PERK_OVERDRIVE_COST_MULT
+}
 
 export function prestigeUnlocked(state: GameState): boolean {
   return totalLevel(state.skills) >= PRESTIGE_MIN_LEVEL
@@ -72,11 +92,12 @@ export function buyPerk(state: GameState, perkId: string): GameEvent[] {
   const def = PERK_BY_ID.get(perkId)
   if (!def) return [{ type: 'blocked', reason: '未知精通' }]
   const lv = state.meta.prestige.perks[perkId] ?? 0
-  if (lv >= def.max) return [{ type: 'blocked', reason: '该精通已满级' }]
-  if (state.meta.prestige.points < def.cost) {
-    return [{ type: 'blocked', reason: `精通点不足（需要 ${def.cost}）` }]
+  if (lv >= perkMaxLevel(def)) return [{ type: 'blocked', reason: '该精通已圆满（深造已满）' }]
+  const cost = perkNextCost(def, lv)
+  if (state.meta.prestige.points < cost) {
+    return [{ type: 'blocked', reason: `精通点不足（需要 ${cost}）` }]
   }
-  state.meta.prestige.points -= def.cost
+  state.meta.prestige.points -= cost
   state.meta.prestige.perks[perkId] = lv + 1
   return [{ type: 'perkChanged', perkId }]
 }
@@ -87,6 +108,6 @@ export function refundPerk(state: GameState, perkId: string): GameEvent[] {
   const lv = state.meta.prestige.perks[perkId] ?? 0
   if (lv <= 0) return [{ type: 'blocked', reason: '该精通尚未投入点数' }]
   state.meta.prestige.perks[perkId] = lv - 1
-  state.meta.prestige.points += def.cost
+  state.meta.prestige.points += perkLevelCost(def, lv)
   return [{ type: 'perkChanged', perkId }]
 }

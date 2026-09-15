@@ -1,12 +1,37 @@
 // ============================================================
-// Forging Service Worker（v1.8）
+// Forging Service Worker（v1.9）
 // 策略：应用外壳运行时缓存（stale-while-revalidate）
 //      导航请求：网络优先，离线回退到缓存的 index.html
+// 版本：缓存名取自注册 URL 的 ?v=（每次构建变化）→ 新版本自动清旧缓存
 // ============================================================
-const CACHE = 'forging-v1'
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev'
+const CACHE = `forging-${VERSION}`
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting()
+  e.waitUntil(
+    (async () => {
+      // 首次访问即预缓存外壳与入口资源（解析 index.html 中的 /assets/*）
+      const cache = await caches.open(CACHE)
+      try {
+        const res = await fetch('index.html', { cache: 'no-cache' })
+        if (res.ok) {
+          await cache.put('index.html', res.clone())
+          const html = await res.text()
+          const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1])
+          await Promise.all(
+            assets.map((u) =>
+              fetch(u)
+                .then((r) => (r.ok ? cache.put(u, r.clone()) : undefined))
+                .catch(() => undefined),
+            ),
+          )
+        }
+      } catch {
+        /* 安装时离线：由运行时缓存兜底 */
+      }
+      await self.skipWaiting()
+    })(),
+  )
 })
 
 self.addEventListener('activate', (e) => {

@@ -5,6 +5,7 @@
 // ============================================================
 import { CONTENT, MAX_ENHANCE, RECIPES_BY_ID, SITES_BY_ID, itemDef } from './content'
 import { levelInfo } from './level'
+import { refLabel } from './refs'
 import { systemRng, type Rng } from './rng'
 import { durationOf, enhanceCostFor } from './rules'
 import { simulate } from './settle'
@@ -289,4 +290,24 @@ function deleteLoadout(state: GameState, loadoutId: string): GameEvent[] {
   if (i < 0) return [{ type: 'blocked', reason: '预设不存在' }]
   state.meta.loadouts.splice(i, 1)
   return []
+}
+
+// ---------------- 预设预检（v1.9） ----------------
+
+/** 预设应用前检查：返回每个动作的阻塞原因（空数组 = 全部可执行） */
+export function checkLoadout(state: GameState, loadoutId: string): { label: string; reason: string }[] {
+  const lo = state.meta.loadouts.find((l) => l.id === loadoutId)
+  if (!lo) return [{ label: '预设', reason: '预设不存在' }]
+  const issues: { label: string; reason: string }[] = []
+  const capacity = 1 + state.queueSlots
+  for (let i = 0; i < lo.actions.length; i++) {
+    const a = lo.actions[i]
+    if (i >= capacity) {
+      issues.push({ label: refLabel(a.ref), reason: `超出队容量 ${capacity}，应用时将被截断` })
+      continue
+    }
+    const reason = startBlockReason(state, a.ref)
+    if (reason) issues.push({ label: refLabel(a.ref), reason })
+  }
+  return issues
 }

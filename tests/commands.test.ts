@@ -77,7 +77,7 @@ describe('命令层', () => {
     expect(s.equipment.length).toBe(0)
   })
 
-  it('队列扩容：价格顺序 300 → 1200，金币不足阻塞', () => {
+  it('队列扩容（v1.9 扩展至 6）：价格 300 → 1200 → 5000 → 20000，金币不足阻塞，达上限阻塞', () => {
     const s = newGame('T', 0)
     s.gold = 299
     expect(
@@ -93,6 +93,27 @@ describe('命令层', () => {
     applyCommand(s, { type: 'buyQueueSlot' }, 0)
     expect(s.queueSlots).toBe(3)
     expect(s.gold).toBe(0)
+
+    s.gold = 4999
+    expect(applyCommand(s, { type: 'buyQueueSlot' }, 0).some((e) => e.type === 'blocked')).toBe(true)
+    s.gold = 5000
+    applyCommand(s, { type: 'buyQueueSlot' }, 0)
+    expect(s.queueSlots).toBe(4)
+    expect(s.gold).toBe(0)
+
+    s.gold = 20000
+    applyCommand(s, { type: 'buyQueueSlot' }, 0)
+    expect(s.queueSlots).toBe(5)
+    expect(s.gold).toBe(0)
+
+    s.gold = 59999
+    expect(applyCommand(s, { type: 'buyQueueSlot' }, 0).some((e) => e.type === 'blocked')).toBe(true)
+    s.gold = 60000
+    applyCommand(s, { type: 'buyQueueSlot' }, 0)
+    expect(s.queueSlots).toBe(6) // 达上限
+    expect(
+      applyCommand(s, { type: 'buyQueueSlot' }, 0).some((e) => e.type === 'blocked' && e.reason.includes('没有更多')),
+    ).toBe(true)
   })
 
   it('强化目标校验：等级不匹配时阻塞', () => {
