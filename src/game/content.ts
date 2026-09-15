@@ -363,7 +363,7 @@ export function validateContent(t: ContentTables): string[] {
     if (!(fxd.budget[k] >= 1)) errs.push(`表现预算非法: ${k}`)
   }
   if (!(fxd.budget.frameBudgetMs > 0 && fxd.budget.loopBudgetMs > 0)) errs.push('表现层时间预算非法')
-  if (!fxd.fxLevels.includes(fxd.defaults.fx)) errs.push('默认动效档不在档位列表内')
+  if (fxd.defaults.fx !== 'auto' && !fxd.fxLevels.includes(fxd.defaults.fx)) errs.push('默认动效档不在档位列表内')
   if (!(fxd.defaults.volume >= 0 && fxd.defaults.volume <= 100)) errs.push('默认音量非法')
 
   // 曲线与配置

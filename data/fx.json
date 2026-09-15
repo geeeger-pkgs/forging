@@ -21,16 +21,6 @@
       "gain": 0.45
     },
     {
-      "id": "queueAdvance",
-      "name": "队列接力",
-      "wave": "triangle",
-      "freqs": [
-        294
-      ],
-      "durationMs": 70,
-      "gain": 0.4
-    },
-    {
       "id": "levelUp",
       "name": "技能升级",
       "wave": "sine",
@@ -201,7 +191,7 @@
   "defaults": {
     "sound": true,
     "volume": 60,
-    "fx": "full"
+    "fx": "auto"
   },
   "fxLevels": [
     "full",

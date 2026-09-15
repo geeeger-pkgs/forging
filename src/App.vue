@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { store } from './app/store'
+import { computed, watchEffect } from 'vue'
+import { resolveFxLevel, store } from './app/store'
 import ActionDialog from './ui/components/ActionDialog.vue'
 import ItemDetailModal from './ui/components/ItemDetailModal.vue'
 import MainPanel from './ui/components/MainPanel.vue'
@@ -8,10 +9,17 @@ import OfflineModal from './ui/components/OfflineModal.vue'
 import RightPanel from './ui/components/RightPanel.vue'
 import Toasts from './ui/components/Toasts.vue'
 import TopBar from './ui/components/TopBar.vue'
+/** v2.5：把解析后的动效档位写到根节点，CSS 据此关闭过渡/动画 */
+const fxLevel = computed(() => resolveFxLevel(store.state?.meta?.settings?.fx))
+watchEffect(() => {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.dataset.fx = fxLevel.value
+  }
+})
 </script>
 
 <template>
-  <div class="app">
+  <div class="app" :data-fx="fxLevel">
     <TopBar />
     <div class="body">
       <NavBar />

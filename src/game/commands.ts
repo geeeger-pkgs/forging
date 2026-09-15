@@ -46,7 +46,16 @@ import { openCrate } from './crates'
 import { buyPerk, doPrestige, refundPerk } from './prestige'
 import { rerollTask } from './tasks'
 import { claimTutorial, tutorialProgress } from './tutorial'
-import type { ActionRef, ActiveAction, Command, GameEvent, GameState, ItemId, LoadoutAction } from './types'
+import type {
+  ActionRef,
+  ActiveAction,
+  Command,
+  GameEvent,
+  GameState,
+  ItemId,
+  LoadoutAction,
+  SettingsState,
+} from './types'
 
 /** 壳层便捷入口：先结算已流逝时间，再应用命令 */
 export function dispatch(state: GameState, cmd: Command, now: number, rng?: Rng): GameEvent[] {
@@ -134,7 +143,25 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       upgradeBanner(state, events)
       return events
     }
+    case 'setSettings':
+      return applySettings(state, cmd.patch)
   }
+}
+
+/**
+ * v2.5：表现层设置。非法值被夹紧（volume 0~100、fx 必须在 fxLevels 内）
+ * 而不是拒绝整条命令 —— 滑块/下拉框的越界输入不应打断玩家操作。
+ */
+function applySettings(state: GameState, patch: Partial<SettingsState>): GameEvent[] {
+  const cur: SettingsState = state.meta.settings ?? { ...CONTENT.fx.defaults }
+  const next: SettingsState = { ...cur }
+  if (typeof patch.sound === 'boolean') next.sound = patch.sound
+  if (typeof patch.volume === 'number' && Number.isFinite(patch.volume)) {
+    next.volume = Math.max(0, Math.min(100, Math.round(patch.volume)))
+  }
+  if (patch.fx && (patch.fx === 'auto' || CONTENT.fx.fxLevels.includes(patch.fx))) next.fx = patch.fx
+  state.meta.settings = next
+  return [{ type: 'settingsChanged', settings: { ...next } }]
 }
 
 // ---------------- 动作 ----------------

@@ -15,11 +15,6 @@ const shownQueue = computed(() => queue.value.slice(0, 4))
 const overflow = computed(() => Math.max(0, queue.value.length - 4))
 const tl = computed(() => totalLevel(store.state.skills))
 const tv = computed(() => totalValue(store.state))
-const remainSec = computed(() => {
-  const c = cur.value
-  if (!c) return ''
-  return ((Math.max(0, c.startedAt + c.durationMs - store.now)) / 1000).toFixed(1) + 's'
-})
 
 const buffs = computed(() =>
   activeBuffs(store.state, store.now).map((b) => {
@@ -44,8 +39,8 @@ const buffs = computed(() =>
       <div v-if="cur" class="current">
         <span class="label">{{ refLabel(cur.ref) }}</span>
         <span v-if="cur.remaining !== null" class="count">×{{ cur.remaining }}</span>
+        <!-- v2.5：剩余时间由进度条自带（0.1s 粒度，短动作也能看清倒数） -->
         <ProgressBar :started-at="cur.startedAt" :duration-ms="cur.durationMs" />
-        <span class="time">{{ remainSec }}</span>
         <button class="btn danger sm" @click="cmd({ type: 'stopAction' })">停止</button>
       </div>
       <div v-else class="idle">无所事事……</div>

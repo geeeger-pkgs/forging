@@ -7,6 +7,10 @@ import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
+import { audioStatus, installGestureUnlock, playCue, setAudioEnabled, setAudioVolume } from '../ui/audio'
+import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus, setLiveCounts } from '../ui/fx-probe'
+import { resolveFx, resolveFxLevel } from '../ui/fx-map'
+import { emitScene } from './scene-bus'
 import { regenStamina } from '../game/abyss'
 import { checkCodexMilestones } from '../game/codex'
 import { checkSeason, refreshSeason } from '../game/season'
@@ -20,19 +24,14 @@ import { newGame } from '../game/state'
 import { checkTasks, refreshTasks } from '../game/tasks'
 import type { ForgeCategory } from '../ui/types'
 import { exportSave, loadGame, saveGame } from './persist'
-import type {
-  ActionRef,
-  Command,
-  GameEvent,
-  GameState,
-  OfflineSummary,
-  SkillId,
-} from '../game/types'
+import type { ActionRef, Command, GameEvent, GameState, OfflineSummary, SkillId } from '../game/types'
 
 export interface Toast {
   id: number
   text: string
   kind: 'info' | 'good' | 'bad'
+  /** v2.5：相同文案合并计数（避免批量事件刷屏），≥2 时界面显示 ×N */
+  count?: number
 }
 
 /** 主面板视图：四技能 + 传承 + 任务 + 商店 + 成就 + 设置 */
@@ -85,17 +84,88 @@ function clearUnread(): void {
 // ---------------- 事件 → 提示 ----------------
 
 let toastSeq = 0
+/** 同一轮事件内相同文案只保留一条（v2.5：批量收获/强化连发不再刷屏） */
+const TOAST_TTL_MS = 3200
+const timers = new Map<number, number>()
 
 function pushToast(text: string, kind: Toast['kind']): void {
+  const last = store.toasts[store.toasts.length - 1]
+  if (last && last.text === text && last.kind === kind) {
+    last.count = (last.count ?? 1) + 1
+    const t = timers.get(last.id)
+    if (t !== undefined) window.clearTimeout(t)
+    timers.set(
+      last.id,
+      window.setTimeout(() => removeToast(last.id), TOAST_TTL_MS),
+    )
+    return
+  }
   const id = ++toastSeq
   store.toasts.push({ id, text, kind })
-  window.setTimeout(() => {
-    const i = store.toasts.findIndex((t) => t.id === id)
-    if (i >= 0) store.toasts.splice(i, 1)
-  }, 3200)
+  // 最多同时 4 条：超出时挤掉最旧，保证提示区不遮挡主面板
+  while (store.toasts.length > 4) removeToast(store.toasts[0].id)
+  timers.set(
+    id,
+    window.setTimeout(() => removeToast(id), TOAST_TTL_MS),
+  )
+}
+
+function removeToast(id: number): void {
+  const t = timers.get(id)
+  if (t !== undefined) {
+    window.clearTimeout(t)
+    timers.delete(id)
+  }
+  const i = store.toasts.findIndex((x) => x.id === id)
+  if (i >= 0) store.toasts.splice(i, 1)
+}
+
+/** 飘字承载的是**冗余**信息（侧栏/经验条/金币栏本就可读），故 off 档只关表现、不关信息 */
+const RARE_CATEGORIES = new Set(['essence', 'crate', 'reagent', 'relic'])
+
+/**
+ * 动效档位解析的实现已移入纯模块 `ui/fx-map.ts`（node 可测）；
+ * 此处再导出，既有 `import { resolveFxLevel } from '../app/store'` 的组件无需改动。
+ */
+export { resolveFxLevel }
+
+/**
+ * 表现层分发（v2.5）：事件交给纯映射模块 → 音效 / 场景总线 / 飘字。
+ * 与 toast 相互独立：动效档位不影响 toast（关键信息永不丢失，设计 §2.5）。
+ */
+function dispatchFx(events: GameEvent[]): void {
+  const t0 = Date.now()
+  const level = resolveFxLevel(store.state.meta.settings?.fx)
+  if (level !== 'off') {
+    for (const e of events) {
+      const plan = resolveFx(e, {
+        itemName: (id) => CONTENT.items[id]?.name ?? id,
+        isRare: (id) => RARE_CATEGORIES.has(CONTENT.items[id]?.category ?? ''),
+        skillName: (id) => skillName(id as SkillId),
+      })
+      if (!plan) continue
+      if (plan.cue) {
+        playCue(plan.cue)
+        noteCue(plan.cue)
+      }
+      if (plan.burst && level === 'full' && requestBurst()) emitScene({ kind: 'burst', burst: plan.burst })
+      if (plan.ring) emitScene({ kind: 'ring' })
+      if (plan.popup) emitScene({ kind: 'popup', text: plan.popup.text, popupKind: plan.popup.kind })
+    }
+  }
+  recordTick(Date.now() - t0)
+  setLiveCounts(0, 0)
 }
 
 function handleEvents(events: GameEvent[]): void {
+  // 设置先同步到音频引擎（与动效档位无关：音效与特效是两个独立开关）
+  for (const e of events) {
+    if (e.type === 'settingsChanged') {
+      setAudioEnabled(e.settings.sound)
+      setAudioVolume(e.settings.volume)
+    }
+  }
+  dispatchFx(events)
   for (const e of events) {
     switch (e.type) {
       case 'levelUp':
@@ -271,6 +341,9 @@ export function boot(): void {
   checkCodexMilestones(state)
   // ④ 自动回收清扫（含离线期间产出）
   sweepAutoRecycle(state)
+  installFxProbe()
+  attachAudioStatus(audioStatus)
+  installGestureUnlock()
   store.summary = summary
   if (summary) {
     for (const n of summary.notes) pushToast(n, 'info')

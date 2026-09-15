@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { store } from '../../app/store'
+
+/** 类别图标：色觉障碍玩家也能区分（不依赖颜色单通道） */
+const ICON: Record<string, string> = { info: '•', good: '✔', bad: '✖' }
 </script>
 
 <template>
-  <div class="toasts">
-    <div v-for="t in store.toasts" :key="t.id" class="toast" :class="t.kind">{{ t.text }}</div>
+  <div class="toasts" role="status" aria-live="polite">
+    <TransitionGroup name="toast">
+      <div v-for="t in store.toasts" :key="t.id" class="toast" :class="t.kind">
+        <span class="ico" aria-hidden="true">{{ ICON[t.kind] }}</span>
+        <span class="txt">{{ t.text }}</span>
+        <span v-if="(t.count ?? 1) > 1" class="count">×{{ t.count }}</span>
+      </div>
+    </TransitionGroup>
   </div>
 </template>
 
@@ -20,6 +29,9 @@ import { store } from '../../app/store'
   pointer-events: none;
 }
 .toast {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   background: var(--c-panel);
   border: 1px solid var(--c-border);
   border-left: 3px solid var(--c-accent-2);
@@ -34,5 +46,46 @@ import { store } from '../../app/store'
 }
 .toast.bad {
   border-left-color: var(--c-danger);
+}
+.ico {
+  font-size: 12px;
+  line-height: 1;
+}
+.toast.good .ico {
+  color: var(--c-success);
+}
+.toast.bad .ico {
+  color: var(--c-danger);
+}
+.txt {
+  flex: 1;
+}
+.count {
+  color: var(--c-text-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+/* 滑入：位移很小（≤10px），在 375px 窄屏上不引起横向溢出 */
+.toast-enter-active {
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+.toast-leave-active {
+  transition: opacity 0.24s ease-in;
+  position: absolute;
+  right: 0;
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.toast-leave-to {
+  opacity: 0;
+}
+/* 兜底：动效关闭档位下不做任何过渡（JS 档位 + 系统偏好双保险在 theme.css） */
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter-active,
+  .toast-leave-active {
+    transition: none;
+  }
 }
 </style>

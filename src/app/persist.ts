@@ -4,7 +4,7 @@
 import { perfectAffixCount, rollAffixes } from '../game/affixes'
 import { checkCodexBackfill } from '../game/codex'
 import { CONTENT } from '../game/content'
-import type { EquipInstance, GameState } from '../game/types'
+import type { EquipInstance, FxLevel, FxSetting, GameState, SettingsState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
@@ -201,6 +201,23 @@ function migrate(s: GameState): GameState {
 }
 
 /**
+ * 设置消毒（幂等，v2.5）：缺字段补默认、非法档位回落 auto、音量夹紧到 0~100。
+ * 与 commands.applySettings 同规则 —— 界面与存档两条入口都必须收敛到同一合法域。
+ */
+export function sanitizeSettings(raw: unknown): SettingsState {
+  const d = CONTENT.fx.defaults
+  const o = (raw ?? {}) as Partial<SettingsState>
+  const fx: FxSetting =
+    o.fx === 'auto' || (typeof o.fx === 'string' && CONTENT.fx.fxLevels.includes(o.fx as FxLevel)) ? (o.fx as FxSetting) : d.fx
+  const vol = typeof o.volume === 'number' && Number.isFinite(o.volume) ? Math.round(o.volume) : d.volume
+  return {
+    sound: typeof o.sound === 'boolean' ? o.sound : d.sound,
+    volume: Math.max(0, Math.min(100, vol)),
+    fx,
+  }
+}
+
+/**
  * 载入兜底（幂等）：补齐"技术上已是当前版本、但缺字段"的存档。
  * v2.1 测评 m5：v8 档若缺 affixSalt，旧实现静默回落 0 → 造装词缀可被外部预计算，此处补齐。
  */
@@ -214,7 +231,8 @@ function ensureFields(s: GameState): GameState {
   }
   if (!out.companions) out = { ...out, companions: {} }
   if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
-  if (!out.meta.settings) out = { ...out, meta: { ...out.meta, settings: { ...CONTENT.fx.defaults } } }
+  // v2.5：设置补齐 + 非法值消毒（手改存档/跨版本导入都不应让界面进入未定义档位）
+  out = { ...out, meta: { ...out.meta, settings: sanitizeSettings(out.meta.settings) } }
   if (!out.abyss) {
     out = {
       ...out,
@@ -235,23 +253,32 @@ function ensureFields(s: GameState): GameState {
   return out
 }
 
+/**
+ * 纯函数反序列化（v2.5）：JSON 文本 → GameState（含校验/迁移/补字段/图鉴回填）。
+ * 从 loadGame 与 importSaveFile 抽出来，使"迁移链 + 消毒"能在 node 测试里直接断言，
+ * 而不是只能靠 localStorage/File 的桩（测试可读性 ↑，也避免两份逻辑漂移）。
+ */
+export function deserializeSave(raw: string): GameState | null {
+  try {
+    const data = JSON.parse(raw) as unknown
+    if (!isValidSave(data)) return null
+    // 拒绝高于当前版本的存档（防止旧客户端破坏新档）
+    if ((data as GameState).version > SAVE_VERSION) return null
+    const state = ensureFields(migrate(data as GameState))
+    checkCodexBackfill(state)
+    return state
+  } catch {
+    return null
+  }
+}
+
 /** 载入（主槽 → 备份槽，均失败返回 null） */
 export function loadGame(): GameState | null {
   for (const key of [SAVE_KEY, BAK_KEY]) {
     const raw = localStorage.getItem(key)
     if (!raw) continue
-    try {
-      const data = JSON.parse(raw)
-      if (isValidSave(data)) {
-        // 拒绝高于当前版本的存档（防止旧客户端破坏新档）
-        if (data.version > SAVE_VERSION) continue
-        const state = ensureFields(migrate(data))
-    checkCodexBackfill(state)
-    return state
-      }
-    } catch {
-      // 尝试下一槽位
-    }
+    const state = deserializeSave(raw)
+    if (state) return state
   }
   return null
 }
@@ -270,10 +297,7 @@ export function exportSave(state: GameState): void {
 
 export async function importSaveFile(file: File): Promise<GameState | null> {
   try {
-    const text = await file.text()
-    const data = JSON.parse(text)
-    if (!isValidSave(data)) return null
-    return ensureFields(migrate(data))
+    return deserializeSave(await file.text())
   } catch {
     return null
   }

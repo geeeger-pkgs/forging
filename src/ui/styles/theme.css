@@ -53,6 +53,11 @@ body {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* v2.5：按压反馈（手感）—— 只做 1px 位移，不给低端机造成重排 */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  border-color: var(--c-accent);
+}
 .btn.sm {
   padding: 2px 8px;
   font-size: 12px;
@@ -109,5 +114,33 @@ body {
 }
 .dialog .bad {
   color: var(--c-danger);
+}
+
+/* ============================================================
+   v2.5 动效降级（设计 §2.5）
+   档位由 App.vue 写到 <html data-fx>：
+     full    —— 默认，全部表现
+     reduced —— 关闭位移/缩放类动画，保留透明度过渡（信息不丢）
+     off     —— 关闭所有 CSS 过渡与动画（画布粒子/飘字另由 JS 短路）
+   系统「减少动态效果」偏好作为**兜底**同样生效：即使 JS 档位为 full，
+   用户系统偏好仍优先（选择器对 data-fx="full" 也匹配）。
+   ============================================================ */
+html[data-fx='reduced'] *,
+html[data-fx='off'] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+html[data-fx='off'] .toast,
+html[data-fx='off'] .popup,
+html[data-fx='off'] .ring {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 

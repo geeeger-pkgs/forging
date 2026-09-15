@@ -1,0 +1,82 @@
+{
+  "version": "2.5.0",
+  "E1": {
+    "count": 16,
+    "ids": [
+      "actionStart",
+      "actionComplete",
+      "levelUp",
+      "prestige",
+      "seasonLevel",
+      "enhanceSuccess",
+      "enhanceFail",
+      "enhanceGuarded",
+      "crateOpen",
+      "rareDrop",
+      "lootBig",
+      "taskComplete",
+      "achievement",
+      "abyssClear",
+      "purchase",
+      "blocked"
+    ],
+    "pass": true
+  },
+  "E2": {
+    "gameEventCount": 35,
+    "pass": true
+  },
+  "E3": {
+    "usedCues": [
+      "abyssClear",
+      "achievement",
+      "actionComplete",
+      "actionStart",
+      "blocked",
+      "crateOpen",
+      "enhanceFail",
+      "enhanceGuarded",
+      "enhanceSuccess",
+      "levelUp",
+      "lootBig",
+      "prestige",
+      "purchase",
+      "rareDrop",
+      "seasonLevel",
+      "taskComplete"
+    ],
+    "unusedCues": [],
+    "unknown": [],
+    "pass": true
+  },
+  "E4": {
+    "budget": {
+      "maxParticles": 260,
+      "maxBurstParticles": 60,
+      "maxBurstsPerSecond": 4,
+      "maxPopups": 6,
+      "frameBudgetMs": 1.5,
+      "loopBudgetMs": 0.5,
+      "maxConcurrentVoices": 8
+    },
+    "pass": true
+  },
+  "E5": {
+    "media": [],
+    "pass": true
+  },
+  "E6": {
+    "defaults": {
+      "sound": true,
+      "volume": 60,
+      "fx": "auto"
+    },
+    "fxLevels": [
+      "full",
+      "reduced",
+      "off"
+    ],
+    "pass": true
+  },
+  "fails": []
+}

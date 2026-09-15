@@ -421,7 +421,10 @@ export interface AbyssState {
 
 // ---------- 视听与手感（v2.5） ----------
 
+/** 实际生效的动效档位 */
 export type FxLevel = 'full' | 'reduced' | 'off'
+/** 玩家可选档位：auto 表示跟随系统「减少动态效果」偏好（壳层解析为 FxLevel） */
+export type FxSetting = 'auto' | FxLevel
 
 export interface FxCueDef {
   id: string
@@ -445,7 +448,7 @@ export interface FxBudgetDef {
 export interface FxDef {
   cues: FxCueDef[]
   budget: FxBudgetDef
-  defaults: { sound: boolean; volume: number; fx: FxLevel }
+  defaults: { sound: boolean; volume: number; fx: FxSetting }
   fxLevels: FxLevel[]
 }
 
@@ -454,7 +457,7 @@ export interface SettingsState {
   sound: boolean
   /** 0~100 */
   volume: number
-  fx: FxLevel
+  fx: FxSetting
 }
 
 // ---------- 图鉴与赛季（v2.3） ----------
@@ -849,6 +852,8 @@ export type Command =
   | { type: 'challengeAbyss' }
   | { type: 'sweepAbyss' }
   | { type: 'buyAbyssItem'; itemId: string }
+  /** v2.5：设置（音效 / 音量 / 特效档位）—— 只写 meta.settings，不触碰任何数值 */
+  | { type: 'setSettings'; patch: Partial<SettingsState> }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -868,10 +873,6 @@ export type GameEvent =
   | { type: 'companionLevelUp'; name: string; level: number }
   | { type: 'traitRerolled'; name: string; trait: string }
   | { type: 'bannerUpgraded'; level: number }
-  /** v2.4：深渊 */
-  | { type: 'challengeAbyss' }
-  | { type: 'sweepAbyss' }
-  | { type: 'buyAbyssItem'; itemId: string }
   | { type: 'codexMilestone'; pct: number; gold: number }
   | { type: 'seasonLevelUp'; level: number }
   | { type: 'seasonRotated'; index: number }
@@ -889,6 +890,8 @@ export type GameEvent =
   | { type: 'perkChanged'; perkId: string }
   | { type: 'loadoutApplied'; name: string }
   | { type: 'goldGained'; amount: number }
+  /** v2.5：设置已写入（壳层据此同步音频引擎与特效档位） */
+  | { type: 'settingsChanged'; settings: SettingsState }
   /** v2.1：非阻塞提示（如消耗了高词缀装备） */
   | { type: 'notice'; text: string }
   | { type: 'blocked'; reason: string }

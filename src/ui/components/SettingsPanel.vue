@@ -1,15 +1,62 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { cmd, exportCurrent, store } from '../../app/store'
+import { cmd, exportCurrent, resolveFxLevel, store } from '../../app/store'
 import { clearSave, importSaveFile, saveGame } from '../../app/persist'
 import { checkLoadout } from '../../game/commands'
 import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
+import { audioStatus, playCue, unlockAudio } from '../../ui/audio'
+import type { FxLevel } from '../../game/types'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const message = ref('')
 const loadoutName = ref('')
 const appVersion = __APP_VERSION__
+/** 音频引擎状态（未就绪时给玩家一句解释，而不是静默无声） */
+const audioTick = ref(0)
+
+const settings = computed(() => store.state.meta.settings ?? { ...CONTENT.fx.defaults })
+
+/** auto 档实际解析成什么（供界面显示 "自动（当前：简化）"） */
+const autoResolved = computed(() => resolveFxLevel('auto'))
+
+const audioText = computed(() => {
+  void audioTick.value
+  const s = audioStatus()
+  if (!settings.value.sound) return '已关闭'
+  if (s.ready) return '已就绪'
+  return '待首次点击/按键后启用（浏览器自动播放限制）'
+})
+
+function refreshAudio(): void {
+  audioTick.value += 1
+}
+
+function toggleSound(e: Event): void {
+  const on = (e.target as HTMLInputElement).checked
+  cmd({ type: 'setSettings', patch: { sound: on } })
+  if (on) {
+    unlockAudio()
+    refreshAudio()
+  }
+}
+
+function setVolume(e: Event): void {
+  const v = Number((e.target as HTMLInputElement).value)
+  cmd({ type: 'setSettings', patch: { volume: v } })
+}
+
+function setFx(e: Event): void {
+  const v = (e.target as HTMLSelectElement).value as FxLevel
+  cmd({ type: 'setSettings', patch: { fx: v } })
+}
+
+/** 试听：同时触发一次真实手势解锁，避免"点了没声"的困惑 */
+function preview(): void {
+  unlockAudio()
+  playCue('levelUp')
+  refreshAudio()
+}
 
 /** 预设预检（v1.9）：应用前展示每个动作的阻塞原因 */
 const loadoutIssues = computed(() => {
@@ -145,9 +192,57 @@ function onClear(): void {
     </section>
 
     <section class="card">
+      <h3>视听与手感</h3>
+      <p class="dim">
+        音效为程序化合成（零外部资源，不增加加载体积）；所有动效都可在「特效」档位一键关闭，
+        不影响任何数值与信息（关键提示始终以文字给出）。
+      </p>
+      <div class="opt-row">
+        <label class="opt">
+          <input type="checkbox" :checked="settings.sound" @change="toggleSound" />
+          <span>音效</span>
+        </label>
+        <span class="dim status">{{ audioText }}</span>
+      </div>
+      <div class="opt-row">
+        <label class="opt" for="vol">
+          <span>音量</span>
+        </label>
+        <input
+          id="vol"
+          class="slider"
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          :value="settings.volume"
+          :disabled="!settings.sound"
+          @input="setVolume"
+        />
+        <span class="dim">{{ settings.volume }}</span>
+        <button class="btn sm" :disabled="!settings.sound" @click="preview">试听</button>
+      </div>
+      <div class="opt-row">
+        <label class="opt" for="fxl">
+          <span>特效</span>
+        </label>
+        <select id="fxl" class="select" :value="settings.fx" @change="setFx">
+          <option value="auto">自动（跟随系统减少动效：{{ autoResolved === 'reduced' ? '简化' : '完整' }}）</option>
+          <option value="full">完整（全部粒子与飘字）</option>
+          <option value="reduced">简化（关闭粒子爆发与光环）</option>
+          <option value="off">关闭（无任何动效与音效表现）</option>
+        </select>
+      </div>
+      <p class="dim">
+        说明：「关闭」档仍会保留顶部提示条与飘字以外的全部文字信息；系统开启「减少动态效果」时，
+        「自动」档会退化为「简化」。
+      </p>
+    </section>
+
+    <section class="card">
       <h3>关于</h3>
       <p class="dim">
-        Forging v2.4 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 词缀 / 远征 / 图鉴与赛季 / 深渊回廊 / 传承）<br />
+        Forging v2.5 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 词缀 / 远征 / 图鉴与赛季 / 深渊回廊 / 传承 / 视听）<br />
         参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。<br />
         构建：{{ appVersion }}
       </p>
@@ -239,5 +334,47 @@ function onClear(): void {
 }
 .spacer {
   flex: 1;
+}
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 62px;
+  cursor: pointer;
+}
+.opt input[type='checkbox'] {
+  accent-color: var(--c-accent, #d9a441);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+.status {
+  margin: 0;
+}
+.slider {
+  flex: 0 1 180px;
+  accent-color: var(--c-accent, #d9a441);
+  cursor: pointer;
+}
+.slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.select {
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
 }
 </style>

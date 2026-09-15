@@ -184,7 +184,8 @@ export function playCue(id: string, opts: { gain?: number; detune?: number } = {
         osc.stop(end)
       }
     })
-    window.setTimeout(() => {
+    // 用 globalThis 而非 window：node 测试环境无 window（否则计时器不落地、active 只增不减）
+    globalThis.setTimeout(() => {
       state.active = Math.max(0, state.active - 1)
     }, cue.durationMs + 20)
     return true
