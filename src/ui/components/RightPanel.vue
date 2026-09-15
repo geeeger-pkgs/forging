@@ -321,4 +321,18 @@ h4 {
 .spacer {
   flex: 1;
 }
+
+/* v1.8：窄屏纵向堆叠 */
+@media (max-width: 900px) {
+  .right {
+    width: auto;
+    min-width: 0;
+    border-left: none;
+    border-top: 1px solid var(--c-border);
+    overflow-y: visible;
+  }
+  .slots {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
 </style>

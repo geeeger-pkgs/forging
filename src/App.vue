@@ -34,4 +34,12 @@ import TopBar from './ui/components/TopBar.vue'
   flex: 1;
   min-height: 0;
 }
+
+/* v1.8：窄屏（移动端/小窗口）纵向堆叠 */
+@media (max-width: 900px) {
+  .body {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+}
 </style>

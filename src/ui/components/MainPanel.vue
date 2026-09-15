@@ -189,4 +189,19 @@ h2 {
 .search-inline {
   margin: 0 0 0 auto;
 }
+
+/* v1.8：窄屏适配 */
+@media (max-width: 900px) {
+  .main {
+    padding: 10px 12px;
+  }
+  .tabs {
+    flex-wrap: wrap;
+  }
+  .search,
+  .search-inline {
+    width: 100%;
+    margin: 0 0 8px;
+  }
+}
 </style>

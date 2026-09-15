@@ -160,4 +160,35 @@ function claim(): void {
 .t-progress {
   color: var(--c-text-dim);
 }
+
+/* v1.8：窄屏横向滚动条 */
+@media (max-width: 900px) {
+  .nav {
+    width: auto;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--c-border);
+    overflow-y: visible;
+    max-height: none;
+  }
+  .item {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+  }
+  .xpbar {
+    display: none;
+  }
+  .tools {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+    flex-direction: row;
+  }
+  .tutorial {
+    margin-top: 0;
+    flex: 1 1 100%;
+  }
+}
 </style>

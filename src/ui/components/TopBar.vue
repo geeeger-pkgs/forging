@@ -152,4 +152,21 @@ const buffs = computed(() =>
   color: var(--c-text-dim);
   font-size: 12px;
 }
+
+/* v1.8：窄屏换行布局 */
+@media (max-width: 900px) {
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 12px;
+  }
+  .left,
+  .right {
+    min-width: 0;
+  }
+  .center {
+    order: 3;
+    flex: 1 1 100%;
+  }
+}
 </style>
