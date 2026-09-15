@@ -192,6 +192,8 @@ export interface ActiveAction {
   startedAt: number
   /** 当前轮次耗时快照（ms；换装在下一轮生效） */
   durationMs: number
+  /** 效率保底计数器（连续未触发次数；随存档持久化） */
+  procMisses: number
 }
 
 /** 离线小数结转（仅材料类整数发放需要） */
