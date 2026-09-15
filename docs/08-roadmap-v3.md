@@ -65,6 +65,6 @@
 | v2.1 | ✅ 完成 | 145 测试全绿 ｜ typecheck ｜ build（gzip JS 66.0KB）｜ 实机烟测（主 + 边界 + 窄屏）｜ sim-affixes 证据齐全 | docs/review-v2.1.md |
 | v2.2 | ✅ 完成（测评 7.7 → 处置后达标） | 180 测试全绿 ｜ typecheck ｜ build（gzip JS 73.96KB）｜ 实机烟测（主 + 边界 + 窄屏）｜ sim-expedition 证据与实现逐项对齐 | docs/review-v2.2.md |
 | v2.3 | ✅ 完成（测评 7.7 → 处置后达标） | 211 测试全绿 ｜ typecheck ｜ build（gzip JS 79.40KB）｜ 实机烟测（桌面 + 390px 无溢出）｜ sim-season JSON 机器校验 | docs/review-v2.3.md |
-| v2.4 | 进行中 | — | — |
-| v2.5 | 未开始 | — | — |
+| v2.4 | ✅ 完成（测评 7.6 → 处置后达标，Blocker 0） | 245 测试全绿 ｜ typecheck ｜ build（gzip JS 84.5KB）｜ 实机烟测（桌面 + 窄屏）｜ sim-abyss JSON 机器校验 | docs/review-v2.4.md |
+| v2.5 | 进行中 | — | — |
 | v3.0 | 未开始 | — | — |
