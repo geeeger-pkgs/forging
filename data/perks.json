@@ -1,0 +1,8 @@
+[
+  { "id": "swift", "name": "迅捷精通", "desc": "全技能速度 +1.5%", "effect": "speed", "perPoint": 0.015, "max": 20, "cost": 1 },
+  { "id": "wisdom", "name": "智慧精通", "desc": "经验加成 +3%", "effect": "wisdom", "perPoint": 0.03, "max": 15, "cost": 1 },
+  { "id": "bounty", "name": "富饶精通", "desc": "效率 +1%", "effect": "efficiency", "perPoint": 0.01, "max": 15, "cost": 1 },
+  { "id": "insight", "name": "洞察精通", "desc": "稀有掉落 +2%", "effect": "rareFind", "perPoint": 0.02, "max": 10, "cost": 1 },
+  { "id": "offline", "name": "离线精通", "desc": "离线上限 +1 小时", "effect": "offlineHours", "perPoint": 1, "max": 8, "cost": 1 },
+  { "id": "headstart", "name": "起点精通", "desc": "传承后技能起始等级 +2", "effect": "startLevel", "perPoint": 2, "max": 5, "cost": 2 }
+]

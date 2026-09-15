@@ -8,6 +8,7 @@ import type { ActionCard } from '../types'
 import AchievementsPanel from './AchievementsPanel.vue'
 import ActionGrid from './ActionGrid.vue'
 import EnhancePanel from './EnhancePanel.vue'
+import PrestigePanel from './PrestigePanel.vue'
 import SceneCanvas from './SceneCanvas.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import ShopPanel from './ShopPanel.vue'
@@ -15,6 +16,7 @@ import TasksPanel from './TasksPanel.vue'
 
 const view = computed(() => store.ui.view)
 const title = computed(() => {
+  if (view.value === 'prestige') return '传承'
   if (view.value === 'tasks') return '任务'
   if (view.value === 'shop') return '商店'
   if (view.value === 'achievements') return '成就'
@@ -116,6 +118,10 @@ function pick(card: ActionCard): void {
 
     <template v-else-if="view === 'enhancing'">
       <EnhancePanel />
+    </template>
+
+    <template v-else-if="view === 'prestige'">
+      <PrestigePanel />
     </template>
 
     <template v-else-if="view === 'tasks'">

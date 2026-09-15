@@ -48,3 +48,10 @@ export function totalLevel(skills: Record<SkillId, number>): number {
   for (const id of Object.keys(skills) as SkillId[]) sum += levelInfo(skills[id]).level
   return sum
 }
+
+/** 升到指定等级所需的累计 XP（v1.5：传承起点等级用） */
+export function xpForLevel(level: number): number {
+  let sum = 0
+  for (let l = 1; l < level; l++) sum += xpToNext(l)
+  return sum
+}

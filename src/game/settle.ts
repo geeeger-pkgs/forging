@@ -7,6 +7,7 @@
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
 import { buffBonuses } from './buffs'
+import { perkBonuses } from './prestige'
 import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
 import { levelInfo } from './level'
 import { randInt, systemRng, type Rng } from './rng'
@@ -121,8 +122,11 @@ function applyRewards(
   const agg = aggregateEquipment(state)
   // v1.4：在线模式叠加符文增益（离线结算期间 buffs 被临时清空 → 自动为 0）
   const buff = buffBonuses(state, Date.now())
-  const eff = agg.efficiency + buff.efficiency
-  const rare = agg.rareFind + buff.rareFind
+  // v1.5：精通加成（永久，离线同样生效）
+  const perk = perkBonuses(state)
+  const eff = agg.efficiency + buff.efficiency + perk.efficiency
+  const rare = agg.rareFind + buff.rareFind + perk.rareFind
+  const wisdom = agg.wisdom + perk.wisdom
 
   if (ref.kind === 'mine') {
     state.stats.totalMines += 1
@@ -138,7 +142,7 @@ function applyRewards(
       events.push(...tutorialProgress(state, 'mineItem', Math.floor(expected), { itemId }))
     }
     grantRareDrops(state, rareDropsOf(ref), rare, mode, rng, events)
-    const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + eff : 1)
+    const xpMul = (1 + wisdom) * (mode === 'expectation' ? 1 + eff : 1)
     grantXp(state, 'mining', xpOf(ref) * xpMul, events)
     events.push(...tutorialCheckTotalLevel(state))
     return true
@@ -176,7 +180,7 @@ function applyRewards(
     }
   }
   grantRareDrops(state, recipe.rareDrops, rare, mode, rng, events)
-  const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + eff : 1)
+  const xpMul = (1 + wisdom) * (mode === 'expectation' ? 1 + eff : 1)
   grantXp(state, recipe.skill, xpOf(ref) * xpMul, events)
   state.stats.totalCrafts += 1
   if (recipe.skill === 'smelting') state.stats.totalSmelts += 1

@@ -3,6 +3,7 @@
 // 规则：cap 8h；复用结算内核；强化不参与；材料不足停止；回线摘要
 // ============================================================
 import { CONTENT } from './content'
+import { perkBonuses } from './prestige'
 import { simulate } from './settle'
 import type { ActionRef, GameEvent, GameState, OfflineSummary, SkillId } from './types'
 
@@ -19,10 +20,12 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
     return null
   }
 
-  const capMs = CONTENT.config.offlineCapHours * 3_600_000
+  // v1.5：离线上限 = 基础 8h + 离线精通加成
+  const capHours = CONTENT.config.offlineCapHours + perkBonuses(state).offlineHours
+  const capMs = capHours * 3_600_000
   const counted = Math.min(elapsed, capMs)
   const notes: string[] = []
-  if (counted < elapsed) notes.push(`离线时长超过 ${CONTENT.config.offlineCapHours} 小时上限，超出部分未结算`)
+  if (counted < elapsed) notes.push(`离线时长超过 ${capHours} 小时上限，超出部分未结算`)
 
   // 强化不参与离线：跳过当前/队列中的强化动作
   const cur = state.actions.current

@@ -1,9 +1,8 @@
 // ============================================================
-// Forging · 内核类型契约（M1 接口冻结稿；v1.2 迭代中）
+// Forging · 内核类型契约（v1.5）
 // 规则：
 //   - 本文件是【内核线（src/game）】与【壳线（src/app、src/ui）】唯一接口
 //   - 内核纯函数：无 DOM、无 Vue、可单测、可序列化
-//   - M1 出口后破坏性变更须评审（docs/03-tech-design-v0.1.md §2）
 // ============================================================
 
 // ---------- 基础枚举 ----------
@@ -26,7 +25,7 @@ export type ItemCategory =
   | 'jewelry'
   | 'rune'
 
-/** 装备槽位（设计 §8；v1.3 起扩展至 10 槽：+ 项链/戒指） */
+/** 装备槽位（v1.3 起 10 槽：含项链/戒指） */
 export type SlotId =
   | 'pick'
   | 'crucible'
@@ -62,7 +61,7 @@ export interface ItemDef {
   /** 材料类（煤/精华/小箱）无档位 */
   tier?: Tier
   category: ItemCategory
-  /** tool / weapon / armor 才有 */
+  /** tool / weapon / armor / jewelry 才有 */
   slot?: SlotId
   /** 缺省项视为 0 */
   stats?: Partial<ItemStats>
@@ -93,7 +92,7 @@ export interface OreSiteDef {
   rareDrops: RareDrop[]
 }
 
-/** 配方（熔炼 / 锻造） */
+/** 配方（熔炼 / 锻造 / 符文） */
 export interface RecipeDef {
   id: string
   name: string
@@ -157,6 +156,8 @@ export interface ConfigDef {
   coalMineUnlock: number
   defaultQueueSlots: number
   maxQueueSlots: number
+  /** v1.5：传承解锁总等级 */
+  prestigeUnlockLevel: number
 }
 
 export interface SkillDef {
@@ -165,7 +166,7 @@ export interface SkillDef {
   maxLevel: number
 }
 
-// ---------- 成就（v1.1） ----------
+// ---------- 成就 ----------
 
 export type AchievementType =
   | 'stat'
@@ -188,7 +189,7 @@ export interface AchievementDef {
   name: string
   desc: string
   type: AchievementType
-  /** type=stat：计数器名（totalMines / totalCrafts / totalEnhances） */
+  /** type=stat：计数器名 */
   stat?: string
   /** type=skillLevel：目标技能 */
   skill?: SkillId
@@ -203,7 +204,7 @@ export interface AchievementFlags {
   unlocked: string[]
 }
 
-// ---------- 任务（v1.2） ----------
+// ---------- 任务 ----------
 
 export type TaskCounter =
   | 'totalMines'
@@ -268,7 +269,7 @@ export interface TaskState {
   weekly: TaskSlot | null
 }
 
-// ---------- 符文增益（v1.4） ----------
+// ---------- 符文增益 ----------
 
 export type RuneEffect = 'speed' | 'efficiency' | 'rareFind' | 'enhanceRate'
 
@@ -286,6 +287,29 @@ export interface BuffSlot {
   until: number
 }
 
+// ---------- 精通（v1.5 转生系统） ----------
+
+export type PerkEffect = 'speed' | 'wisdom' | 'efficiency' | 'rareFind' | 'offlineHours' | 'startLevel'
+
+export interface PerkDef {
+  id: string
+  name: string
+  desc: string
+  effect: PerkEffect
+  /** 每点效果增量 */
+  perPoint: number
+  max: number
+  /** 每点消耗精通点 */
+  cost: number
+}
+
+export interface PrestigeState {
+  /** 可用精通点（购买扣减、退款返还） */
+  points: number
+  /** perkId → 已投点数 */
+  perks: Record<string, number>
+}
+
 export interface ContentTables {
   skills: SkillDef[]
   ores: OreSiteDef[]
@@ -297,6 +321,7 @@ export interface ContentTables {
   achievements: AchievementDef[]
   tasks: TasksDef
   runes: RuneDef[]
+  perks: PerkDef[]
   config: ConfigDef
 }
 
@@ -332,13 +357,9 @@ export interface OfflineCarry {
 }
 
 export interface TutorialFlags {
-  /** 当前已接受、进行中的步骤；10 = 全部完成 */
   current: number
-  /** 当前步骤的累计进度（接受步骤时清零） */
   progress: number
-  /** 目标已达成（待领奖） */
   completed: number[]
-  /** 已领取奖励 */
   claimed: number[]
 }
 
@@ -361,7 +382,7 @@ export interface GameState {
   }
   /** 队列位总数（1 = 默认；最多 4） */
   queueSlots: number
-  /** 符文增益槽（v1.4；至多 2 个，until 为真实时间戳） */
+  /** 符文增益槽（至多 2 个，until 为真实时间戳） */
   buffs: BuffSlot[]
   flags: {
     tutorial: TutorialFlags
@@ -372,6 +393,7 @@ export interface GameState {
     lastSeenAt: number
     carry: OfflineCarry
     tasks: TaskState
+    prestige: PrestigeState
   }
   stats: {
     totalCrafts: number
@@ -382,13 +404,13 @@ export interface GameState {
     /** 累计获得金币（单调递增，仅正数入账） */
     totalGoldEarned: number
     totalCratesOpened: number
-    /** v1.3：任务完成计数（每日 / 周常分开） */
     totalTasksDone: number
     totalWeekliesDone: number
-    /** v1.3：累计锻造饰品件数 */
     totalJewelryForged: number
-    /** v1.4：累计制作符文数 */
     totalRunesCrafted: number
+    /** v1.5：传承次数与累计精通点 */
+    totalPrestiges: number
+    totalPrestigePointsEarned: number
   }
 }
 
@@ -408,6 +430,9 @@ export type Command =
   | { type: 'openCrate' }
   | { type: 'rerollTask'; index: number }
   | { type: 'useRune'; itemId: ItemId }
+  | { type: 'prestige' }
+  | { type: 'buyPerk'; perkId: string }
+  | { type: 'refundPerk'; perkId: string }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -426,15 +451,15 @@ export type GameEvent =
   | { type: 'tasksRotated'; period: 'daily' | 'weekly' }
   | { type: 'crateOpened'; text: string }
   | { type: 'buffActivated'; name: string; until: number }
+  | { type: 'prestigeDone'; points: number }
+  | { type: 'perkChanged'; perkId: string }
   | { type: 'goldGained'; amount: number }
   | { type: 'blocked'; reason: string }
 
 // ---------- 离线结算摘要 ----------
 
 export interface OfflineSummary {
-  /** 实际离线时长（ms，原始） */
   elapsedMs: number
-  /** 计入结算的时长（ms，cap 后） */
   countedMs: number
   rounds: { ref: ActionRef; count: number }[]
   items: { itemId: ItemId; qty: number }[]
@@ -442,8 +467,6 @@ export interface OfflineSummary {
   levels: { skill: SkillId; level: number }[]
   notes: string[]
 }
-
-// ---------- 结算与命令返回 ----------
 
 export interface StepResult {
   state: GameState

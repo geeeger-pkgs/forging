@@ -9,6 +9,7 @@
 // ============================================================
 import { buffBonuses } from './buffs'
 import { itemDef } from './content'
+import { perkBonuses } from './prestige'
 import { skillOf } from './refs'
 import type { ActionRef, GameState, SlotId } from './types'
 
@@ -112,5 +113,6 @@ export function speedFor(state: GameState, ref: ActionRef): number {
   else if (skill === 'smelting') bonus += agg.toolSpeed.smelting
   else if (skill === 'forging') bonus += agg.toolSpeed.forging
   bonus += buffBonuses(state, Date.now()).speed
+  bonus += perkBonuses(state).speed
   return bonus
 }

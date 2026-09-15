@@ -18,6 +18,7 @@ import {
 } from './state'
 import { useRune } from './buffs'
 import { openCrate } from './crates'
+import { buyPerk, doPrestige, refundPerk } from './prestige'
 import { rerollTask } from './tasks'
 import { claimTutorial, tutorialProgress } from './tutorial'
 import type { ActionRef, ActiveAction, Command, GameEvent, GameState, ItemId } from './types'
@@ -61,6 +62,12 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return rerollTask(state, cmd.index)
     case 'useRune':
       return useRune(state, cmd.itemId, now)
+    case 'prestige':
+      return doPrestige(state)
+    case 'buyPerk':
+      return buyPerk(state, cmd.perkId)
+    case 'refundPerk':
+      return refundPerk(state, cmd.perkId)
   }
 }
 

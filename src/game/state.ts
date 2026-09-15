@@ -26,6 +26,7 @@ export function newGame(name: string, now: number): GameState {
       lastSeenAt: now,
       carry: { items: {} },
       tasks: { dailyDate: '', daily: [], rerollsLeft: 1, paidRerollsLeft: 3, weekKey: '', weekly: null },
+      prestige: { points: 0, perks: {} },
     },
     stats: {
       totalCrafts: 0,
@@ -39,6 +40,8 @@ export function newGame(name: string, now: number): GameState {
       totalWeekliesDone: 0,
       totalJewelryForged: 0,
       totalRunesCrafted: 0,
+      totalPrestiges: 0,
+      totalPrestigePointsEarned: 0,
     },
   }
 }

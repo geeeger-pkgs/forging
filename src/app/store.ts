@@ -29,8 +29,8 @@ export interface Toast {
   kind: 'info' | 'good' | 'bad'
 }
 
-/** 主面板视图：四技能 + 任务 + 商店 + 成就 + 设置 */
-export type UiView = SkillId | 'tasks' | 'shop' | 'achievements' | 'settings'
+/** 主面板视图：四技能 + 传承 + 任务 + 商店 + 成就 + 设置 */
+export type UiView = SkillId | 'prestige' | 'tasks' | 'shop' | 'achievements' | 'settings'
 
 const TITLE = 'Forging · 挖矿锻造放置游戏'
 
@@ -103,6 +103,12 @@ function handleEvents(events: GameEvent[]): void {
         break
       case 'buffActivated':
         pushToast(`符文生效：${e.name}`, 'good')
+        break
+      case 'prestigeDone':
+        pushToast(`🔮 传承完成：获得精通点 ×${e.points}`, 'good')
+        if (document.hidden) markUnread()
+        break
+      case 'perkChanged':
         break
       case 'enhanceResult':
         pushToast(
