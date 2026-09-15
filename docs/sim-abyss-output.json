@@ -1,7 +1,7 @@
 {
   "abyss": {
     "staminaMax": 12,
-    "staminaRegenMinutes": 10,
+    "staminaRegenMinutes": 30,
     "weights": {
       "speed": 1,
       "efficiency": 1.5,
@@ -10,8 +10,8 @@
       "wisdom": 0.5,
       "enhanceRate": 2
     },
-    "base": 0.45,
-    "growth": 1.086,
+    "growth": 1.0275,
+    "base": 3.185,
     "themes": [
       "矿脉裂隙",
       "熔岩回廊",
@@ -21,100 +21,102 @@
     ],
     "shop": {
       "rerollTicket": {
-        "crystal": 120,
-        "note": "定向重铸券：重铸时指定一条词缀 id 保底出现（回应 v2.2 测评建议）"
-      },
-      "relicExchange": {
-        "crystal": 240,
-        "note": "遗物兑换（补齐图鉴 100% 的最后一块）"
+        "crystal": 100,
+        "max": 12,
+        "priceGrowth": 1.3,
+        "note": "定向重铸券：重铸时指定一条词缀 id 保底出现（可重复购买，价格递增）"
       },
       "permanentSpeed": {
-        "crystal": 200,
-        "levels": 5,
+        "crystal": 150,
+        "max": 8,
+        "priceGrowth": 1.3,
         "perLevel": 0.01,
-        "note": "永久 +1% 速度 / 级（最多 5 级）"
+        "note": "永久 +1% 速度 / 级（可重复购买，价格递增）"
+      },
+      "relicExchange": {
+        "crystal": 200,
+        "max": 3,
+        "priceGrowth": 1,
+        "note": "遗物兑换（各 1 次，补齐图鉴 100%）"
       },
       "title": {
-        "crystal": 300,
-        "note": "称号「深渊行者」（展示用）"
+        "crystal": 200,
+        "max": 1,
+        "priceGrowth": 1,
+        "note": "称号「深渊行者」"
       }
     },
     "firstClearCrystalBase": 10,
-    "firstClearCrystalPerFloor": 2
+    "firstClearCrystalPerFloor": 2,
+    "repeatCrystalBase": 1,
+    "repeatCrystalPerFloor": 20
+  },
+  "scores": {
+    "early": 3.9250000000000003,
+    "mid": 6.2512,
+    "end": 8.011400000000002
+  },
+  "stats": {
+    "early": {
+      "speed": 1.635,
+      "efficiency": 0.755,
+      "quantity": 0.165,
+      "rareFind": 0.5,
+      "wisdom": 0.845,
+      "enhanceRate": 0.11
+    },
+    "mid": {
+      "speed": 2.3445,
+      "efficiency": 1.0898,
+      "quantity": 0.658,
+      "rareFind": 1.07,
+      "wisdom": 1.23,
+      "enhanceRate": 0.125
+    },
+    "end": {
+      "speed": 2.9075000000000006,
+      "efficiency": 1.3946,
+      "quantity": 0.932,
+      "rareFind": 1.45,
+      "wisdom": 1.6300000000000001,
+      "enhanceRate": 0.125
+    }
   },
   "reach": {
-    "early": 9,
-    "mid": 24,
+    "early": 8,
+    "mid": 25,
     "end": 35
   },
-  "targets": {
+  "bands": {
     "early": [
-      7,
-      10
+      6,
+      12
     ],
     "mid": [
       20,
-      25
+      28
     ],
     "end": [
-      30,
-      36
+      32,
+      38
     ]
   },
-  "builds": {
-    "early": {
-      "name": "前期（T3 无词缀）",
-      "caps": {
-        "speed": 0.5,
-        "efficiency": 0.2,
-        "quantity": 0.05,
-        "rareFind": 0.1,
-        "wisdom": 0.05,
-        "enhanceRate": 0
-      },
-      "score": 0.9450000000000001,
-      "reach": 9
-    },
-    "mid": {
-      "name": "中期（T5 +5 套装）",
-      "caps": {
-        "speed": 1.4,
-        "efficiency": 0.6,
-        "quantity": 0.3,
-        "rareFind": 0.5,
-        "wisdom": 0.4,
-        "enhanceRate": 0.05
-      },
-      "score": 3.25,
-      "reach": 24
-    },
-    "end": {
-      "name": "终局满配（+10/符文/精通/词缀）",
-      "caps": {
-        "speed": 3.04,
-        "efficiency": 1.58,
-        "quantity": 0.27,
-        "rareFind": 1.84,
-        "wisdom": 1.09,
-        "enhanceRate": 0.12
-      },
-      "score": 7.753,
-      "reach": 35
-    }
+  "baseSearchHits": 39,
+  "singleStatReach": {
+    "early": 2,
+    "mid": 5,
+    "end": 5
   },
   "reqAt": {
-    "1": 0.45,
-    "5": 0.6259387161672002,
-    "10": 0.9455422537048633,
-    "15": 1.4283349638696168,
-    "20": 2.1576410372129367,
-    "25": 3.25932989335566,
-    "30": 4.923539722549972,
-    "35": 7.437493040807158,
-    "40": 11.235067827056302
+    "1": 3.185,
+    "9": 3.956982057921866,
+    "15": 4.656451290843797,
+    "24": 5.944174349221682,
+    "30": 6.994916306486934,
+    "35": 8.011091189665823,
+    "40": 9.174889196261645
   },
   "crystalToFloor": {
-    "5": 80,
     "9": 180,
     "15": 390,
     "24": 840,
@@ -122,5 +124,6 @@
     "35": 1610,
     "40": 2040
   },
-  "shopTotal": 2500
+  "firstTier": 2776,
+  "shopTotal": 11812
 }
