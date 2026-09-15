@@ -250,6 +250,18 @@ describe('F4 并发上限（设计 §2.2 爆音防护）', () => {
     expect(audioStatus().active).toBe(CONTENT.fx.budget.maxConcurrentVoices)
   })
 
+  it('建图在微任务里完成：同步返回不建节点，flush 后才建（保住主循环预算）', async () => {
+    const { Ctor, created } = makeFakeCtx()
+    setAudioContextFactory(Ctor as unknown as new () => AudioContext)
+    unlockAudio()
+    await Promise.resolve()
+    const afterUnlock = created.count // 解锁时已预热噪声缓冲（1 次）
+    expect(playCue('levelUp')).toBe(true)
+    expect(created.count).toBe(afterUnlock) // 同步阶段零建图
+    await Promise.resolve() // 让 queueMicrotask 跑完
+    expect(created.count).toBeGreaterThan(afterUnlock)
+  })
+
   it('计时器到期后释放额度（时长+20ms）', async () => {
     vi.useFakeTimers()
     const { Ctor } = makeFakeCtx()
@@ -271,6 +283,18 @@ describe('F5 自动播放门槛（R1 的 node 侧对应）', () => {
     setAudioContextFactory(null)
     expect(audioStatus().ready).toBe(false)
     expect(playCue('levelUp')).toBe(false)
+  })
+
+  it('playCue 绝不创建 AudioContext（自动播放策略 + 分发路径不做重活）', () => {
+    const { Ctor, created } = makeFakeCtx()
+    setAudioContextFactory(Ctor as unknown as new () => AudioContext)
+    const before = created.count
+    expect(playCue('levelUp')).toBe(false)
+    expect(created.count).toBe(before) // 一次节点/上下文都没建
+    expect(audioStatus().ctxState).toBeNull() // 上下文仍未创建
+    // 手势解锁后才允许发声
+    expect(unlockAudio()).toBe(true)
+    expect(audioStatus().ctxState).not.toBeNull()
   })
 
   it('注入假 ctx 后 unlock → ready 且能发声', async () => {
@@ -541,12 +565,20 @@ describe('F11 GameEvent 不含 Command 成员（防 v2.4 类型债复发）', ()
 // ---------------- 探针与总线（R2~R4 的 node 侧单元） ----------------
 
 describe('探针与场景总线（烟测读数的单元保障）', () => {
-  it('recordDraw/recordTick 只保留窗口样本并给出 P95', () => {
+  it('recordDraw/recordTick 只保留窗口样本并给出 p50/p95/max', () => {
     for (let i = 1; i <= 200; i++) recordDraw(i / 100)
     const snap = fxSnapshot()
     expect(snap.draw.samples).toBeLessThanOrEqual(180)
-    expect(snap.draw.p95).toBeGreaterThan(0)
+    expect(snap.draw.p50).toBeGreaterThan(0)
+    expect(snap.draw.p50).toBeLessThanOrEqual(snap.draw.p95)
+    expect(snap.draw.p95).toBeLessThanOrEqual(snap.draw.max)
     expect(snap.draw.budget).toBe(CONTENT.fx.budget.frameBudgetMs)
+  })
+
+  it('空窗口时各项为 0（不产生 NaN 污染报告）', () => {
+    const snap = fxSnapshot()
+    expect(snap.draw).toEqual({ p50: 0, p95: 0, max: 0, samples: 0, budget: CONTENT.fx.budget.frameBudgetMs })
+    expect(snap.tick.p95).toBe(0)
   })
 
   it('requestBurst 受 maxBurstsPerSecond 限制', () => {
@@ -564,6 +596,28 @@ describe('探针与场景总线（烟测读数的单元保障）', () => {
     expect(snap.cues).toBe(1)
     expect(snap.particles).toBe(12)
     expect(snap.popups).toBe(3)
+  })
+
+  it('峰值独立于瞬时值：粒子清空后峰值仍保留（R4 的判定依据）', () => {
+    setLiveCounts(30, 4)
+    setLiveCounts(0, 0)
+    const snap = fxSnapshot()
+    expect(snap.particles).toBe(0)
+    expect(snap.popups).toBe(0)
+    expect(snap.peakParticles).toBe(30) // 确实出现过
+    expect(snap.peakPopups).toBe(4)
+  })
+
+  it('__resetFxProbe 清零峰值与窗口', () => {
+    setLiveCounts(30, 4)
+    noteCue('levelUp')
+    recordDraw(1)
+    __resetFxProbe()
+    const snap = fxSnapshot()
+    expect(snap.peakParticles).toBe(0)
+    expect(snap.peakPopups).toBe(0)
+    expect(snap.cues).toBe(0)
+    expect(snap.draw.samples).toBe(0)
   })
 
   it('场景总线：未订阅时短队列缓存，订阅后补放', () => {

@@ -12,7 +12,18 @@ const WINDOW = 180
 const drawSamples: number[] = []
 const tickSamples: number[] = []
 
-const counters = { bursts: 0, burstsThisSecond: 0, popups: 0, particles: 0, lastCue: null as string | null, cues: 0 }
+const counters = {
+  bursts: 0,
+  burstsThisSecond: 0,
+  popups: 0,
+  particles: 0,
+  /** 峰值：烟测在任意时刻读数，瞬时值可能刚好为 0（粒子/飘字都是短命对象），
+   *  峰值才能证明"确实出现/确实从未出现"（R4 的判定依据） */
+  peakParticles: 0,
+  peakPopups: 0,
+  lastCue: null as string | null,
+  cues: 0,
+}
 let secondMark = 0
 
 function visible(): boolean {
@@ -57,29 +68,40 @@ export function requestBurst(): boolean {
 export function setLiveCounts(particles: number, popups: number): void {
   counters.particles = particles
   counters.popups = popups
+  if (particles > counters.peakParticles) counters.peakParticles = particles
+  if (popups > counters.peakPopups) counters.peakPopups = popups
 }
 
-function p95(arr: number[]): number {
-  if (arr.length === 0) return 0
+/**
+ * 分位数统计。样本少时 P95 会退化成"最大值"，容易把一次 JIT 预热当成常态，
+ * 因此同时给出 p50 / p95 / max —— 烟测报告三者都记，避免用单点结论糊弄评审。
+ */
+function stat(arr: number[]): { p50: number; p95: number; max: number; samples: number } {
+  if (arr.length === 0) return { p50: 0, p95: 0, max: 0, samples: 0 }
   const sorted = [...arr].sort((a, b) => a - b)
-  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))]
+  const at = (q: number): number => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))]
+  return { p50: at(0.5), p95: at(0.95), max: sorted[sorted.length - 1], samples: sorted.length }
 }
 
 export function fxSnapshot(): {
-  draw: { p95: number; samples: number; budget: number }
-  tick: { p95: number; samples: number; budget: number }
+  draw: { p50: number; p95: number; max: number; samples: number; budget: number }
+  tick: { p50: number; p95: number; max: number; samples: number; budget: number }
   particles: number
   popups: number
+  peakParticles: number
+  peakPopups: number
   bursts: number
   cues: number
   lastCue: string | null
   visible: boolean
 } {
   return {
-    draw: { p95: p95(drawSamples), samples: drawSamples.length, budget: CONTENT.fx.budget.frameBudgetMs },
-    tick: { p95: p95(tickSamples), samples: tickSamples.length, budget: CONTENT.fx.budget.loopBudgetMs },
+    draw: { ...stat(drawSamples), budget: CONTENT.fx.budget.frameBudgetMs },
+    tick: { ...stat(tickSamples), budget: CONTENT.fx.budget.loopBudgetMs },
     particles: counters.particles,
     popups: counters.popups,
+    peakParticles: counters.peakParticles,
+    peakPopups: counters.peakPopups,
     bursts: counters.bursts,
     cues: counters.cues,
     lastCue: counters.lastCue,
@@ -92,15 +114,22 @@ export function installFxProbe(): void {
   if (typeof window === 'undefined') return
   ;(window as unknown as Record<string, unknown>).__fx = {
     snapshot: fxSnapshot,
+    /** 烟测用：清窗口/峰值，做"改档位 → 重置 → 观察"的前后对比（R4） */
+    reset: __resetFxProbe,
     /** 由 store 注入，避免探针依赖 store（node 下不可导入） */
     audio: null as unknown,
   }
 }
 
+/**
+ * 注入音频状态读取函数（存**函数**而非函数结果，v2.5 烟测修正）。
+ * R1 比较的是"手势前 ready=false → 手势后 ready=true"的前后变化，
+ * 存启动瞬间的快照值只会让烟测永远读到旧值。
+ */
 export function attachAudioStatus(fn: () => unknown): void {
   if (typeof window === 'undefined') return
   const w = window as unknown as { __fx?: { audio: unknown } }
-  if (w.__fx) w.__fx.audio = fn()
+  if (w.__fx) w.__fx.audio = fn
 }
 
 /** 仅测试用 */
@@ -111,6 +140,8 @@ export function __resetFxProbe(): void {
   counters.burstsThisSecond = 0
   counters.popups = 0
   counters.particles = 0
+  counters.peakParticles = 0
+  counters.peakPopups = 0
   counters.lastCue = null
   counters.cues = 0
   secondMark = 0

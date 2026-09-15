@@ -42,7 +42,22 @@ export interface FxContext {
   skillName: (id: string) => string
 }
 
-const n = (x: number): string => Math.round(x).toLocaleString('en-US')
+/**
+ * 千分位数字（不依赖 toLocaleString）。
+ * `toLocaleString` 每次调用都要走 ICU，实测是表现层映射里最贵的一步
+ * （烟测 R3：主循环 P95 0.6ms 里的主要构成）；这里退化为纯字符串分组，行为等价且快一个量级。
+ */
+function n(x: number): string {
+  const v = Math.round(x)
+  const neg = v < 0
+  const s = String(Math.abs(v))
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 === 0) out += ','
+    out += s[i]
+  }
+  return neg ? `-${out}` : out
+}
 
 /**
  * 单个事件的表现计划。

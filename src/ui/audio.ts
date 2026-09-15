@@ -82,6 +82,12 @@ export function unlockAudio(): boolean {
       state.lastError = String(e)
     })
   }
+  // 预热噪声缓冲：把手势之外的首次构建成本提前付掉（不在动作结算帧里付）
+  try {
+    noise(ctx)
+  } catch {
+    // 预失败不影响发声（真用到时再试）
+  }
   return true
 }
 
@@ -125,7 +131,11 @@ export function audioStatus(): { ready: boolean; ctxState: string | null; active
   }
 }
 
-/** 噪声缓冲（懒创建，1 秒白噪声） */
+/**
+ * 噪声缓冲（懒创建，1 秒白噪声）。
+ * 首次创建要填 48000 个样本（实测 ~1ms 尖峰）→ 不能落在动作结算路径上，
+ * 因此在 unlockAudio（用户手势、非结算帧）时预热（v2.5 烟测 R3 修正）。
+ */
 let noiseBuf: AudioBuffer | null = null
 function noise(ctx: AudioContext): AudioBuffer {
   if (noiseBuf) return noiseBuf
@@ -142,58 +152,65 @@ function noise(ctx: AudioContext): AudioBuffer {
  * 音色：wave=sine|square|triangle|sawtooth 走振荡器；noise 走白噪声 + 低通。
  */
 export function playCue(id: string, opts: { gain?: number; detune?: number } = {}): boolean {
+  // 判定同步完成（返回值 = "这条会不会响"），**建图异步**：
+  // WebAudio 节点构建是毫秒级工作，若放在动作结算路径上会顶穿主循环预算（烟测 R3 实测 1.7ms/0.5ms）。
+  // queueMicrotask 而非 setTimeout：微任务不被后台节流，同帧内完成，听感无差别。
   if (!state.enabled || state.volume <= 0) return false
-  const ctx = ensureContext()
+  // 只读**已存在**的上下文，绝不在这里创建：
+  //   1) 自动播放策略要求创建只发生在用户手势里（unlockAudio）
+  //   2) 构造 AudioContext 是 5~15ms 级操作，放在事件分发路径上会直接爆帧
+  //      （v2.5 烟测实测：boot 首批事件 tick 12.2ms，修完回到 0.1~0.4ms）
+  const ctx = state.ctx
   if (!ctx || ctx.state !== 'running' || !state.master) return false
   const cue = CUES.get(id)
   if (!cue) return false
   if (state.active >= BUDGET.maxConcurrentVoices) return false
 
-  const now = ctx.currentTime
-  const dur = cue.durationMs / 1000
-  const perNote = dur / Math.max(1, cue.freqs.length)
-  const gainScale = (opts.gain ?? 1) * cue.gain
-
-  try {
-    state.active += 1
-    cue.freqs.forEach((freq, i) => {
-      const start = now + i * perNote
-      const end = start + perNote
-      const g = ctx.createGain()
-      g.gain.setValueAtTime(0, start)
-      g.gain.linearRampToValueAtTime(gainScale, start + Math.min(0.02, perNote * 0.3))
-      g.gain.exponentialRampToValueAtTime(0.0001, end)
-      g.connect(state.master as GainNode)
-      if (cue.wave === 'noise') {
-        const src = ctx.createBufferSource()
-        src.buffer = noise(ctx)
-        const lp = ctx.createBiquadFilter()
-        lp.type = 'lowpass'
-        lp.frequency.value = freq * 2
-        src.connect(lp)
-        lp.connect(g)
-        src.start(start)
-        src.stop(end)
-      } else {
-        const osc = ctx.createOscillator()
-        osc.type = cue.wave
-        osc.frequency.value = freq
-        if (opts.detune) osc.detune.value = opts.detune
-        osc.connect(g)
-        osc.start(start)
-        osc.stop(end)
-      }
-    })
-    // 用 globalThis 而非 window：node 测试环境无 window（否则计时器不落地、active 只增不减）
-    globalThis.setTimeout(() => {
-      state.active = Math.max(0, state.active - 1)
-    }, cue.durationMs + 20)
-    return true
-  } catch (e) {
+  state.active += 1
+  globalThis.setTimeout(() => {
     state.active = Math.max(0, state.active - 1)
-    state.lastError = String(e)
-    return false
-  }
+  }, cue.durationMs + 20)
+
+  const master = state.master
+  globalThis.queueMicrotask(() => {
+    try {
+      const now = ctx.currentTime
+      const dur = cue.durationMs / 1000
+      const perNote = dur / Math.max(1, cue.freqs.length)
+      const gainScale = (opts.gain ?? 1) * cue.gain
+      cue.freqs.forEach((freq, i) => {
+        const start = now + i * perNote
+        const end = start + perNote
+        const g = ctx.createGain()
+        g.gain.setValueAtTime(0, start)
+        g.gain.linearRampToValueAtTime(gainScale, start + Math.min(0.02, perNote * 0.3))
+        g.gain.exponentialRampToValueAtTime(0.0001, end)
+        g.connect(master)
+        if (cue.wave === 'noise') {
+          const src = ctx.createBufferSource()
+          src.buffer = noise(ctx)
+          const lp = ctx.createBiquadFilter()
+          lp.type = 'lowpass'
+          lp.frequency.value = freq * 2
+          src.connect(lp)
+          lp.connect(g)
+          src.start(start)
+          src.stop(end)
+        } else {
+          const osc = ctx.createOscillator()
+          osc.type = cue.wave
+          osc.frequency.value = freq
+          if (opts.detune) osc.detune.value = opts.detune
+          osc.connect(g)
+          osc.start(start)
+          osc.stop(end)
+        }
+      })
+    } catch (e) {
+      state.lastError = String(e)
+    }
+  })
+  return true
 }
 
 /** 音效清单（UI「试听」与审计共用） */

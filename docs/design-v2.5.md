@@ -66,7 +66,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 
 **覆盖要求**：`GameEvent` 的**全部成员**都必须在表中有条目（无表现的显式返回 `null`），由测试穷举守护（§4 F1）。
 
-> **同时修一处类型债（评审发现）**：`challengeAbyss` / `sweepAbyss` / `buyAbyssItem` 是 **Command**，却同时出现在 `GameEvent` 联合里（v2.4 补丁误入）→ 本版从 `GameEvent` 中**移除**这三个成员。修正后事件数 **37 → 34**，且全部有发射点（脚本/测试双证）。
+> **同时修一处类型债（评审发现）**：`challengeAbyss` / `sweepAbyss` / `buyAbyssItem` 是 **Command**，却同时出现在 `GameEvent` 联合里（v2.4 补丁误入）→ 本版从 `GameEvent` 中**移除**这三个成员。修正后事件数 **37 → 34**；v2.5 自身新增 `settingsChanged`（设置变更需回执给壳层同步音频引擎）→ 最终 **35 个事件**，全部有发射点（脚本/测试双证，F1/F11 断言）。
 
 ### 2.3 场景动效（`SceneCanvas` 扩展 + 飘字层）
 
@@ -99,7 +99,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 |---|---|---|
 | 1 | `data/fx.json`（新，生成器产出） | 16 条 cue + 7 项预算 + 设置默认值（`fx: 'auto'`） |
 | 2 | `src/ui/audio.ts`（新） | WebAudio 引擎（`unlockAudio`/`installGestureUnlock`/`playCue`/`setAudioEnabled`/`setAudioVolume`/`audioStatus`/`__resetAudioForTest`） |
-| 3 | `src/ui/fx-map.ts`（新，纯模块） | `resolveFx(ev, ctx)`：事件 → {cue, burst, ring, popup}，覆盖全部 34 个事件 |
+| 3 | `src/ui/fx-map.ts`（新，纯模块） | `resolveFx(ev, ctx)`：事件 → {cue, burst, ring, popup}，覆盖全部 35 个事件 |
 | 4 | `src/ui/fx-probe.ts`（新） | 采样与探针：`recordDraw/recordTick/p95/installFxProbe`（DEV 挂 `window.__fx`） |
 | 5 | `src/ui/components/SceneCanvas.vue` | 新 burst kind、爆发频率限制、飘字层、光环、降级、`recordDraw` 埋点、`MAX_P` 读内容表 |
 | 6 | `src/app/store.ts` | `handleEvents` 接 `resolveFx` → 音效/场景/飘字；`recordTick` 埋点；首手势 `installGestureUnlock` |
@@ -133,21 +133,28 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 
 ### 3.2 运行时实测（实机烟测，**仅页面可见时采样**）
 
-| # | 测什么 | 方法 | 目标 |
-|---|---|---|---|
-| R1 | 自动播放门槛 | 加载后 `window.__fx.audio.ready === false` → 点击后 `=== true` | 严格 |
-| R2 | 表现层帧内耗时 | 可见状态 ≥120 帧的 `drawMs` **P95** | ≤ `frameBudgetMs`(1.5ms) |
-| R3 | 主循环表现开销 | 同上，`tickMs` P95 | ≤ `loopBudgetMs`(0.5ms) |
-| R4 | 动效开关生效 | `fx=off` → 粒子 0 且飘字 0；`reduced` → 粒子 0、飘字可 >0 | 严格 |
-| R5 | 设置持久化 | 改设置 → 重载 → 值保持且 `data-fx` 正确 | 严格 |
+| # | 测什么 | 方法 | 目标 | v2.5 实测 |
+|---|---|---|---|---|
+| R1 | 自动播放门槛 | 加载后 `__fx.audio().ready === false` → 点击后 `=== true` | 严格 | ✅ false/`ctxState=null` → true/`running` |
+| R2 | 表现层帧内耗时 | 可见状态 `draw` 的 p50/p95/max | ≤ `frameBudgetMs`(1.5ms) | ✅ 0.10 / 0.20 / 0.30ms（180 样本） |
+| R3 | 主循环表现开销 | 同上，`tick` | ≤ `loopBudgetMs`(0.5ms) | ✅ 0.20 / 0.30 / 0.30ms |
+| R4 | 动效开关生效 | `fx=off` → 峰值粒子 0 且飘字 0；`reduced` → 粒子 0、飘字可 >0 | 严格 | ✅ off：0/0；reduced：0/**3** |
+| R5 | 设置持久化 | 改设置 → 重载 → 值保持且 `data-fx` 正确、**引擎同步** | 严格 | ✅ 三处一致 + `audio.enabled=false` 生效 |
 
 > **不采用 rAF 帧间隔采样**（评审 B3）：放置游戏常驻后台会被节流，帧间隔无意义；改为测量**表现层自身代码耗时**，且只在可见时采样。
+>
+> **统计口径（烟测修正）**：样本少时 P95 会退化为"最大值"，因此探针同时输出 **p50/p95/max/samples**；
+> 判定用 p95，但同时记录 p50 与样本数，避免用单点偶然值下结论。
+>
+> **读数落点（烟测修正）**：`window.__fx` 暴露 `snapshot()` / `audio()`（**函数**，可前后两次读取）与 `reset()`；
+> `particles/popups` 由 `SceneCanvas` 每帧上报真实值，另记 **峰峰值**（瞬时值可能刚好为 0）。
+> 存活读数曾长期为 0（只被 store 以 `(0,0)` 写入）—— 这类"读数落点存在但没人写"的问题由本轮烟测抓出，见 `docs/smoke-v2.5.md` §2（D1~D7）。
 
 ## 4. 测试计划（`tests/fx.test.ts`）
 
 | # | 用例 |
 |---|---|
-| F1 | `resolveFx` **穷举**：34 个事件各造样本 → 不抛错；无表现的显式返回 null |
+| F1 | `resolveFx` **穷举**：35 个事件各造样本 → 不抛错；无表现的显式返回 null |
 | F2 | 分支规则：`enhanceResult` 三分支 → 不同 cue+burst；`goldGained` 正负 → popup / purchase；`crateOpened` 大奖 → lootBig |
 | F3 | 稀有判定：`itemsGained` 含 essence/crate/emberstone/token/relic → rareDrop |
 | F4 | 并发上限：假 AudioContext 连发 20 次 → `active ≤ 8`；超限返回 false |
@@ -174,12 +181,12 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 
 ## 6. 验收标准（Definition of Done）
 
-- [ ] 16 条程序化音效；零外部资源（E5 白名单断言）
-- [ ] `resolveFx` 覆盖全部 34 个事件（F1）+ 分支规则（F2/F3）
-- [ ] 三类动效 + 四档设置（auto 解析）+ `data-fx` 真关 CSS 动效（F7/R4）
-- [ ] 设置三项持久化（存档 v12）+ 迁移无损（F8）
-- [ ] 烟测 R1~R5 全过（含 P95 耗时报告）
-- [ ] 测试全绿（≥265）/ typecheck / build（体积增幅记录）
+- [x] 16 条程序化音效；零外部资源（E5 白名单断言；audit E1~E6 全过）
+- [x] `resolveFx` 覆盖全部 35 个事件（F1）+ 分支规则（F2/F3）
+- [x] 三类动效 + 四档设置（auto 解析）+ `data-fx` 真关 CSS 动效（F7；R4 实测 off 与 reduced 均生效）
+- [x] 设置三项持久化（存档 v12）+ 迁移无损（F8）+ **引擎启动同步**（烟测 D5 修复）
+- [x] 烟测 R1~R5 全过（p50/p95/max 报告 + 2 张截图，`docs/smoke-v2.5.md`；含 D1~D7 缺陷处置）
+- [x] 测试全绿（**298**）/ typecheck / build（gzip JS 93.2KB ← v2.4 84.5KB，+8.7KB 为音效引擎与表现层）
 
 ## 7. 范围外（记入 backlog）
 

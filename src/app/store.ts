@@ -8,7 +8,7 @@ import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
 import { audioStatus, installGestureUnlock, playCue, setAudioEnabled, setAudioVolume } from '../ui/audio'
-import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus, setLiveCounts } from '../ui/fx-probe'
+import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus } from '../ui/fx-probe'
 import { resolveFx, resolveFxLevel } from '../ui/fx-map'
 import { emitScene } from './scene-bus'
 import { regenStamina } from '../game/abyss'
@@ -134,7 +134,9 @@ export { resolveFxLevel }
  * 与 toast 相互独立：动效档位不影响 toast（关键信息永不丢失，设计 §2.5）。
  */
 function dispatchFx(events: GameEvent[]): void {
-  const t0 = Date.now()
+  // performance.now 而非 Date.now：Date.now 只有 1ms 分辨率，任何非零开销都会量化成 1ms，
+  // 与 0.5ms 的预算无法比较（实机烟测 R3 的第一版读数就是这么假的）
+  const t0 = performance.now()
   const level = resolveFxLevel(store.state.meta.settings?.fx)
   if (level !== 'off') {
     for (const e of events) {
@@ -153,8 +155,9 @@ function dispatchFx(events: GameEvent[]): void {
       if (plan.popup) emitScene({ kind: 'popup', text: plan.popup.text, popupKind: plan.popup.kind })
     }
   }
-  recordTick(Date.now() - t0)
-  setLiveCounts(0, 0)
+  recordTick(performance.now() - t0)
+  // 存活粒子/飘字数由 SceneCanvas 每帧上报（真实值）；这里不再写 0，
+  // 否则会把"当前值"覆盖成假数据（v2.5 烟测发现的空读数问题）
 }
 
 function handleEvents(events: GameEvent[]): void {
@@ -341,6 +344,11 @@ export function boot(): void {
   checkCodexMilestones(state)
   // ④ 自动回收清扫（含离线期间产出）
   sweepAutoRecycle(state)
+  // ⑤ 把存档里的设置同步到音频引擎（v2.5 烟测 R5 发现）：
+  //    引擎默认值是"音效开/音量 60"，若不在此同步，玩家关闭音效后重载会被强行打开。
+  const s0 = state.meta.settings ?? { ...CONTENT.fx.defaults }
+  setAudioEnabled(s0.sound)
+  setAudioVolume(s0.volume)
   installFxProbe()
   attachAudioStatus(audioStatus)
   installGestureUnlock()

@@ -6,7 +6,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { store } from '../../app/store'
 import { subscribeScene } from '../../app/scene-bus'
-import { recordDraw } from '../fx-probe'
+import { recordDraw, setLiveCounts } from '../fx-probe'
+// 档位解析只保留**一份实现**（纯模块）：组件曾自带一份拷贝，属于双真值，v2.5 自检时删除
+import { resolveFxLevel } from '../fx-map'
 import { CONTENT } from '../../game/content'
 import { skillOf } from '../../game/refs'
 import type { SkillId } from '../../game/types'
@@ -38,9 +40,22 @@ const popups: Popup[] = []
 const rings: Ring[] = []
 const POPUP_COLORS: Record<Popup['kind'], string> = { item: '#7fd4c1', xp: '#4f7cff', gold: '#f5a623' }
 
+/**
+ * 飘字入队。
+ * 同帧多条会同时出现（采掘 + 经验 + 金币），因此按"已有条数"做纵向错行，
+ * 否则两三条会叠成一团糊字（v2.5 实机截图自检发现）。
+ */
 function pushPopup(text: string, kind: Popup['kind']): void {
   if (popups.length >= BUDGET.maxPopups) popups.shift()
-  popups.push({ text, kind, x: W * 0.5 + (Math.random() - 0.5) * 80, y: H * 0.55, life: 0, max: 90 })
+  const slot = popups.length
+  popups.push({
+    text,
+    kind,
+    x: W * 0.5 + (Math.random() - 0.5) * 60,
+    y: H * 0.55 - slot * 17,
+    life: 0,
+    max: 90,
+  })
 }
 
 function pushRing(): void {
@@ -108,8 +123,12 @@ function frame(): void {
   const progress = act ? Math.min(1, Math.max(0, (Date.now() - act.startedAt) / Math.max(1, act.durationMs))) : 0
   const skill: SkillId | null = act ? skillOf(act.ref) : null
 
-  // 完成 / 切动作 → 粒子爆发
-  if ((key !== lastKey || progress < lastProgress - 0.02) && lastKey !== '' && lastKey !== 'idle') {
+  // 档位（每帧读一次：设置改动即刻生效）
+  const fxLevel = resolveFxLevel(store.state.meta.settings?.fx)
+
+  // 完成 / 切动作 → 粒子爆发（仅 full 档；reduced/off 关闭交互爆发，设计 §2.3）
+  // 自检修正：此处原先未判档位，off 档仍会冒粒子（烟测 R4 实测 peakParticles 16 ≠ 0）
+  if (fxLevel === 'full' && (key !== lastKey || progress < lastProgress - 0.02) && lastKey !== '' && lastKey !== 'idle') {
     if (skill === 'mining') burst(W * 0.62, H * 0.52, 'ore', 16)
     else if (skill === 'smelting') burst(W * 0.42, H * 0.42, 'spark', 18)
     else if (skill === 'forging') burst(W * 0.5, H * 0.5, 'spark', 22)
@@ -133,7 +152,6 @@ function frame(): void {
   ctx.stroke()
 
   // 环境浮尘（仅 full 档；reduced/off 关闭）
-  const fxLevel = resolveFxLevel()
   if (fxLevel === 'full' && Math.random() < 0.07 && particles.length < MAX_P) {
     particles.push({
       x: Math.random() * W,
@@ -219,6 +237,8 @@ function frame(): void {
   ctx.globalAlpha = 1
 
   recordDraw(performance.now() - t0)
+  // 真实存活数上报（含峰值）：烟测 R4 判定"降级档到底有没有画东西"的唯一依据
+  setLiveCounts(particles.length, popups.length)
 }
 
 function drawMining(ctx: CanvasRenderingContext2D, progress: number): void {
@@ -325,20 +345,6 @@ function drawIdle(ctx: CanvasRenderingContext2D, t: number): void {
   }
   ctx.globalAlpha = 1
 
-}
-
-/** 档位解析（与 store 同源语义；组件侧只需知道是否为 full） */
-function resolveFxLevel(): 'full' | 'reduced' | 'off' {
-  const fx = store.state.meta.settings?.fx
-  if (fx === 'full' || fx === 'reduced' || fx === 'off') return fx
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    try {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'reduced'
-    } catch {
-      // 忽略
-    }
-  }
-  return 'full'
 }
 
 let unsub: (() => void) | null = null
