@@ -453,3 +453,46 @@ describe('离线语义补强（并行 run / 期望标记）', () => {
     expect(s.meta.expeditions.runs[0].outcome?.expected).toBe(false)
   })
 })
+
+describe('编队上限（烟测发现的边界）', () => {
+  it('队伍上限 = 基础 2 + 旗帜等级；超编被内核拒绝，截断后可派', () => {
+    const s = newGame('T', 0)
+    for (const c of CONTENT.companions.companions) {
+      s.companions[c.id] = { level: 1, xp: 0, trait: 'scholar' }
+    }
+    s.materials['ingot_copper'] = 999
+    const all = Object.keys(s.companions)
+    expect(all.length).toBe(6)
+    expect(teamSize(s)).toBe(2)
+
+    // 全员提交 → 超编阻塞
+    const over = applyCommand(
+      s,
+      { type: 'dispatchExpedition', routeId: 'outskirts', hours: 1, team: all },
+      0,
+      mulberry32(1),
+    )
+    const b = over.find((e) => e.type === 'blocked')
+    expect(b && b.type === 'blocked' ? b.reason : '').toContain('队伍上限')
+
+    // UI 的「全员出战」兜底会截到上限 → 可派
+    const capped = all.slice(0, teamSize(s))
+    const ok = applyCommand(
+      s,
+      { type: 'dispatchExpedition', routeId: 'outskirts', hours: 1, team: capped },
+      0,
+      mulberry32(2),
+    )
+    expect(ok.some((e) => e.type === 'expeditionDispatched')).toBe(true)
+    expect(s.meta.expeditions.runs[0].team.length).toBe(teamSize(s))
+  })
+
+  it('旗帜每级 +1 队伍位（上限 5）', () => {
+    const s = newGame('T', 0)
+    s.materials['expedition_token'] = 100
+    s.gold = 1_000_000
+    for (let i = 0; i < 3; i++) upgradeBanner(s, [])
+    expect(teamSize(s)).toBe(CONTENT.expeditions.team.base + 3)
+    expect(teamSize(s)).toBe(CONTENT.expeditions.team.base + CONTENT.expeditions.banner.maxLevel)
+  })
+})
