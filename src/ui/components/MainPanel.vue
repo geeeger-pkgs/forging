@@ -4,7 +4,7 @@ import { pickAction, store } from '../../app/store'
 import { CONTENT, itemDef, skillName } from '../../game/content'
 import { levelInfo } from '../../game/level'
 import type { RecipeDef } from '../../game/types'
-import type { ActionCard } from '../types'
+import { FORGE_CATEGORIES, type ActionCard } from '../types'
 import AchievementsPanel from './AchievementsPanel.vue'
 import ActionGrid from './ActionGrid.vue'
 import EnhancePanel from './EnhancePanel.vue'
@@ -67,12 +67,7 @@ const smeltCards = computed<ActionCard[]>(() =>
   CONTENT.recipes.filter((r) => r.skill === 'smelting' && match(r.name)).map(recipeCard),
 )
 
-const forgeCats = [
-  { id: 'tool', label: '工具' },
-  { id: 'weapon', label: '武器' },
-  { id: 'armor', label: '护甲' },
-  { id: 'rune', label: '符文' },
-] as const
+const forgeCats = FORGE_CATEGORIES
 
 const forgeCards = computed<ActionCard[]>(() =>
   CONTENT.recipes

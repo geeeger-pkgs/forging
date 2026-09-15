@@ -3,7 +3,20 @@
 // 载入 data/*.json → 结构校验 → 交叉引用校验 → 导出强类型 CONTENT
 // 校验失败直接 throw（启动即失败，避免脏数据流入运行时）
 // ============================================================
-import type { ContentTables, ItemDef, ItemId, PerkEffect, RuneDef, SkillId, SlotId, TaskCounter } from './types'
+import type {
+  AffixArchetype,
+  AffixDef,
+  AffixEffect,
+  ContentTables,
+  ItemDef,
+  ItemId,
+  PerkEffect,
+  RuneDef,
+  SkillId,
+  SlotId,
+  TaskCounter,
+  Tier,
+} from './types'
 
 import skillsJson from '../../data/skills.json'
 import oresJson from '../../data/ores.json'
@@ -16,6 +29,7 @@ import achievementsJson from '../../data/achievements.json'
 import tasksJson from '../../data/tasks.json'
 import runesJson from '../../data/runes.json'
 import perksJson from '../../data/perks.json'
+import affixesJson from '../../data/affixes.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -44,9 +58,24 @@ const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalCratesOpened',
   'totalJewelryForged',
   'totalRunesCrafted',
+  'totalReforges',
 ]
 
-function validate(t: ContentTables): string[] {
+const AFFIX_EFFECTS: readonly AffixEffect[] = [
+  'speed',
+  'quantity',
+  'efficiency',
+  'wisdom',
+  'rareFind',
+  'enhanceRate',
+  'guard',
+  'goldFind',
+  'stoneFind',
+]
+const ARCHETYPES: readonly AffixArchetype[] = ['tool', 'weapon', 'armor', 'jewelry']
+
+/** 内容表校验（导出供测试做负例验证；返回错误清单，空数组 = 通过） */
+export function validateContent(t: ContentTables): string[] {
   const errs: string[] = []
   const hasItem = (id: string): boolean => Boolean(t.items[id])
 
@@ -156,6 +185,45 @@ function validate(t: ContentTables): string[] {
     if (p.max <= 0 || p.cost <= 0) errs.push(`精通配置非法: ${p.id}`)
   }
 
+  // 词缀（v2.1）
+  const affixIds = new Set<string>()
+  for (const a of t.affixes.affixes) {
+    if (affixIds.has(a.id)) errs.push(`词缀 id 重复: ${a.id}`)
+    affixIds.add(a.id)
+    if (!AFFIX_EFFECTS.includes(a.effect)) errs.push(`词缀效果非法: ${a.id} -> ${a.effect}`)
+    if (!(a.base > 0) || !(a.perTier >= 0)) errs.push(`词缀数值非法: ${a.id}`)
+  }
+  for (const arch of ARCHETYPES) {
+    const pool = t.affixes.pools[arch]
+    if (!Array.isArray(pool) || pool.length === 0) {
+      errs.push(`词缀池缺失或为空: ${arch}`)
+      continue
+    }
+    if (new Set(pool).size !== pool.length) errs.push(`词缀池内有重复: ${arch}`)
+    for (const id of pool) if (!affixIds.has(id)) errs.push(`词缀池引用不存在的词缀: ${arch} -> ${id}`)
+  }
+  const maxTier = Math.max(...Object.values(t.items).map((d) => d.tier ?? 0))
+  const poolSize = Math.min(...ARCHETYPES.map((a) => (t.affixes.pools[a] ?? []).length))
+  for (let tier = 1; tier <= maxTier; tier++) {
+    const n = t.affixes.countByTier[String(tier)]
+    if (!Number.isInteger(n) || n < 1) errs.push(`词缀条数缺失或非法: T${tier}`)
+    else if (n > poolSize) errs.push(`词缀条数超出最小池容量: T${tier} -> ${n} > ${poolSize}`)
+    // 评审 M4：条数等于池大小时组合退化为 1 种 → 至少留 1 条余量
+    else if (n === poolSize) errs.push(`词缀条数等于池容量，组合退化: T${tier} -> ${n}（需池 > 条数）`)
+  }
+  if (!(t.affixes.rollMin > 0) || !(t.affixes.rollMax >= t.affixes.rollMin)) errs.push('词缀 roll 区间非法')
+  if (!(t.affixes.perfectThreshold > t.affixes.rollMin && t.affixes.perfectThreshold <= t.affixes.rollMax)) {
+    errs.push('词缀完美阈值必须落在 roll 区间内')
+  }
+  if (!hasItem('emberstone')) errs.push('缺少重铸石物品: emberstone')
+  for (let tier = 1; tier <= maxTier; tier++) {
+    const key = String(tier)
+    if (!(t.affixes.reforge.goldByTier[key] > 0)) errs.push(`重铸造价缺失: T${tier}`)
+    if (!(t.affixes.reforge.essenceByTier[key] >= 0)) errs.push(`重铸精华消耗缺失: T${tier}`)
+  }
+  if (!(t.affixes.reforge.lockGoldFactor > 0)) errs.push('重铸锁定系数非法')
+  if (!(t.affixes.reforge.emberstonePerLock >= 1)) errs.push('重铸锁定重铸石消耗非法')
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -179,11 +247,12 @@ export const CONTENT: ContentTables = {
   tasks: tasksJson,
   runes: runesJson,
   perks: perksJson,
+  affixes: affixesJson,
   config: configJson,
 } as unknown as ContentTables
 
 {
-  const errs = validate(CONTENT)
+  const errs = validateContent(CONTENT)
   if (errs.length > 0) throw new Error('内容表校验失败:\n- ' + errs.join('\n- '))
 }
 
@@ -197,6 +266,7 @@ export const TASK_DAILY_BY_ID = new Map(CONTENT.tasks.daily.map((t) => [t.id, t]
 export const TASK_WEEKLY_BY_ID = new Map(CONTENT.tasks.weekly.map((t) => [t.id, t] as const))
 export const RUNE_BY_ID: ReadonlyMap<ItemId, RuneDef> = new Map(CONTENT.runes.map((r) => [r.id, r] as const))
 export const PERK_BY_ID = new Map(CONTENT.perks.map((p) => [p.id, p] as const))
+export const AFFIX_BY_ID: ReadonlyMap<string, AffixDef> = new Map(CONTENT.affixes.affixes.map((a) => [a.id, a] as const))
 export const MAX_LEVEL = Math.max(...CONTENT.skills.map((s) => s.maxLevel))
 export const MAX_ENHANCE = Math.max(...CONTENT.enhance.map((e) => e.targetLevel))
 
@@ -212,8 +282,8 @@ export function skillName(id: SkillId): string {
   return s.name
 }
 
-/** 同级锭 itemId（用于强化消耗解析） */
-export function ingotIdForTier(tier: 1 | 2 | 3 | 4 | 5): ItemId {
-  const suffix = { 1: 'copper', 2: 'iron', 3: 'silver', 4: 'gold', 5: 'mithril' }[tier]
+/** 同级锭 itemId（用于强化消耗解析；v2.1 补齐 T6/T7，与 items.json 档位一致） */
+export function ingotIdForTier(tier: Tier): ItemId {
+  const suffix = { 1: 'copper', 2: 'iron', 3: 'silver', 4: 'gold', 5: 'mithril', 6: 'starlite', 7: 'void' }[tier]
   return `ingot_${suffix}`
 }

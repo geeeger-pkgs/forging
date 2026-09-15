@@ -1,11 +1,17 @@
 // ============================================================
 // Forging · 存档（localStorage 双槽 + 版本迁移 + 导出/导入）
 // ============================================================
-import type { GameState } from '../game/types'
+import { perfectAffixCount, rollAffixes } from '../game/affixes'
+import type { EquipInstance, GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 7
+export const SAVE_VERSION = 8
+
+/** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
+function newAffixSalt(): number {
+  return (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0
+}
 
 export function saveGame(state: GameState): void {
   try {
@@ -93,6 +99,28 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       loadouts: (s.meta as unknown as { loadouts?: GameState['meta']['loadouts'] }).loadouts ?? [],
     },
   }),
+  // v2.1：旧档装备确定性回填词缀（与造装同一函数 + 本档私有盐 → 同一档结果恒定、可复现）
+  7: (s) => {
+    const salt = s.meta.affixSalt ?? newAffixSalt()
+    const equipment: EquipInstance[] = (s.equipment ?? []).map((e) => ({
+      ...e,
+      affixes: e.affixes ?? rollAffixes(e.itemId, e.instanceId, salt),
+    }))
+    let perfect = 0
+    for (const e of equipment) perfect += perfectAffixCount(e.itemId, e.affixes)
+    return {
+      ...s,
+      version: 8,
+      equipment,
+      meta: { ...s.meta, affixSalt: salt },
+      stats: {
+        ...s.stats,
+        totalReforges: s.stats.totalReforges ?? 0,
+        // 语义：累计「新摇出」的完美词缀条数（造装 + 重铸）；旧档按回填结果计入
+        perfectAffixes: s.stats.perfectAffixes ?? perfect,
+      },
+    }
+  },
 }
 
 function migrate(s: GameState): GameState {

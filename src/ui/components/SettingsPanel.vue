@@ -147,7 +147,7 @@ function onClear(): void {
     <section class="card">
       <h3>关于</h3>
       <p class="dim">
-        Forging v2.0 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 传承）<br />
+        Forging v2.1 · 纯前端单机放置游戏（挖矿 / 熔炼 / 锻造 / 强化 / 词缀 / 传承）<br />
         参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。<br />
         构建：{{ appVersion }}
       </p>

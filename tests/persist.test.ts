@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SAVE_VERSION, clearSave, importSaveFile, loadGame, saveGame } from '../src/app/persist'
-import { newGame } from '../src/game/state'
+import { rollAffixes } from '../src/game/affixes'
+import { addInstance, newGame } from '../src/game/state'
 
 // —— localStorage 桩（node 环境） ——
 function makeStorage() {
@@ -100,7 +101,7 @@ describe('存档持久化', () => {
     localStorage.setItem('forging.save', JSON.stringify(v1))
     const loaded = loadGame()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(7)
+    expect(loaded!.version).toBe(SAVE_VERSION)
     expect(loaded!.stats.totalMines).toBe(0)
     expect(loaded!.stats.totalCrafts).toBe(7)
     expect(loaded!.stats.totalGoldEarned).toBe(0)
@@ -129,7 +130,7 @@ describe('存档持久化', () => {
     delete (v2 as Record<string, unknown>).buffs
     localStorage.setItem('forging.save', JSON.stringify(v2))
     const loaded = loadGame()
-    expect(loaded!.version).toBe(7)
+    expect(loaded!.version).toBe(SAVE_VERSION)
     expect(loaded!.stats.totalMines).toBe(5)
     expect(loaded!.stats.totalSmelts).toBe(0)
     expect(loaded!.stats.totalTasksDone).toBe(0)
@@ -146,5 +147,65 @@ describe('存档持久化', () => {
     const s = newGame('Future', 1)
     localStorage.setItem('forging.save', JSON.stringify({ ...s, version: 99 }))
     expect(loadGame()).toBeNull()
+  })
+
+  it('v7 → v8：旧档装备确定性回填词缀（与造装函数一致、可复现）', () => {
+    const s = newGame('Legacy', 1)
+    const pickId = addInstance(s, 'pick_mithril', 5)
+    const swordId = addInstance(s, 'sword_gold', 2)
+    // 去掉 v2.1 字段，模拟 v7 存档形态
+    for (const e of s.equipment) delete (e as unknown as Record<string, unknown>).affixes
+    delete (s.stats as unknown as Record<string, unknown>).totalReforges
+    delete (s.stats as unknown as Record<string, unknown>).perfectAffixes
+    localStorage.setItem('forging.save', JSON.stringify({ ...s, version: 7 }))
+
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(SAVE_VERSION)
+    // 回填使用本档私有盐（评审 B6）：结果可复现，但要带上存档里的 salt
+    expect(typeof loaded!.meta.affixSalt).toBe('number')
+    for (const inst of loaded!.equipment) {
+      expect(inst.affixes).toEqual(rollAffixes(inst.itemId, inst.instanceId, loaded!.meta.affixSalt))
+      expect(inst.affixes.length).toBeGreaterThan(0)
+    }
+    expect(loaded!.equipment.find((e) => e.instanceId === pickId)!.affixes.length).toBe(3) // T5
+    expect(loaded!.equipment.find((e) => e.instanceId === swordId)!.affixes.length).toBe(2) // T4
+    expect(loaded!.stats.totalReforges).toBe(0)
+    expect(loaded!.stats.perfectAffixes).toBeGreaterThanOrEqual(0)
+
+    // 幂等：再次写入并读取，词缀不再变化
+    saveGame(loaded!)
+    const again = loadGame()
+    expect(again!.equipment).toEqual(loaded!.equipment)
+  })
+
+  it('v1 → v8 全链：迁移后装备同样带词缀且强化等级保留', () => {
+    const s = newGame('Chain', 1)
+    const id = addInstance(s, 'pick_copper', 3)
+    for (const e of s.equipment) delete (e as unknown as Record<string, unknown>).affixes
+    const v1 = {
+      ...s,
+      version: 1,
+      stats: { totalCrafts: 1 },
+      meta: { lastSeenAt: 1, carry: { items: {} } },
+      flags: { tutorial: { current: 1, progress: 0, completed: [], claimed: [] } },
+    }
+    localStorage.setItem('forging.save', JSON.stringify(v1))
+
+    const loaded = loadGame()
+    expect(loaded!.version).toBe(SAVE_VERSION)
+    const inst = loaded!.equipment.find((e) => e.instanceId === id)!
+    expect(inst.enhanceLevel).toBe(3)
+    expect(inst.affixes).toEqual(rollAffixes('pick_copper', id, loaded!.meta.affixSalt))
+  })
+
+  it('v8 往返：词缀与盐完整保留（导出/导入幂等）', () => {
+    const s = newGame('Salt', 1)
+    const id = addInstance(s, 'pick_void')
+    saveGame(s)
+    const loaded = loadGame()!
+    const inst = loaded.equipment.find((e) => e.instanceId === id)!
+    expect(inst.affixes).toEqual(rollAffixes('pick_void', id, s.meta.affixSalt))
+    expect(loaded.meta.affixSalt).toBe(s.meta.affixSalt)
   })
 })

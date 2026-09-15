@@ -6,10 +6,11 @@ import {
   SITES_BY_ID,
   TUTORIAL_BY_STEP,
 } from '../src/game/content'
+import { FORGE_CATEGORIES } from '../src/ui/types'
 
 describe('内容表', () => {
   it('载入并通过校验（模块导入即校验）', () => {
-    expect(Object.keys(CONTENT.items).length).toBe(102)
+    expect(Object.keys(CONTENT.items).length).toBe(103)
     expect(CONTENT.recipes.length).toBe(92)
     expect(CONTENT.enhance.length).toBe(10)
     expect(CONTENT.tutorial.length).toBe(8)
@@ -106,5 +107,21 @@ describe('内容表', () => {
   it('成就表已载入并通过校验', () => {
     expect(CONTENT.achievements.length).toBeGreaterThanOrEqual(25)
     expect(CONTENT.achievements.some((a) => a.id === 'mine_10')).toBe(true)
+  })
+
+  it('内容 ↔ UI 覆盖：每个锻造分类都有页签入口（历史缺陷回归）', () => {
+    // v2.1 修复：jewelry 分类曾在 v1.3 起长期没有页签 → 10 条饰品配方不可达
+    const forgingCats = new Set(CONTENT.recipes.filter((r) => r.skill === 'forging').map((r) => r.category))
+    const tabs = new Set<string>(FORGE_CATEGORIES.map((c) => c.id))
+    for (const cat of forgingCats) {
+      expect(tabs.has(cat), `缺少锻造页签：${cat}（${CONTENT.recipes.filter((r) => r.category === cat).length} 条配方不可达）`).toBe(true)
+    }
+  })
+
+  it('每个锻造分类都有实际配方（页签不为空）', () => {
+    for (const c of FORGE_CATEGORIES) {
+      const n = CONTENT.recipes.filter((r) => r.skill === 'forging' && r.category === c.id).length
+      expect(n, `页签「${c.label}」没有任何配方`).toBeGreaterThan(0)
+    }
   })
 })

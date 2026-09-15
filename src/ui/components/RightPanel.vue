@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { cmd, inspectItem, store } from '../../app/store'
+import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
+import { perfectScore } from '../../game/affixes'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById } from '../../game/state'
 import { SLOT_IDS, aggregateEquipment } from '../../game/stats'
@@ -31,6 +32,8 @@ const slots = computed(() =>
       label: SLOT_LABEL[id],
       inst: inst ?? null,
       name: inst ? itemDef(inst.itemId).name : '',
+      affix: inst ? inst.affixes.length : 0,
+      score: inst ? perfectScore(inst.itemId, inst.affixes) : 0,
     }
   }),
 )
@@ -46,7 +49,12 @@ const bagItems = computed(() => {
   const equipped = new Set(Object.values(store.state.slots))
   return store.state.equipment
     .filter((e) => !equipped.has(e.instanceId))
-    .map((e) => ({ inst: e, name: itemDef(e.itemId).name }))
+    .map((e) => ({
+      inst: e,
+      name: itemDef(e.itemId).name,
+      affix: e.affixes.length,
+      score: perfectScore(e.itemId, e.affixes),
+    }))
 })
 
 const agg = computed(() => aggregateEquipment(store.state))
@@ -122,15 +130,25 @@ function toggleAuto(itemId: string): void {
 function recycleInstance(instanceId: number): void {
   cmd({ type: 'recycleInstance', instanceId })
 }
+/** 材料 → 简单详情条；装备实例 → 词缀详情弹窗（v2.1） */
 function inspect(instanceId: number | null, itemId?: string): void {
   if (itemId) {
     inspectItem(itemId)
     return
   }
-  if (instanceId !== null) {
-    const inst = instanceById(store.state, instanceId)
-    if (inst) inspectItem(inst.itemId)
-  }
+  if (instanceId !== null) inspectInstance(instanceId)
+}
+
+/** 词缀徽标文本：无词缀返回空串 */
+function affixBadge(count: number, score: number): string {
+  if (count <= 0) return ''
+  return `${count}词缀 ${Math.round(score * 100)}%`
+}
+
+/** 高亮阈值统一取自内容表（评审 m4：不再硬编码 0.9） */
+const TOP_SCORE = CONTENT.affixes.perfectThreshold
+function isTop(score: number): boolean {
+  return score >= TOP_SCORE
 }
 </script>
 
@@ -145,6 +163,9 @@ function inspect(instanceId: number | null, itemId?: string): void {
             <div class="slot-item" @click="inspect(s.inst.instanceId)">
               <ItemIcon :item-id="s.inst.itemId" :size="18" />
               <span class="slot-name">{{ s.name }}<em>+{{ s.inst.enhanceLevel }}</em></span>
+            </div>
+            <div v-if="s.affix > 0" class="affix-badge" :class="{ top: isTop(s.score) }">
+              {{ affixBadge(s.affix, s.score) }}
             </div>
             <button class="btn sm" @click="unequip(s.id)">卸下</button>
           </template>
@@ -185,7 +206,12 @@ function inspect(instanceId: number | null, itemId?: string): void {
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
         <span class="clickable" @click="inspect(b.inst.instanceId)">
           <ItemIcon :item-id="b.inst.itemId" :size="16" />
-          <span class="name">{{ b.name }}<em class="dim"> +{{ b.inst.enhanceLevel }}</em></span>
+          <span class="name">
+            {{ b.name }}<em class="dim"> +{{ b.inst.enhanceLevel }}</em>
+            <em v-if="b.affix > 0" class="affix-inline" :class="{ top: isTop(b.score) }">
+              {{ affixBadge(b.affix, b.score) }}
+            </em>
+          </span>
         </span>
         <button class="btn sm" @click="equipInstance(b.inst.instanceId)">装备</button>
         <button class="btn sm" @click="recycleInstance(b.inst.instanceId)">回收</button>
@@ -258,6 +284,25 @@ h3 {
 .slot-name em {
   font-style: normal;
   color: var(--c-accent-2);
+}
+.affix-badge {
+  font-size: 10px;
+  color: var(--c-accent-2);
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  padding: 0 4px;
+  align-self: flex-start;
+}
+.affix-badge.top,
+.affix-inline.top {
+  color: var(--c-success);
+  border-color: var(--c-success);
+}
+.affix-inline {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--c-accent-2);
+  margin-left: 4px;
 }
 .slot-empty {
   color: var(--c-text-dim);

@@ -2,7 +2,7 @@
 // Forging · 自动化（v1.7）
 // 自动回收：白名单材料超出保留量即自动卖出换金（幂等，主循环定期清扫）
 // ============================================================
-import { itemDef } from './content'
+import { recycleGain } from './economy'
 import { addGold, materialCount, removeMaterial } from './state'
 import type { GameEvent, GameState } from './types'
 
@@ -14,8 +14,8 @@ export function sweepAutoRecycle(state: GameState): GameEvent[] {
     const have = materialCount(state, itemId)
     if (have <= keep) continue
     const sold = have - keep
+    const gain = recycleGain(state, itemId, sold)
     removeMaterial(state, itemId, sold)
-    const gain = itemDef(itemId).value * sold
     addGold(state, gain)
     events.push({ type: 'goldGained', amount: gain })
   }

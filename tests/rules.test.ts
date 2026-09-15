@@ -5,8 +5,10 @@ import { aggregateEquipment, speedFor } from '../src/game/stats'
 import { addInstance, newGame } from '../src/game/state'
 import type { GameState } from '../src/game/types'
 
+/** 基础属性用例：清空词缀，避免随机词缀干扰断言（词缀另有专项测试） */
 function equip(state: GameState, itemId: string, enhanceLevel = 0): void {
   const id = addInstance(state, itemId, enhanceLevel)
+  state.equipment.find((e) => e.instanceId === id)!.affixes = []
   const def = CONTENT.items[itemId]
   if (!def.slot) throw new Error('not equipment: ' + itemId)
   state.slots[def.slot] = id

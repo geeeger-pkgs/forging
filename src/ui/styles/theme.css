@@ -96,6 +96,14 @@ body {
 .dialog h3 {
   margin: 0 0 10px;
 }
+/* v2.1：窄屏解除 min-width，避免弹窗横向溢出（评审 m2） */
+@media (max-width: 900px) {
+  .dialog {
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+  }
+}
 .dialog .dim {
   color: var(--c-text-dim);
 }

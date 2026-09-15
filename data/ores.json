@@ -60,7 +60,8 @@
     "yieldMax": 3,
     "rareDrops": [
       { "itemId": "essence", "rate": 0.053 },
-      { "itemId": "crate", "rate": 0.0005 }
+      { "itemId": "crate", "rate": 0.0005 },
+      { "itemId": "emberstone", "rate": 0.002 }
     ]
   },
   {
@@ -76,7 +77,8 @@
     "yieldMax": 3,
     "rareDrops": [
       { "itemId": "essence", "rate": 0.071 },
-      { "itemId": "crate", "rate": 0.0005 }
+      { "itemId": "crate", "rate": 0.0005 },
+      { "itemId": "emberstone", "rate": 0.003 }
     ]
   },
   {
@@ -105,7 +107,8 @@
     "yieldMax": 3,
     "rareDrops": [
       { "itemId": "essence", "rate": 0.095 },
-      { "itemId": "crate", "rate": 0.0005 }
+      { "itemId": "crate", "rate": 0.0005 },
+      { "itemId": "emberstone", "rate": 0.0045 }
     ]
   },
   {
@@ -121,7 +124,8 @@
     "yieldMax": 3,
     "rareDrops": [
       { "itemId": "essence", "rate": 0.11 },
-      { "itemId": "crate", "rate": 0.0005 }
+      { "itemId": "crate", "rate": 0.0005 },
+      { "itemId": "emberstone", "rate": 0.007 }
     ]
   }
 ]

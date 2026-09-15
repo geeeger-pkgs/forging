@@ -2,11 +2,15 @@
 // Forging · 成就系统（v1.1）
 // 规则：达成即自动解锁并发放奖励（幂等）；由 settle 与 commands 定期调用
 // ============================================================
+import { perfectScore } from './affixes'
 import { CONTENT, itemDef } from './content'
 import { totalValue } from './economy'
 import { levelInfo } from './level'
 import { addGold, addInstance, addMaterial, materialCount } from './state'
 import type { AchievementDef, GameEvent, GameState } from './types'
+
+/** affixSlots 成就判定阈值：已装备件的词缀完美度 ≥ 80% 计入 */
+const AFFIX_SLOT_SCORE = 0.8
 
 export function achievementProgress(state: GameState): { unlocked: number; total: number } {
   return { unlocked: state.flags.achievements.unlocked.length, total: CONTENT.achievements.length }
@@ -54,6 +58,20 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
     }
     case 'buffSlots':
       return state.buffs.length >= def.target
+    case 'affixSlots': {
+      // v2.1（评审 M6）：已装备且**词缀完美度达标**的槽位数
+      // 注意：所有装备天生至少 1 条词缀，若只数"带词缀的槽"会与 slotsFilled 完全重复
+      let n = 0
+      for (const v of Object.values(state.slots)) {
+        if (v === undefined) continue
+        const inst = state.equipment.find((e) => e.instanceId === v)
+        if (inst && perfectScore(inst.itemId, inst.affixes ?? []) >= AFFIX_SLOT_SCORE) n += 1
+      }
+      return n >= def.target
+    }
+    case 'affixCount':
+      // v2.1：任一件装备的词缀条数达到目标（持有即可，无需装备）
+      return state.equipment.some((e) => (e.affixes?.length ?? 0) >= def.target)
   }
 }
 

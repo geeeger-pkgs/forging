@@ -14,6 +14,7 @@ import { systemRng } from '../game/rng'
 import { simulate } from '../game/settle'
 import { newGame } from '../game/state'
 import { checkTasks, refreshTasks } from '../game/tasks'
+import type { ForgeCategory } from '../ui/types'
 import { exportSave, loadGame, saveGame } from './persist'
 import type {
   ActionRef,
@@ -44,9 +45,11 @@ export const store = reactive({
   ui: {
     view: 'mining' as UiView,
     dialogRef: null as ActionRef | null,
-    forgeCategory: 'tool' as 'tool' | 'weapon' | 'armor' | 'rune',
+    forgeCategory: 'tool' as ForgeCategory,
     searchText: '',
     inspectItemId: null as string | null,
+    /** v2.1：装备实例详情弹窗（含词缀与重铸） */
+    inspectInstanceId: null as number | null,
   },
   now: Date.now(),
 })
@@ -115,10 +118,23 @@ function handleEvents(events: GameEvent[]): void {
         pushToast(`🎯 预设已应用：${e.name}`, 'good')
         break
       case 'enhanceResult':
+        if (e.guarded) {
+          pushToast(`🛡 庇护生效：强化失败但等级未降（+${e.from}）`, 'info')
+        } else {
+          pushToast(
+            e.success ? `强化成功：+${e.from} → +${e.to}` : `强化失败：+${e.from} → +${e.to}`,
+            e.success ? 'good' : 'bad',
+          )
+        }
+        break
+      case 'reforged':
         pushToast(
-          e.success ? `强化成功：+${e.from} → +${e.to}` : `强化失败：+${e.from} → +${e.to}`,
-          e.success ? 'good' : 'bad',
+          `⚒ 重铸完成：${e.name} 完美度 ${Math.round(e.before * 100)}% → ${Math.round(e.after * 100)}%`,
+          e.after >= e.before ? 'good' : 'info',
         )
+        break
+      case 'notice':
+        pushToast(e.text, 'info')
         break
       case 'blocked':
         pushToast(e.reason, 'bad')
@@ -157,6 +173,11 @@ export function setView(v: UiView): void {
 
 export function inspectItem(id: string | null): void {
   store.ui.inspectItemId = id
+}
+
+/** v2.1：打开装备实例详情（词缀 + 重铸）；传 null 关闭 */
+export function inspectInstance(instanceId: number | null): void {
+  store.ui.inspectInstanceId = instanceId
 }
 
 // ---------------- 启动与主循环 ----------------

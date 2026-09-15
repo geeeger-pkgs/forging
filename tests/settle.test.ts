@@ -15,8 +15,10 @@ function enqueue(s: GameState, ref: ActionRef, count: number | null): void {
   s.actions.queue.push({ ref, remaining: count, startedAt: 0, durationMs: 0, procMisses: 0 })
 }
 
+/** 基础属性用例：清空词缀，避免随机词缀干扰断言（词缀另有专项测试） */
 function equip(s: GameState, itemId: string, enhanceLevel = 0): number {
   const id = addInstance(s, itemId, enhanceLevel)
+  s.equipment.find((e) => e.instanceId === id)!.affixes = []
   const def = CONTENT.items[itemId]
   if (def.slot) s.slots[def.slot] = id
   return id

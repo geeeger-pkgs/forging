@@ -9,7 +9,7 @@
 
 export type SkillId = 'mining' | 'smelting' | 'forging' | 'enhancing'
 
-export type Tier = 1 | 2 | 3 | 4 | 5
+export type Tier = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 export type ItemId = string
 
@@ -24,6 +24,8 @@ export type ItemCategory =
   | 'armor'
   | 'jewelry'
   | 'rune'
+  /** v2.1：助剂类材料（重铸石） */
+  | 'reagent'
 
 /** 装备槽位（v1.3 起 10 槽：含项链/戒指） */
 export type SlotId =
@@ -177,6 +179,10 @@ export type AchievementType =
   | 'itemCount'
   | 'slotsFilled'
   | 'buffSlots'
+  /** v2.1：已装备槽中带词缀的件数 */
+  | 'affixSlots'
+  /** v2.1：单件装备的词缀条数（任一件达到即算） */
+  | 'affixCount'
 
 export interface AchievementReward {
   gold?: number
@@ -216,6 +222,7 @@ export type TaskCounter =
   | 'totalCratesOpened'
   | 'totalJewelryForged'
   | 'totalRunesCrafted'
+  | 'totalReforges'
 
 export interface TaskTemplate {
   id: string
@@ -287,6 +294,64 @@ export interface BuffSlot {
   until: number
 }
 
+// ---------- 词缀（v2.1） ----------
+
+/** 词缀效果：前 6 项与 ItemStats 同源（走同一加法池）；guard / goldFind 为词缀专有 */
+export type AffixEffect =
+  | 'speed'
+  | 'quantity'
+  | 'efficiency'
+  | 'wisdom'
+  | 'rareFind'
+  | 'enhanceRate'
+  /** 强化失败不降级概率 */
+  | 'guard'
+  /** 回收收益加成 */
+  | 'goldFind'
+  /** 重铸石掉落加成 */
+  | 'stoneFind'
+
+export interface AffixDef {
+  id: string
+  name: string
+  effect: AffixEffect
+  /** 一档（T1）完美值 */
+  base: number
+  /** 每档递增（完美值 = base + perTier × (tier − 1)） */
+  perTier: number
+}
+
+/** 装备实例上的一条词缀（value 为最终数值） */
+export interface AffixRoll {
+  /** 词缀定义 id */
+  id: string
+  value: number
+}
+
+/** 装备原型（= 物品 category）：决定词缀池 */
+export type AffixArchetype = 'tool' | 'weapon' | 'armor' | 'jewelry'
+
+export interface AffixesDef {
+  affixes: AffixDef[]
+  /** 原型 → 可选词缀 id（互不重复抽取） */
+  pools: Record<AffixArchetype, string[]>
+  /** 档位 → 词缀条数 */
+  countByTier: Record<string, number>
+  /** 单条词缀品质下界（value = max × roll，roll ∈ [rollMin, rollMax]） */
+  rollMin: number
+  rollMax: number
+  /** 视为「完美」的品质阈值 */
+  perfectThreshold: number
+  reforge: {
+    goldByTier: Record<string, number>
+    /** 每锁定 1 条，金币造价 ×(1 + lockGoldFactor × 锁定数) */
+    lockGoldFactor: number
+    essenceByTier: Record<string, number>
+    /** 每锁定 1 条消耗的重铸石数量 */
+    emberstonePerLock: number
+  }
+}
+
 // ---------- 精通（v1.5 转生系统） ----------
 
 export type PerkEffect = 'speed' | 'wisdom' | 'efficiency' | 'rareFind' | 'offlineHours' | 'startLevel'
@@ -339,6 +404,7 @@ export interface ContentTables {
   tasks: TasksDef
   runes: RuneDef[]
   perks: PerkDef[]
+  affixes: AffixesDef
   config: ConfigDef
 }
 
@@ -349,6 +415,8 @@ export interface EquipInstance {
   instanceId: number
   itemId: ItemId
   enhanceLevel: number
+  /** v2.1：词缀（条数由档位决定；旧档由迁移确定性回填） */
+  affixes: AffixRoll[]
 }
 
 export type ActionRef =
@@ -415,6 +483,8 @@ export interface GameState {
     autoRecycle: AutoRecycleMap
     /** v1.7：动作预设 */
     loadouts: LoadoutDef[]
+    /** v2.1：造装词缀的存档私有盐（阻断外部预计算/垫刀；见 affixes.ts） */
+    affixSalt: number
   }
   stats: {
     totalCrafts: number
@@ -432,6 +502,9 @@ export interface GameState {
     /** v1.5：传承次数与累计精通点 */
     totalPrestiges: number
     totalPrestigePointsEarned: number
+    /** v2.1：重铸次数与累计产出的「完美词缀」条数（单调递增） */
+    totalReforges: number
+    perfectAffixes: number
   }
 }
 
@@ -458,6 +531,8 @@ export type Command =
   | { type: 'saveLoadout'; name: string }
   | { type: 'applyLoadout'; loadoutId: string }
   | { type: 'deleteLoadout'; loadoutId: string }
+  /** v2.1：重铸词缀（locks = 保留不重摇的词缀下标） */
+  | { type: 'reforge'; instanceId: number; locks: number[] }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -468,7 +543,8 @@ export type GameEvent =
   | { type: 'itemsGained'; items: { itemId: ItemId; qty: number }[] }
   | { type: 'xpGained'; skill: SkillId; xp: number }
   | { type: 'levelUp'; skill: SkillId; level: number }
-  | { type: 'enhanceResult'; instanceId: number; from: number; to: number; success: boolean }
+  | { type: 'enhanceResult'; instanceId: number; from: number; to: number; success: boolean; guarded?: boolean }
+  | { type: 'reforged'; instanceId: number; name: string; before: number; after: number }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
   | { type: 'achievementUnlocked'; id: string; name: string }
@@ -480,6 +556,8 @@ export type GameEvent =
   | { type: 'perkChanged'; perkId: string }
   | { type: 'loadoutApplied'; name: string }
   | { type: 'goldGained'; amount: number }
+  /** v2.1：非阻塞提示（如消耗了高词缀装备） */
+  | { type: 'notice'; text: string }
   | { type: 'blocked'; reason: string }
 
 // ---------- 离线结算摘要 ----------

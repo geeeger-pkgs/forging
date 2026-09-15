@@ -76,6 +76,9 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
       case 'levelUp':
         levels.push({ skill: ev.skill, level: ev.level })
         break
+      case 'notice':
+        notes.push(ev.text)
+        break
       case 'blocked':
         notes.push(ev.reason)
         break

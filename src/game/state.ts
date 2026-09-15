@@ -2,6 +2,7 @@
 // Forging · 状态工厂与基础操作
 // 约定：内核函数原地修改传入的 state（调用方持有可变更副本）
 // ============================================================
+import { perfectAffixCount, rollAffixes } from './affixes'
 import { CONTENT } from './content'
 import type { EquipInstance, GameState, ItemId } from './types'
 
@@ -29,6 +30,7 @@ export function newGame(name: string, now: number): GameState {
       prestige: { points: 0, perks: {} },
       autoRecycle: {},
       loadouts: [],
+      affixSalt: (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0,
     },
     stats: {
       totalCrafts: 0,
@@ -44,6 +46,8 @@ export function newGame(name: string, now: number): GameState {
       totalRunesCrafted: 0,
       totalPrestiges: 0,
       totalPrestigePointsEarned: 0,
+      totalReforges: 0,
+      perfectAffixes: 0,
     },
   }
 }
@@ -74,10 +78,16 @@ export function instanceById(state: GameState, instanceId: number): EquipInstanc
   return state.equipment.find((e) => e.instanceId === instanceId)
 }
 
-/** 新增装备实例并返回 instanceId */
+/**
+ * 新增装备实例并返回 instanceId。
+ * v2.1：造装即带词缀，由 (itemId, instanceId, 存档盐) 确定性派生——
+ * 同一存档内结果恒定（读档重造无效、迁移可复现），同时不暴露可公开预计算的种子。
+ */
 export function addInstance(state: GameState, itemId: ItemId, enhanceLevel = 0): number {
   const id = state.nextInstanceId++
-  state.equipment.push({ instanceId: id, itemId, enhanceLevel })
+  const affixes = rollAffixes(itemId, id, state.meta.affixSalt ?? 0)
+  state.equipment.push({ instanceId: id, itemId, enhanceLevel, affixes })
+  state.stats.perfectAffixes += perfectAffixCount(itemId, affixes)
   return id
 }
 

@@ -6,6 +6,7 @@
 //   expectation 期望 + 小数结转（离线结算；强化被排除）
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
+import { REFORGE_STONE, perfectScore } from './affixes'
 import { buffBonuses } from './buffs'
 import { perkBonuses } from './prestige'
 import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
@@ -31,6 +32,10 @@ export interface SimulateOptions {
   events?: GameEvent[]
   maxRounds?: number
 }
+
+/** 消耗装备时的「高价值」提示阈值（完美度 ≥ 70% 或强化 ≥ +5） */
+const PRECIOUS_SCORE = 0.7
+const PRECIOUS_ENHANCE = 5
 
 /** 惰性推进：处理 [当前时间, now] 内所有可完成的动作轮次 */
 export function simulate(state: GameState, now: number, opts: SimulateOptions): GameEvent[] {
@@ -141,7 +146,7 @@ function applyRewards(
       grantExpected(state, itemId, expected, events)
       events.push(...tutorialProgress(state, 'mineItem', Math.floor(expected), { itemId }))
     }
-    grantRareDrops(state, rareDropsOf(ref), rare, mode, rng, events)
+    grantRareDrops(state, rareDropsOf(ref), rare, mode, rng, events, agg.stoneFind)
     const xpMul = (1 + wisdom) * (mode === 'expectation' ? 1 + eff : 1)
     grantXp(state, 'mining', xpOf(ref) * xpMul, events)
     events.push(...tutorialCheckTotalLevel(state))
@@ -179,7 +184,7 @@ function applyRewards(
       )
     }
   }
-  grantRareDrops(state, recipe.rareDrops, rare, mode, rng, events)
+  grantRareDrops(state, recipe.rareDrops, rare, mode, rng, events, agg.stoneFind)
   const xpMul = (1 + wisdom) * (mode === 'expectation' ? 1 + eff : 1)
   grantXp(state, recipe.skill, xpOf(ref) * xpMul, events)
   state.stats.totalCrafts += 1
@@ -233,11 +238,17 @@ function performEnhance(
   const success = rng.next() < rate
   const from = inst.enhanceLevel
   let to = from
-  if (success) to = from + 1
-  else if (step.downgrade) to = Math.max(0, from - 1)
+  // v2.1：庇护词缀——失败且该档降级时，按庇护概率免降级（仅对降级档生效）
+  let guarded = false
+  if (success) {
+    to = from + 1
+  } else if (step.downgrade) {
+    if (agg.guard > 0 && rng.next() < Math.min(1, agg.guard)) guarded = true
+    else to = Math.max(0, from - 1)
+  }
   inst.enhanceLevel = to
   state.stats.totalEnhances += 1
-  events.push({ type: 'enhanceResult', instanceId: ref.instanceId, from, to, success })
+  events.push({ type: 'enhanceResult', instanceId: ref.instanceId, from, to, success, guarded })
 
   // 连续强化链（v1.2）：每轮自动重臂到「当前等级 + 1」；失败降级自动跟随
   // 到达 +10 后本轮结束（remaining 收敛为 1，避免下一轮以“已达上限”报错停止）
@@ -286,9 +297,12 @@ function grantRareDrops(
   mode: 'online' | 'expectation',
   rng: Rng,
   events: GameEvent[],
+  stoneFind = 0,
 ): void {
   for (const rd of drops) {
-    const rate = rd.rate * (1 + rareFind)
+    // v2.1：勘探词缀只加权重铸石掉落（与通用稀有加成叠乘）
+    const extra = rd.itemId === REFORGE_STONE ? stoneFind : 0
+    const rate = rd.rate * (1 + rareFind + extra)
     if (mode === 'online') {
       if (rng.next() < rate) grantItem(state, rd.itemId, 1, events)
     } else {
@@ -334,13 +348,26 @@ function consumeInputs(
     if (def.stackable) {
       removeMaterial(state, inp.itemId, inp.qty)
     } else {
-      // 优先消耗强化等级最低的实例，损失最小
+      // v2.1（评审 B5）：优先消耗「词缀最差、其次强化最低」的同类实例。
+      // 取舍说明：词缀是稀缺资产（重铸石 + 真随机，且无法用材料复现），强化等级可用材料重跑，
+      // 因此词缀优先级更高；两者任一偏高时给出非阻塞提示，避免资产被静默销毁。
       const targets = freeInstances(state, inp.itemId)
-        .sort((a, b) => a.enhanceLevel - b.enhanceLevel)
+        .sort(
+          (a, b) =>
+            perfectScore(a.itemId, a.affixes ?? []) - perfectScore(b.itemId, b.affixes ?? []) ||
+            a.enhanceLevel - b.enhanceLevel,
+        )
         .slice(0, inp.qty)
       for (const t of targets) {
         const idx = state.equipment.findIndex((e) => e.instanceId === t.instanceId)
         if (idx >= 0) state.equipment.splice(idx, 1)
+      }
+      for (const t of targets) {
+        const score = perfectScore(t.itemId, t.affixes ?? [])
+        if (score >= PRECIOUS_SCORE || t.enhanceLevel >= PRECIOUS_ENHANCE) {
+          const why = score >= PRECIOUS_SCORE ? `完美度 ${Math.round(score * 100)}%` : `强化 +${t.enhanceLevel}`
+          events.push({ type: 'notice', text: `⚠ 消耗了高价值装备：${itemDef(t.itemId).name} +${t.enhanceLevel}（${why}）` })
+        }
       }
     }
   }

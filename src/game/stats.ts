@@ -6,7 +6,9 @@
 //   - 强化附加：工具 ×(1 + 2.9%×n)；非工具主属性 ×(1 + 5%×n)
 //   - v1.3：饰品（项链=强化成功率 / 戒指=效率）
 //   - v1.2 套装：≥5 件同档 +4% 全速；8 件同档再 +4% 效率
+//   - v2.1 词缀：加法并入同一池；词缀不受强化倍率放大（强化与词缀为两条独立轴）
 // ============================================================
+import { affixBonusOf } from './affixes'
 import { buffBonuses } from './buffs'
 import { itemDef } from './content'
 import { perkBonuses } from './prestige'
@@ -47,6 +49,12 @@ export interface AggregatedStats {
   rareFind: number
   /** 强化成功率加成（v1.3 饰品） */
   enhanceRate: number
+  /** v2.1 词缀：强化失败不降级概率 */
+  guard: number
+  /** v2.1 词缀：回收收益加成 */
+  goldFind: number
+  /** v2.1 词缀：重铸石掉落加成 */
+  stoneFind: number
   /** 套装（v1.2）：件数最多的同档位（≥3 时展示） */
   setTier: number | null
   setCount: number
@@ -61,6 +69,9 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     wisdom: 0,
     rareFind: 0,
     enhanceRate: 0,
+    guard: 0,
+    goldFind: 0,
+    stoneFind: 0,
     setTier: null,
     setCount: 0,
   }
@@ -73,18 +84,35 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     const def = itemDef(inst.itemId)
     if (def.tier) tierCount.set(def.tier, (tierCount.get(def.tier) ?? 0) + 1)
     const s = def.stats
-    if (!s) continue
-    const enhMult = def.category === 'tool' ? 1 + ENH_TOOL * inst.enhanceLevel : 1 + ENH_OTHER * inst.enhanceLevel
-    if (s.speed) {
-      const toolSkill = TOOL_SKILL[slot]
-      if (toolSkill) agg.toolSpeed[toolSkill] += s.speed * enhMult
-      else agg.allSpeed += s.speed * enhMult
+    if (s) {
+      const enhMult = def.category === 'tool' ? 1 + ENH_TOOL * inst.enhanceLevel : 1 + ENH_OTHER * inst.enhanceLevel
+      if (s.speed) {
+        const toolSkill = TOOL_SKILL[slot]
+        if (toolSkill) agg.toolSpeed[toolSkill] += s.speed * enhMult
+        else agg.allSpeed += s.speed * enhMult
+      }
+      if (s.efficiency) agg.efficiency += s.efficiency * enhMult
+      if (s.quantity) agg.quantity += s.quantity * enhMult
+      if (s.wisdom) agg.wisdom += s.wisdom * enhMult
+      if (s.rareFind) agg.rareFind += s.rareFind * enhMult
+      if (s.successRate) agg.enhanceRate += s.successRate * enhMult
     }
-    if (s.efficiency) agg.efficiency += s.efficiency * enhMult
-    if (s.quantity) agg.quantity += s.quantity * enhMult
-    if (s.wisdom) agg.wisdom += s.wisdom * enhMult
-    if (s.rareFind) agg.rareFind += s.rareFind * enhMult
-    if (s.successRate) agg.enhanceRate += s.successRate * enhMult
+
+    // v2.1 词缀：加法并入，不乘强化倍率（两条独立成长轴）
+    const affix = affixBonusOf(inst.affixes ?? [])
+    if (affix.speed) {
+      const toolSkill = TOOL_SKILL[slot]
+      if (toolSkill) agg.toolSpeed[toolSkill] += affix.speed
+      else agg.allSpeed += affix.speed
+    }
+    agg.efficiency += affix.efficiency
+    agg.quantity += affix.quantity
+    agg.wisdom += affix.wisdom
+    agg.rareFind += affix.rareFind
+    agg.enhanceRate += affix.enhanceRate
+    agg.guard += affix.guard
+    agg.goldFind += affix.goldFind
+    agg.stoneFind += affix.stoneFind
   }
 
   // 套装加成（v1.2 重设计）：件数最多的同档装备

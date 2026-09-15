@@ -20,6 +20,7 @@ export type ItemShape =
   | 'coal'
   | 'essence'
   | 'crate'
+  | 'ember'
   | 'unknown'
 
 const SHAPE_BY_PREFIX: [string, ItemShape][] = [
@@ -43,6 +44,7 @@ export function shapeOf(itemId: string): ItemShape {
   if (itemId === 'coal') return 'coal'
   if (itemId === 'essence') return 'essence'
   if (itemId === 'crate') return 'crate'
+  if (itemId === 'emberstone') return 'ember'
   const hit = SHAPE_BY_PREFIX.find(([p]) => itemId.startsWith(p))
   return hit ? hit[1] : 'unknown'
 }
@@ -62,6 +64,7 @@ export function colorOf(itemId: string, tier?: number): string {
   if (itemId === 'coal') return '#3a4152'
   if (itemId === 'essence') return '#b48ef0'
   if (itemId === 'crate') return '#b08756'
+  if (itemId === 'emberstone') return '#e5703a'
   return '#8a93ad'
 }
 
@@ -102,6 +105,8 @@ export function svgFor(shape: ItemShape, c: string): string {
       return `<path d="M12 2l2.2 7.4L22 12l-7.8 2.6L12 22l-2.2-7.4L2 12l7.8-2.6z" fill="${c}"/>`
     case 'crate':
       return `<rect x="4.5" y="6" width="15" height="12" rx="1.5" fill="${c}"/><path d="M4.5 11h15M12 6v12" stroke="#000" stroke-width="1.2" opacity="0.35"/>`
+    case 'ember':
+      return `<path d="M12 2.5c3.2 4 5.4 6.2 5.4 9.6a5.4 5.4 0 0 1-10.8 0c0-1.6.7-3 1.9-4.4.2 1.4.8 2.3 1.7 2.7-.6-2.6-.2-5 1.8-7.9z" fill="${c}"/><path d="M12 20.5a2.6 2.6 0 0 0 2.4-2.8c0-1.2-.9-2.2-2.4-3.6-1.5 1.4-2.4 2.4-2.4 3.6A2.6 2.6 0 0 0 12 20.5z" fill="#fff" opacity="0.35"/>`
     default:
       return `<circle cx="12" cy="12" r="7" fill="${c}"/>`
   }

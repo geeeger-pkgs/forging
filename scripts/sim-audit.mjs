@@ -78,7 +78,17 @@ for (const s of ores.slice(0, 8)) {
   const floor = s.baseTimeMs / (1 + speedMaxMine) < config.minActionTimeMs ? ' ⚠触底' : ''
   console.log(`  ${s.id.padEnd(16)} 基础 ${s.baseTimeMs}ms → 满配 ${tMax}ms${floor}`)
 }
-console.log(`效率合计 +${f(effMax, 3)} → ×${f(1 + effMax, 3)}；稀有合计 +${f(rareMax, 3)} → 稀有率 ×${f(1 + rareMax, 3)}`)
+// v2.1（评审 M2）：效率按真实语义出数——在线是「每轮概率额外产出一份、链式上限 1」的 proc，
+// 每轮期望倍率 = 1 + 1/(2−E)（E<1）；离线期望用 1+E 乘区（含精通）。两者不可混为一谈。
+const procRate = (E) => (E >= 1 ? 1 : 1 / (2 - E))
+const effEquip = effMax - runeVal('efficiency', 3) - runeVal('efficiency', 2) - perkVal('efficiency')
+console.log(
+  `效率（装备侧）E=${f(effEquip, 3)} → 在线每轮期望倍率 ×${f(1 + procRate(effEquip), 3)}（触发率 ${f(procRate(effEquip), 3)}/轮）`,
+)
+console.log(
+  `  ｜离线期望（装备+精通）×(1+${f(effEquip + perkVal('efficiency'), 3)})：符文/精通在线不参与 proc，离线偏乐观（设计取舍）`,
+)
+console.log(`效率合计（含符文/精通）+${f(effMax, 3)}；稀有合计 +${f(rareMax, 3)} → 稀有率 ×${f(1 + rareMax, 3)}`)
 const minBase = config.minActionTimeMs * (1 + speedMaxMine)
 console.log(`250ms 下限触底条件：基础时长 < ${Math.round(minBase)}ms（当前最速动作 ${Math.min(...ores.map((s) => s.baseTimeMs))}ms）→ ${Math.min(...ores.map((s) => s.baseTimeMs)) >= minBase ? '永不触底 ✅' : '可能触底 ⚠'}`)
 

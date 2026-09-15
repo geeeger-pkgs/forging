@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { store } from './app/store'
 import ActionDialog from './ui/components/ActionDialog.vue'
+import ItemDetailModal from './ui/components/ItemDetailModal.vue'
 import MainPanel from './ui/components/MainPanel.vue'
 import NavBar from './ui/components/NavBar.vue'
 import OfflineModal from './ui/components/OfflineModal.vue'
@@ -18,6 +19,7 @@ import TopBar from './ui/components/TopBar.vue'
       <RightPanel />
     </div>
     <ActionDialog />
+    <ItemDetailModal />
     <OfflineModal v-if="store.summary" />
     <Toasts />
   </div>

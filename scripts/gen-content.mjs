@@ -42,6 +42,8 @@ for (const t of TIERS) {
 addItem({ id: 'coal', name: '煤', category: 'coal', enhanceable: false, value: 3, stackable: true })
 addItem({ id: 'essence', name: '精华', category: 'essence', enhanceable: false, value: 15, stackable: true })
 addItem({ id: 'crate', name: '工匠小箱', category: 'crate', enhanceable: false, value: 25, stackable: true })
+// v2.1：重铸石（词缀锁定消耗；采集侧资源，不设商店直售）
+addItem({ id: 'emberstone', name: '重铸石', category: 'reagent', enhanceable: false, value: 60, stackable: true })
 
 // 装备 9 类（T1~T7）+ 饰品 2 类（T1~T5）
 const CATS = [
@@ -202,11 +204,51 @@ for (const eff of RUNE_EFFECTS) {
   })
 }
 
+// ---------------- 词缀（v2.1） ----------------
+// 数值口径：max(tier) = base + perTier × (tier − 1)；实际值 = max × roll，roll ∈ [0.55, 1.0]
+// 池按「装备原型 = 物品 category」划分；条数按档位递增（T1~2 一条 → T7 四条）
+const AFFIXES = [
+  { id: 'keen', name: '锋锐', effect: 'speed', base: 0.012, perTier: 0.006 },
+  { id: 'plenty', name: '丰产', effect: 'quantity', base: 0.02, perTier: 0.008 },
+  { id: 'flow', name: '流畅', effect: 'efficiency', base: 0.006, perTier: 0.003 },
+  { id: 'lore', name: '博识', effect: 'wisdom', base: 0.02, perTier: 0.01 },
+  { id: 'fortune', name: '幸运', effect: 'rareFind', base: 0.02, perTier: 0.01 },
+  { id: 'precision', name: '精准', effect: 'enhanceRate', base: 0.01, perTier: 0.005 },
+  { id: 'aegis', name: '庇护', effect: 'guard', base: 0.02, perTier: 0.01 },
+  { id: 'midas', name: '点金', effect: 'goldFind', base: 0.03, perTier: 0.015 },
+  { id: 'prospect', name: '勘探', effect: 'stoneFind', base: 0.05, perTier: 0.025 },
+]
+
+// 池各 5 条：T7 抽 4 条 → 5 种组合（避免"条数=池大小"导致组合退化，评审 M4）
+const affixDefs = {
+  affixes: AFFIXES,
+  pools: {
+    tool: ['keen', 'plenty', 'flow', 'lore', 'fortune'],
+    weapon: ['keen', 'plenty', 'flow', 'lore', 'midas'],
+    armor: ['flow', 'lore', 'fortune', 'aegis', 'prospect'],
+    jewelry: ['precision', 'aegis', 'midas', 'fortune', 'prospect'],
+  },
+  countByTier: { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4 },
+  rollMin: 0.55,
+  rollMax: 1.0,
+  /** 单条词缀视为「完美」的品质阈值（成就与 UI 高亮；与 §3 模拟的 90% 是两回事） */
+  perfectThreshold: 0.95,
+  // 重铸造价：金按档位分表（与该档开采金/时挂钩），锁每多一条 +90% 金 + 1 重铸石
+  reforge: {
+    goldByTier: { 1: 120, 2: 400, 3: 1100, 4: 2600, 5: 5200, 6: 7600, 7: 9500 },
+    lockGoldFactor: 0.9,
+    essenceByTier: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 4 },
+    emberstonePerLock: 1,
+  },
+}
+
 // ---------------- 输出 ----------------
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
 writeFileSync(join(dataDir, 'runes.json'), JSON.stringify(runes, null, 2) + '\n')
+writeFileSync(join(dataDir, 'affixes.json'), JSON.stringify(affixDefs, null, 2) + '\n')
 
 const itemCount = Object.keys(items).length
-console.log(`[gen-content] items: ${itemCount}（材料 17 + 装备 ${itemCount - 17 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}`)
-console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json')
+console.log(`[gen-content] items: ${itemCount}（材料 18 + 装备 ${itemCount - 18 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}`)
+console.log(`[gen-content] affixes: ${AFFIXES.length}（4 池）`)
+console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json')

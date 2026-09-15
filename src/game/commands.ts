@@ -3,7 +3,16 @@
 // 用法（壳层）：dispatch(state, cmd, now, rng) —— 先推进结算，再应用命令
 // 约定：命令层不触发模拟；validate 失败返回 blocked 事件（状态不变）
 // ============================================================
+import {
+  REFORGE_STONE,
+  affixQuality,
+  lockIssue,
+  perfectScore,
+  reforgeCost,
+  rerollAffixes,
+} from './affixes'
 import { CONTENT, MAX_ENHANCE, RECIPES_BY_ID, SITES_BY_ID, itemDef } from './content'
+import { recycleGain } from './economy'
 import { levelInfo } from './level'
 import { refLabel } from './refs'
 import { systemRng, type Rng } from './rng'
@@ -77,6 +86,8 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return applyLoadout(state, cmd.loadoutId, now)
     case 'deleteLoadout':
       return deleteLoadout(state, cmd.loadoutId)
+    case 'reforge':
+      return reforgeInstance(state, cmd.instanceId, cmd.locks, rng ?? systemRng())
   }
 }
 
@@ -184,9 +195,8 @@ function equip(state: GameState, instanceId: number): GameEvent[] {
 function recycleMaterial(state: GameState, itemId: ItemId, qty: number): GameEvent[] {
   if (qty < 1) return [{ type: 'blocked', reason: '回收数量必须 ≥ 1' }]
   if (materialCount(state, itemId) < qty) return [{ type: 'blocked', reason: '数量不足' }]
-  const def = itemDef(itemId)
+  const gain = recycleGain(state, itemId, qty)
   removeMaterial(state, itemId, qty)
-  const gain = def.value * qty
   addGold(state, gain)
   return [{ type: 'goldGained', amount: gain }]
 }
@@ -195,11 +205,11 @@ function recycleInstance(state: GameState, instanceId: number): GameEvent[] {
   const inst = instanceById(state, instanceId)
   if (!inst) return [{ type: 'blocked', reason: '装备不存在' }]
   if (isEquipped(state, instanceId)) return [{ type: 'blocked', reason: '请先卸下再回收' }]
-  const def = itemDef(inst.itemId)
+  const gain = recycleGain(state, inst.itemId, 1)
   const idx = state.equipment.findIndex((e) => e.instanceId === instanceId)
   if (idx >= 0) state.equipment.splice(idx, 1)
-  addGold(state, def.value)
-  return [{ type: 'goldGained', amount: def.value }]
+  addGold(state, gain)
+  return [{ type: 'goldGained', amount: gain }]
 }
 
 // ---------------- 队列扩容 ----------------
@@ -293,6 +303,67 @@ function deleteLoadout(state: GameState, loadoutId: string): GameEvent[] {
 }
 
 // ---------------- 预设预检（v1.9） ----------------
+
+// ---------------- 重铸（v2.1） ----------------
+
+/** 重铸前置校验：返回阻塞原因或 null（UI 预检复用，不改变状态） */
+export function reforgeBlockReason(state: GameState, instanceId: number, locks: readonly number[]): string | null {
+  const inst = instanceById(state, instanceId)
+  if (!inst) return '装备不存在'
+  const cost = reforgeCost(inst.itemId, locks.length)
+  if (!cost) return '该物品没有词缀，无法重铸'
+  const issue = lockIssue(inst.affixes.length, locks)
+  if (issue) return issue
+  if (state.gold < cost.gold) return `金币不足（需要 ${cost.gold}）`
+  if (cost.essence > 0 && materialCount(state, 'essence') < cost.essence) {
+    return `${itemDef('essence').name}不足（需要 ${cost.essence}）`
+  }
+  if (cost.emberstone > 0 && materialCount(state, REFORGE_STONE) < cost.emberstone) {
+    return `${itemDef(REFORGE_STONE).name}不足（需要 ${cost.emberstone}）`
+  }
+  return null
+}
+
+/**
+ * 重铸：重摇全部未锁定词缀（条数/池不变），锁定条保留原值。
+ * 造价 = 金 ×(1 + 0.9×锁定数) + 精华（按档位）+ 重铸石 ×锁定数。
+ */
+function reforgeInstance(
+  state: GameState,
+  instanceId: number,
+  locks: readonly number[],
+  rng: Rng,
+): GameEvent[] {
+  const reason = reforgeBlockReason(state, instanceId, locks)
+  if (reason) return [{ type: 'blocked', reason }]
+  const inst = instanceById(state, instanceId)
+  if (!inst) return [{ type: 'blocked', reason: '装备不存在' }]
+  const cost = reforgeCost(inst.itemId, locks.length)
+  if (!cost) return [{ type: 'blocked', reason: '该物品没有词缀，无法重铸' }]
+
+  addGold(state, -cost.gold)
+  if (cost.essence > 0) removeMaterial(state, 'essence', cost.essence)
+  if (cost.emberstone > 0) removeMaterial(state, REFORGE_STONE, cost.emberstone)
+
+  const before = perfectScore(inst.itemId, inst.affixes)
+  const locked = new Set(locks)
+  // 评审 B1：锁定条的 id 必须从抽取池剔除，否则同名词缀会重复
+  const next = rerollAffixes(rng, inst.itemId, inst.affixes, locks)
+
+  // 累计完美词缀：只统计本次新摇出的完美条（锁定条不重复计数）
+  const threshold = CONTENT.affixes.perfectThreshold
+  for (let i = 0; i < next.length; i++) {
+    if (locked.has(i)) continue
+    if (affixQuality(inst.itemId, next[i]) >= threshold) state.stats.perfectAffixes += 1
+  }
+
+  inst.affixes = next
+  state.stats.totalReforges += 1
+  return [
+    { type: 'goldGained', amount: -cost.gold },
+    { type: 'reforged', instanceId, name: itemDef(inst.itemId).name, before, after: perfectScore(inst.itemId, next) },
+  ]
+}
 
 /** 预设应用前检查：返回每个动作的阻塞原因（空数组 = 全部可执行） */
 export function checkLoadout(state: GameState, loadoutId: string): { label: string; reason: string }[] {

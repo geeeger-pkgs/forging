@@ -149,6 +149,14 @@
     "value": 25,
     "stackable": true
   },
+  "emberstone": {
+    "id": "emberstone",
+    "name": "重铸石",
+    "category": "reagent",
+    "enhanceable": false,
+    "value": 60,
+    "stackable": true
+  },
   "pick_copper": {
     "id": "pick_copper",
     "name": "铜镐",
