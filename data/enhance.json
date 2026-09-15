@@ -1,0 +1,12 @@
+[
+  { "targetLevel": 1,  "successRate": 1.00, "downgrade": false, "cost": { "ingots": 2, "essences": 1 }, "baseTimeMs": 6000, "xpBase": 7 },
+  { "targetLevel": 2,  "successRate": 0.90, "downgrade": false, "cost": { "ingots": 2, "essences": 1 }, "baseTimeMs": 6000, "xpBase": 9 },
+  { "targetLevel": 3,  "successRate": 0.85, "downgrade": false, "cost": { "ingots": 3, "essences": 1 }, "baseTimeMs": 6000, "xpBase": 11 },
+  { "targetLevel": 4,  "successRate": 0.80, "downgrade": false, "cost": { "ingots": 3, "essences": 1 }, "baseTimeMs": 6000, "xpBase": 13 },
+  { "targetLevel": 5,  "successRate": 0.74, "downgrade": true,  "cost": { "ingots": 4, "essences": 2 }, "baseTimeMs": 6000, "xpBase": 15 },
+  { "targetLevel": 6,  "successRate": 0.66, "downgrade": true,  "cost": { "ingots": 4, "essences": 2 }, "baseTimeMs": 6000, "xpBase": 17 },
+  { "targetLevel": 7,  "successRate": 0.59, "downgrade": true,  "cost": { "ingots": 5, "essences": 2 }, "baseTimeMs": 6000, "xpBase": 19 },
+  { "targetLevel": 8,  "successRate": 0.52, "downgrade": true,  "cost": { "ingots": 5, "essences": 3 }, "baseTimeMs": 6000, "xpBase": 21 },
+  { "targetLevel": 9,  "successRate": 0.44, "downgrade": true,  "cost": { "ingots": 6, "essences": 3 }, "baseTimeMs": 6000, "xpBase": 23 },
+  { "targetLevel": 10, "successRate": 0.36, "downgrade": true,  "cost": { "ingots": 8, "essences": 5 }, "baseTimeMs": 6000, "xpBase": 25 }
+]

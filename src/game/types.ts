@@ -108,7 +108,8 @@ export interface EnhanceStepDef {
   successRate: number
   /** true = 失败降「当前级 −1」；false = 失败等级不变 */
   downgrade: boolean
-  cost: { itemId: ItemId; qty: number }[]
+  /** 消耗：同级锭与精华数量（锭的具体档位由被强化物品解析） */
+  cost: { ingots: number; essences: number }
   baseTimeMs: number
   xpBase: number
 }
@@ -201,6 +202,8 @@ export interface OfflineCarry {
 export interface TutorialFlags {
   /** 当前已接受、进行中的步骤；10 = 全部完成 */
   current: number
+  /** 当前步骤的累计进度（接受步骤时清零） */
+  progress: number
   /** 目标已达成（待领奖） */
   completed: number[]
   /** 已领取奖励 */

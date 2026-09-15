@@ -1,0 +1,95 @@
+[
+  {
+    "id": "copper_seam",
+    "name": "铜矿脉",
+    "skill": "mining",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 5,
+    "outputItemId": "ore_copper",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.017 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "iron_seam",
+    "name": "铁矿脉",
+    "skill": "mining",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 8000,
+    "xp": 7.5,
+    "outputItemId": "ore_iron",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.024 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "silver_seam",
+    "name": "银矿脉",
+    "skill": "mining",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 11000,
+    "xp": 12.5,
+    "outputItemId": "ore_silver",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.037 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "gold_seam",
+    "name": "金矿脉",
+    "skill": "mining",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 14000,
+    "xp": 20,
+    "outputItemId": "ore_gold",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.053 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "mithril_seam",
+    "name": "秘银矿脉",
+    "skill": "mining",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 17000,
+    "xp": 30,
+    "outputItemId": "ore_mithril",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.071 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "coal_seam",
+    "name": "煤矿场",
+    "skill": "mining",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 6000,
+    "xp": 8,
+    "outputItemId": "coal",
+    "yieldMin": 2,
+    "yieldMax": 4,
+    "rareDrops": []
+  }
+]

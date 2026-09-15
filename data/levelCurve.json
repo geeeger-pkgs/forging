@@ -1,0 +1,9 @@
+{
+  "baseXp": 30,
+  "bands": [
+    { "fromLevel": 1, "multiplier": 1.35 },
+    { "fromLevel": 11, "multiplier": 1.18 },
+    { "fromLevel": 21, "multiplier": 1.12 },
+    { "fromLevel": 36, "multiplier": 1.09 }
+  ]
+}

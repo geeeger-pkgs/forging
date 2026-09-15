@@ -1,0 +1,9 @@
+{
+  "offlineCapHours": 8,
+  "minActionTimeMs": 250,
+  "queueSlotCosts": [300, 1200],
+  "autosaveSec": 5,
+  "coalMineUnlock": 20,
+  "defaultQueueSlots": 1,
+  "maxQueueSlots": 4
+}

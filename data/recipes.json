@@ -1,0 +1,1666 @@
+[
+  {
+    "id": "smelt_copper",
+    "name": "熔炼铜锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 5,
+    "inputs": [
+      {
+        "itemId": "ore_copper",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "smelt_iron",
+    "name": "熔炼铁锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 7.5,
+    "inputs": [
+      {
+        "itemId": "ore_iron",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "smelt_silver",
+    "name": "熔炼银锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 9000,
+    "xp": 12.5,
+    "inputs": [
+      {
+        "itemId": "ore_silver",
+        "qty": 3
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "smelt_gold",
+    "name": "熔炼金锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 20,
+    "inputs": [
+      {
+        "itemId": "ore_gold",
+        "qty": 3
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "smelt_mithril",
+    "name": "熔炼秘银锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 14000,
+    "xp": 30,
+    "inputs": [
+      {
+        "itemId": "ore_mithril",
+        "qty": 4
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_copper",
+    "name": "铜镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_iron",
+    "name": "铁镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 27,
+    "inputs": [
+      {
+        "itemId": "pick_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 18
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_silver",
+    "name": "银镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 60.75,
+    "inputs": [
+      {
+        "itemId": "pick_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 27
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_gold",
+    "name": "金镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 136.69,
+    "inputs": [
+      {
+        "itemId": "pick_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 41
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_mithril",
+    "name": "秘银镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 307.55,
+    "inputs": [
+      {
+        "itemId": "pick_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 62
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_copper",
+    "name": "铜坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 10,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 10
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_iron",
+    "name": "铁坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 22.5,
+    "inputs": [
+      {
+        "itemId": "crucible_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 15
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_silver",
+    "name": "银坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 50.63,
+    "inputs": [
+      {
+        "itemId": "crucible_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 23
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_gold",
+    "name": "金坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 113.91,
+    "inputs": [
+      {
+        "itemId": "crucible_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 35
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_mithril",
+    "name": "秘银坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 256.29,
+    "inputs": [
+      {
+        "itemId": "crucible_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 53
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_copper",
+    "name": "铜锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_iron",
+    "name": "铁锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 27,
+    "inputs": [
+      {
+        "itemId": "hammer_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 18
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_silver",
+    "name": "银锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 60.75,
+    "inputs": [
+      {
+        "itemId": "hammer_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 27
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_gold",
+    "name": "金锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 136.69,
+    "inputs": [
+      {
+        "itemId": "hammer_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 41
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_mithril",
+    "name": "秘银锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 307.55,
+    "inputs": [
+      {
+        "itemId": "hammer_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 62
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_copper",
+    "name": "铜剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 8000,
+    "xp": 18,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 18
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_iron",
+    "name": "铁剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 9000,
+    "xp": 40.5,
+    "inputs": [
+      {
+        "itemId": "sword_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 27
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_silver",
+    "name": "银剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 91.13,
+    "inputs": [
+      {
+        "itemId": "sword_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 41
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_gold",
+    "name": "金剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 205.03,
+    "inputs": [
+      {
+        "itemId": "sword_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 62
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_mithril",
+    "name": "秘银剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 12000,
+    "xp": 461.32,
+    "inputs": [
+      {
+        "itemId": "sword_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 93
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_copper",
+    "name": "铜战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 8000,
+    "xp": 14,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 14
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_iron",
+    "name": "铁战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 9000,
+    "xp": 31.5,
+    "inputs": [
+      {
+        "itemId": "warhammer_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 21
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_silver",
+    "name": "银战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 70.88,
+    "inputs": [
+      {
+        "itemId": "warhammer_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 32
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_gold",
+    "name": "金战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 159.47,
+    "inputs": [
+      {
+        "itemId": "warhammer_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 48
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_mithril",
+    "name": "秘银战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 12000,
+    "xp": 358.8,
+    "inputs": [
+      {
+        "itemId": "warhammer_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 72
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_copper",
+    "name": "铜头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 10,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 10
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_iron",
+    "name": "铁头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 22.5,
+    "inputs": [
+      {
+        "itemId": "helmet_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 15
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_silver",
+    "name": "银头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 50.63,
+    "inputs": [
+      {
+        "itemId": "helmet_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 23
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_gold",
+    "name": "金头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 113.91,
+    "inputs": [
+      {
+        "itemId": "helmet_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 35
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_mithril",
+    "name": "秘银头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 256.29,
+    "inputs": [
+      {
+        "itemId": "helmet_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 53
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_copper",
+    "name": "铜胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 8000,
+    "xp": 16,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 16
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_iron",
+    "name": "铁胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 9000,
+    "xp": 36,
+    "inputs": [
+      {
+        "itemId": "chest_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 24
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_silver",
+    "name": "银胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 81,
+    "inputs": [
+      {
+        "itemId": "chest_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 36
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_gold",
+    "name": "金胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 182.25,
+    "inputs": [
+      {
+        "itemId": "chest_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 54
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_mithril",
+    "name": "秘银胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 12000,
+    "xp": 410.06,
+    "inputs": [
+      {
+        "itemId": "chest_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 81
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_copper",
+    "name": "铜腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 14,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 14
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_iron",
+    "name": "铁腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 31.5,
+    "inputs": [
+      {
+        "itemId": "legs_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 21
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_silver",
+    "name": "银腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 70.88,
+    "inputs": [
+      {
+        "itemId": "legs_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 32
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_gold",
+    "name": "金腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 159.47,
+    "inputs": [
+      {
+        "itemId": "legs_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 48
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_mithril",
+    "name": "秘银腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 358.8,
+    "inputs": [
+      {
+        "itemId": "legs_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 72
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_copper",
+    "name": "铜靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 8,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_iron",
+    "name": "铁靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 7000,
+    "xp": 18,
+    "inputs": [
+      {
+        "itemId": "boots_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_silver",
+    "name": "银靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 8000,
+    "xp": 40.5,
+    "inputs": [
+      {
+        "itemId": "boots_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 18
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_gold",
+    "name": "金靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 9000,
+    "xp": 91.13,
+    "inputs": [
+      {
+        "itemId": "boots_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 27
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_mithril",
+    "name": "秘银靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 10000,
+    "xp": 205.03,
+    "inputs": [
+      {
+        "itemId": "boots_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 41
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  }
+]

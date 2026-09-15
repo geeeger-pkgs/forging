@@ -1,0 +1,701 @@
+{
+  "ore_copper": {
+    "id": "ore_copper",
+    "name": "铜矿石",
+    "tier": 1,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 2,
+    "stackable": true
+  },
+  "ingot_copper": {
+    "id": "ingot_copper",
+    "name": "铜锭",
+    "tier": 1,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 5,
+    "stackable": true
+  },
+  "ore_iron": {
+    "id": "ore_iron",
+    "name": "铁矿石",
+    "tier": 2,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 8,
+    "stackable": true
+  },
+  "ingot_iron": {
+    "id": "ingot_iron",
+    "name": "铁锭",
+    "tier": 2,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 20,
+    "stackable": true
+  },
+  "ore_silver": {
+    "id": "ore_silver",
+    "name": "银矿石",
+    "tier": 3,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 18,
+    "stackable": true
+  },
+  "ingot_silver": {
+    "id": "ingot_silver",
+    "name": "银锭",
+    "tier": 3,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 45,
+    "stackable": true
+  },
+  "ore_gold": {
+    "id": "ore_gold",
+    "name": "金矿石",
+    "tier": 4,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 32,
+    "stackable": true
+  },
+  "ingot_gold": {
+    "id": "ingot_gold",
+    "name": "金锭",
+    "tier": 4,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 80,
+    "stackable": true
+  },
+  "ore_mithril": {
+    "id": "ore_mithril",
+    "name": "秘银矿石",
+    "tier": 5,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 50,
+    "stackable": true
+  },
+  "ingot_mithril": {
+    "id": "ingot_mithril",
+    "name": "秘银锭",
+    "tier": 5,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 125,
+    "stackable": true
+  },
+  "coal": {
+    "id": "coal",
+    "name": "煤",
+    "category": "coal",
+    "enhanceable": false,
+    "value": 3,
+    "stackable": true
+  },
+  "essence": {
+    "id": "essence",
+    "name": "精华",
+    "category": "essence",
+    "enhanceable": false,
+    "value": 15,
+    "stackable": true
+  },
+  "crate": {
+    "id": "crate",
+    "name": "工匠小箱",
+    "category": "crate",
+    "enhanceable": false,
+    "value": 25,
+    "stackable": true
+  },
+  "pick_copper": {
+    "id": "pick_copper",
+    "name": "铜镐",
+    "tier": 1,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 0.15
+    },
+    "enhanceable": true,
+    "value": 30,
+    "stackable": false
+  },
+  "pick_iron": {
+    "id": "pick_iron",
+    "name": "铁镐",
+    "tier": 2,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 0.3
+    },
+    "enhanceable": true,
+    "value": 180,
+    "stackable": false
+  },
+  "pick_silver": {
+    "id": "pick_silver",
+    "name": "银镐",
+    "tier": 3,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 0.5
+    },
+    "enhanceable": true,
+    "value": 608,
+    "stackable": false
+  },
+  "pick_gold": {
+    "id": "pick_gold",
+    "name": "金镐",
+    "tier": 4,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 0.75
+    },
+    "enhanceable": true,
+    "value": 1640,
+    "stackable": false
+  },
+  "pick_mithril": {
+    "id": "pick_mithril",
+    "name": "秘银镐",
+    "tier": 5,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 1.05
+    },
+    "enhanceable": true,
+    "value": 3875,
+    "stackable": false
+  },
+  "crucible_copper": {
+    "id": "crucible_copper",
+    "name": "铜坩埚",
+    "tier": 1,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 0.15
+    },
+    "enhanceable": true,
+    "value": 25,
+    "stackable": false
+  },
+  "crucible_iron": {
+    "id": "crucible_iron",
+    "name": "铁坩埚",
+    "tier": 2,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 0.3
+    },
+    "enhanceable": true,
+    "value": 150,
+    "stackable": false
+  },
+  "crucible_silver": {
+    "id": "crucible_silver",
+    "name": "银坩埚",
+    "tier": 3,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 0.5
+    },
+    "enhanceable": true,
+    "value": 518,
+    "stackable": false
+  },
+  "crucible_gold": {
+    "id": "crucible_gold",
+    "name": "金坩埚",
+    "tier": 4,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 0.75
+    },
+    "enhanceable": true,
+    "value": 1400,
+    "stackable": false
+  },
+  "crucible_mithril": {
+    "id": "crucible_mithril",
+    "name": "秘银坩埚",
+    "tier": 5,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 1.05
+    },
+    "enhanceable": true,
+    "value": 3313,
+    "stackable": false
+  },
+  "hammer_copper": {
+    "id": "hammer_copper",
+    "name": "铜锤",
+    "tier": 1,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 0.15
+    },
+    "enhanceable": true,
+    "value": 30,
+    "stackable": false
+  },
+  "hammer_iron": {
+    "id": "hammer_iron",
+    "name": "铁锤",
+    "tier": 2,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 0.3
+    },
+    "enhanceable": true,
+    "value": 180,
+    "stackable": false
+  },
+  "hammer_silver": {
+    "id": "hammer_silver",
+    "name": "银锤",
+    "tier": 3,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 0.5
+    },
+    "enhanceable": true,
+    "value": 608,
+    "stackable": false
+  },
+  "hammer_gold": {
+    "id": "hammer_gold",
+    "name": "金锤",
+    "tier": 4,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 0.75
+    },
+    "enhanceable": true,
+    "value": 1640,
+    "stackable": false
+  },
+  "hammer_mithril": {
+    "id": "hammer_mithril",
+    "name": "秘银锤",
+    "tier": 5,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 1.05
+    },
+    "enhanceable": true,
+    "value": 3875,
+    "stackable": false
+  },
+  "sword_copper": {
+    "id": "sword_copper",
+    "name": "铜剑",
+    "tier": 1,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.02
+    },
+    "enhanceable": true,
+    "value": 45,
+    "stackable": false
+  },
+  "sword_iron": {
+    "id": "sword_iron",
+    "name": "铁剑",
+    "tier": 2,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.03
+    },
+    "enhanceable": true,
+    "value": 270,
+    "stackable": false
+  },
+  "sword_silver": {
+    "id": "sword_silver",
+    "name": "银剑",
+    "tier": 3,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.04
+    },
+    "enhanceable": true,
+    "value": 923,
+    "stackable": false
+  },
+  "sword_gold": {
+    "id": "sword_gold",
+    "name": "金剑",
+    "tier": 4,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 2480,
+    "stackable": false
+  },
+  "sword_mithril": {
+    "id": "sword_mithril",
+    "name": "秘银剑",
+    "tier": 5,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 5813,
+    "stackable": false
+  },
+  "warhammer_copper": {
+    "id": "warhammer_copper",
+    "name": "铜战锤",
+    "tier": 1,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.02
+    },
+    "enhanceable": true,
+    "value": 35,
+    "stackable": false
+  },
+  "warhammer_iron": {
+    "id": "warhammer_iron",
+    "name": "铁战锤",
+    "tier": 2,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.03
+    },
+    "enhanceable": true,
+    "value": 210,
+    "stackable": false
+  },
+  "warhammer_silver": {
+    "id": "warhammer_silver",
+    "name": "银战锤",
+    "tier": 3,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.04
+    },
+    "enhanceable": true,
+    "value": 720,
+    "stackable": false
+  },
+  "warhammer_gold": {
+    "id": "warhammer_gold",
+    "name": "金战锤",
+    "tier": 4,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.05
+    },
+    "enhanceable": true,
+    "value": 1920,
+    "stackable": false
+  },
+  "warhammer_mithril": {
+    "id": "warhammer_mithril",
+    "name": "秘银战锤",
+    "tier": 5,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.06
+    },
+    "enhanceable": true,
+    "value": 4500,
+    "stackable": false
+  },
+  "helmet_copper": {
+    "id": "helmet_copper",
+    "name": "铜头盔",
+    "tier": 1,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.03
+    },
+    "enhanceable": true,
+    "value": 25,
+    "stackable": false
+  },
+  "helmet_iron": {
+    "id": "helmet_iron",
+    "name": "铁头盔",
+    "tier": 2,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.04
+    },
+    "enhanceable": true,
+    "value": 150,
+    "stackable": false
+  },
+  "helmet_silver": {
+    "id": "helmet_silver",
+    "name": "银头盔",
+    "tier": 3,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.05
+    },
+    "enhanceable": true,
+    "value": 518,
+    "stackable": false
+  },
+  "helmet_gold": {
+    "id": "helmet_gold",
+    "name": "金头盔",
+    "tier": 4,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.06
+    },
+    "enhanceable": true,
+    "value": 1400,
+    "stackable": false
+  },
+  "helmet_mithril": {
+    "id": "helmet_mithril",
+    "name": "秘银头盔",
+    "tier": 5,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.08
+    },
+    "enhanceable": true,
+    "value": 3313,
+    "stackable": false
+  },
+  "chest_copper": {
+    "id": "chest_copper",
+    "name": "铜胸甲",
+    "tier": 1,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.05
+    },
+    "enhanceable": true,
+    "value": 40,
+    "stackable": false
+  },
+  "chest_iron": {
+    "id": "chest_iron",
+    "name": "铁胸甲",
+    "tier": 2,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.08
+    },
+    "enhanceable": true,
+    "value": 240,
+    "stackable": false
+  },
+  "chest_silver": {
+    "id": "chest_silver",
+    "name": "银胸甲",
+    "tier": 3,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.11
+    },
+    "enhanceable": true,
+    "value": 810,
+    "stackable": false
+  },
+  "chest_gold": {
+    "id": "chest_gold",
+    "name": "金胸甲",
+    "tier": 4,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.14
+    },
+    "enhanceable": true,
+    "value": 2160,
+    "stackable": false
+  },
+  "chest_mithril": {
+    "id": "chest_mithril",
+    "name": "秘银胸甲",
+    "tier": 5,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.18
+    },
+    "enhanceable": true,
+    "value": 5063,
+    "stackable": false
+  },
+  "legs_copper": {
+    "id": "legs_copper",
+    "name": "铜腿甲",
+    "tier": 1,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.05
+    },
+    "enhanceable": true,
+    "value": 35,
+    "stackable": false
+  },
+  "legs_iron": {
+    "id": "legs_iron",
+    "name": "铁腿甲",
+    "tier": 2,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.08
+    },
+    "enhanceable": true,
+    "value": 210,
+    "stackable": false
+  },
+  "legs_silver": {
+    "id": "legs_silver",
+    "name": "银腿甲",
+    "tier": 3,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.12
+    },
+    "enhanceable": true,
+    "value": 720,
+    "stackable": false
+  },
+  "legs_gold": {
+    "id": "legs_gold",
+    "name": "金腿甲",
+    "tier": 4,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.16
+    },
+    "enhanceable": true,
+    "value": 1920,
+    "stackable": false
+  },
+  "legs_mithril": {
+    "id": "legs_mithril",
+    "name": "秘银腿甲",
+    "tier": 5,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.2
+    },
+    "enhanceable": true,
+    "value": 4500,
+    "stackable": false
+  },
+  "boots_copper": {
+    "id": "boots_copper",
+    "name": "铜靴甲",
+    "tier": 1,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.01
+    },
+    "enhanceable": true,
+    "value": 20,
+    "stackable": false
+  },
+  "boots_iron": {
+    "id": "boots_iron",
+    "name": "铁靴甲",
+    "tier": 2,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.02
+    },
+    "enhanceable": true,
+    "value": 120,
+    "stackable": false
+  },
+  "boots_silver": {
+    "id": "boots_silver",
+    "name": "银靴甲",
+    "tier": 3,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.03
+    },
+    "enhanceable": true,
+    "value": 405,
+    "stackable": false
+  },
+  "boots_gold": {
+    "id": "boots_gold",
+    "name": "金靴甲",
+    "tier": 4,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.04
+    },
+    "enhanceable": true,
+    "value": 1080,
+    "stackable": false
+  },
+  "boots_mithril": {
+    "id": "boots_mithril",
+    "name": "秘银靴甲",
+    "tier": 5,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.05
+    },
+    "enhanceable": true,
+    "value": 2563,
+    "stackable": false
+  }
+}

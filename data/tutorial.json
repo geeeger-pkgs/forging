@@ -1,0 +1,50 @@
+[
+  {
+    "step": 1,
+    "title": "初识挖掘",
+    "goal": { "type": "mineItem", "target": 10, "itemId": "ore_copper" },
+    "rewards": [{ "gold": 20 }]
+  },
+  {
+    "step": 2,
+    "title": "熔炼入门",
+    "goal": { "type": "craftItem", "target": 5, "itemId": "ingot_copper" },
+    "rewards": [{ "gold": 20 }]
+  },
+  {
+    "step": 3,
+    "title": "第一件工具",
+    "goal": { "type": "craftItem", "target": 1, "itemId": "pick_copper" },
+    "rewards": [{ "gold": 30 }, { "itemId": "essence", "qty": 1 }]
+  },
+  {
+    "step": 4,
+    "title": "装备起来",
+    "goal": { "type": "equipSlot", "target": 1, "slotId": "pick" },
+    "rewards": [{ "gold": 20 }]
+  },
+  {
+    "step": 5,
+    "title": "学会强化",
+    "goal": { "type": "enhanceInstance", "target": 1 },
+    "rewards": [{ "gold": 20 }, { "itemId": "essence", "qty": 2 }]
+  },
+  {
+    "step": 6,
+    "title": "提速体感",
+    "goal": { "type": "mineItem", "target": 30, "itemId": "ore_copper" },
+    "rewards": [{ "itemId": "ingot_copper", "qty": 10 }]
+  },
+  {
+    "step": 7,
+    "title": "完整链路",
+    "goal": { "type": "craftItem", "target": 1, "itemId": "sword_copper" },
+    "rewards": [{ "gold": 50 }]
+  },
+  {
+    "step": 8,
+    "title": "初出茅庐",
+    "goal": { "type": "totalLevel", "target": 5 },
+    "rewards": [{ "queueSlot": 1 }]
+  }
+]

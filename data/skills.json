@@ -1,0 +1,6 @@
+[
+  { "id": "mining", "name": "挖掘", "maxLevel": 50 },
+  { "id": "smelting", "name": "熔炼", "maxLevel": 50 },
+  { "id": "forging", "name": "锻造", "maxLevel": 50 },
+  { "id": "enhancing", "name": "强化", "maxLevel": 50 }
+]
