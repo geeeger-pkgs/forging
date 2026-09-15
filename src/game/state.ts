@@ -39,6 +39,7 @@ export function newGame(name: string, now: number): GameState {
       expeditions: { runs: [], banner: 0, nextRunId: 1 },
       codexMilestones: '',
       seasonUnlockedOnce: false,
+      settings: { ...CONTENT.fx.defaults },
     },
     stats: {
       totalCrafts: 0,

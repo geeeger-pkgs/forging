@@ -419,6 +419,44 @@ export interface AbyssState {
   title: boolean
 }
 
+// ---------- 视听与手感（v2.5） ----------
+
+export type FxLevel = 'full' | 'reduced' | 'off'
+
+export interface FxCueDef {
+  id: string
+  name: string
+  wave: 'sine' | 'square' | 'triangle' | 'sawtooth' | 'noise'
+  freqs: number[]
+  durationMs: number
+  gain: number
+}
+
+export interface FxBudgetDef {
+  maxParticles: number
+  maxBurstParticles: number
+  maxBurstsPerSecond: number
+  maxPopups: number
+  frameBudgetMs: number
+  loopBudgetMs: number
+  maxConcurrentVoices: number
+}
+
+export interface FxDef {
+  cues: FxCueDef[]
+  budget: FxBudgetDef
+  defaults: { sound: boolean; volume: number; fx: FxLevel }
+  fxLevels: FxLevel[]
+}
+
+/** 玩家表现层设置（v2.5） */
+export interface SettingsState {
+  sound: boolean
+  /** 0~100 */
+  volume: number
+  fx: FxLevel
+}
+
 // ---------- 图鉴与赛季（v2.3） ----------
 
 /** 图鉴登记（逗号分隔 id 串，压缩存档体积；伙伴/遗物由 companions 与材料表推导） */
@@ -649,6 +687,7 @@ export interface ContentTables {
   expeditions: ExpeditionsDef
   season: SeasonDef
   abyss: AbyssDef
+  fx: FxDef
   config: ConfigDef
 }
 
@@ -712,7 +751,7 @@ export interface GameState {
   /** v2.2：伙伴（id → 状态） */
   companions: Record<string, CompanionState>
   /** v2.4：深渊回廊 */
-  abyss: Record<string, never> | AbyssState
+  abyss: AbyssState
   /** v2.3：图鉴与赛季（赛季未解锁时 season.index = -1） */
   codex: CodexState
   season: SeasonState
@@ -742,6 +781,8 @@ export interface GameState {
     codexMilestones: string
     /** v2.3：赛季是否曾经解锁（粘性：传承掉回门槛下仍保持解锁，测评 M2） */
     seasonUnlockedOnce: boolean
+    /** v2.5：表现层设置 */
+    settings?: SettingsState
   }
   stats: {
     totalCrafts: number

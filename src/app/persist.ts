@@ -8,7 +8,7 @@ import type { EquipInstance, GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 11
+export const SAVE_VERSION = 12
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -145,6 +145,15 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       totalTokensEarned: s.stats.totalTokensEarned ?? 0,
     },
   }),
+  // v2.5：表现层设置（音效/音量/动效档；旧档默认开启音效，受首次手势策略约束）
+  11: (s) => ({
+    ...s,
+    version: 12,
+    meta: {
+      ...s.meta,
+      settings: (s.meta as unknown as { settings?: GameState['meta']['settings'] }).settings ?? { ...CONTENT.fx.defaults },
+    },
+  }),
   // v2.4：深渊回廊（体力给满 12：迁移不纯但被持久化，与 newAffixSalt 同先例）
   10: (s) => ({
     ...s,
@@ -205,6 +214,7 @@ function ensureFields(s: GameState): GameState {
   }
   if (!out.companions) out = { ...out, companions: {} }
   if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
+  if (!out.meta.settings) out = { ...out, meta: { ...out.meta, settings: { ...CONTENT.fx.defaults } } }
   if (!out.abyss) {
     out = {
       ...out,

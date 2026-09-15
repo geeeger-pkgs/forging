@@ -388,11 +388,52 @@ const abyss = {
   ],
 }
 
+// ---------------- 视听与手感（v2.5） ----------------
+// 设计：docs/design-v2.5.md（表现层版本；证据由 scripts/audit-fx.mjs 输出）
+// 音效全部程序化合成（振荡器 + 包络 + 噪声），**零外部资源**
+const fx = {
+  /** 音效清单：wave ∈ sine/square/triangle/sawtooth/noise；freqs 为按序播放的音高（Hz） */
+  cues: [
+    { id: 'actionStart', name: '开始动作', wave: 'triangle', freqs: [220], durationMs: 60, gain: 0.5 },
+    { id: 'actionComplete', name: '动作完成', wave: 'triangle', freqs: [330], durationMs: 80, gain: 0.45 },
+    { id: 'queueAdvance', name: '队列接力', wave: 'triangle', freqs: [294], durationMs: 70, gain: 0.4 },
+    { id: 'levelUp', name: '技能升级', wave: 'sine', freqs: [440, 554, 659], durationMs: 320, gain: 0.5 },
+    { id: 'prestige', name: '传承', wave: 'sine', freqs: [392, 523, 659, 784], durationMs: 700, gain: 0.55 },
+    { id: 'seasonLevel', name: '赛季升级', wave: 'sine', freqs: [523, 659], durationMs: 260, gain: 0.45 },
+    { id: 'enhanceSuccess', name: '强化成功', wave: 'square', freqs: [660, 990], durationMs: 180, gain: 0.4 },
+    { id: 'enhanceFail', name: '强化失败', wave: 'noise', freqs: [200], durationMs: 160, gain: 0.45 },
+    { id: 'enhanceGuarded', name: '庇护生效', wave: 'triangle', freqs: [392], durationMs: 140, gain: 0.4 },
+    { id: 'crateOpen', name: '开箱', wave: 'noise', freqs: [420, 660], durationMs: 220, gain: 0.45 },
+    { id: 'rareDrop', name: '稀有掉落', wave: 'sine', freqs: [880, 1320], durationMs: 400, gain: 0.42 },
+    { id: 'lootBig', name: '大奖', wave: 'sine', freqs: [660, 990, 1320], durationMs: 600, gain: 0.5 },
+    { id: 'taskComplete', name: '任务完成', wave: 'triangle', freqs: [523, 659], durationMs: 240, gain: 0.45 },
+    { id: 'achievement', name: '成就达成', wave: 'sine', freqs: [659, 784, 988], durationMs: 420, gain: 0.5 },
+    { id: 'abyssClear', name: '深渊通关', wave: 'sine', freqs: [196, 247, 294], durationMs: 520, gain: 0.5 },
+    { id: 'purchase', name: '购买', wave: 'triangle', freqs: [494, 587], durationMs: 180, gain: 0.42 },
+    { id: 'blocked', name: '操作被阻塞', wave: 'square', freqs: [220, 165], durationMs: 160, gain: 0.35 },
+  ],
+  /** 预算与上限（证据脚本据此断言） */
+  budget: {
+    maxParticles: 260,      // 与 SceneCanvas 既有 MAX_P 一致（既有常驻粉尘 + 交互爆发共享）
+    maxBurstParticles: 60,  // 单次交互爆发上限
+    maxBurstsPerSecond: 4,  // 交互爆发频率上限
+    maxPopups: 6,           // 同屏飘字上限
+    frameBudgetMs: 1.5,     // 单帧表现层绘制预算（1440px 桌面，烟测实测）
+    loopBudgetMs: 0.5,      // 主循环（250ms tick）额外耗时预算（音效触发 + 事件入队）
+    maxConcurrentVoices: 8, // WebAudio 同时发声上限
+  },
+  /** 设置默认值（写入 meta.settings） */
+  defaults: { sound: true, volume: 60, fx: 'full' },
+  /** 动效档位（off 时完全不绘制表现层） */
+  fxLevels: ['full', 'reduced', 'off'],
+}
+
 // ---------------- 输出 ----------------
 writeFileSync(join(dataDir, 'companions.json'), JSON.stringify(companionsDef, null, 2) + '\n')
 writeFileSync(join(dataDir, 'expeditions.json'), JSON.stringify(expeditions, null, 2) + '\n')
 writeFileSync(join(dataDir, 'season.json'), JSON.stringify(season, null, 2) + '\n')
 writeFileSync(join(dataDir, 'abyss.json'), JSON.stringify(abyss, null, 2) + '\n')
+writeFileSync(join(dataDir, 'fx.json'), JSON.stringify(fx, null, 2) + '\n')
 void TIER_SUFFIX
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
@@ -405,4 +446,5 @@ console.log(`[gen-content] affixes: ${AFFIXES.length}（4 池）`)
 console.log(`[gen-content] companions: ${companions.length}（按 ${companionsDef.startLevelCap} 级上限）｜ routes: ${routes.length} × ${expeditions.hours.length} 档`)
 console.log(`[gen-content] season: ${season.days} 天 / ${season.levels} 级 / ${season.templates.length} 模板`)
 console.log(`[gen-content] abyss: 体力 ${abyss.staminaMax} / 门槛 ${abyss.base}×${abyss.growth}^n / 商店 ${abyss.shop.length} 项`)
-console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json, data/season.json, data/abyss.json')
+console.log(`[gen-content] fx: 音效 ${fx.cues.length} 条 / 预算 ${Object.keys(fx.budget).length} 项`)
+console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json, data/season.json, data/abyss.json, data/fx.json')

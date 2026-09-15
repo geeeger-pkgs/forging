@@ -37,6 +37,7 @@ import companionsJson from '../../data/companions.json'
 import expeditionsJson from '../../data/expeditions.json'
 import seasonJson from '../../data/season.json'
 import abyssJson from '../../data/abyss.json'
+import fxJson from '../../data/fx.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -345,6 +346,26 @@ export function validateContent(t: ContentTables): string[] {
   if (!shopIds.has('reroll_ticket')) errs.push('深渊商店缺少定向重铸券')
   if (!shopIds.has('permanent_speed')) errs.push('深渊商店缺少永久速度')
 
+  // 视听与手感（v2.5）
+  const fxd = t.fx
+  const cueIds = new Set<string>()
+  for (const cue of fxd.cues) {
+    if (cueIds.has(cue.id)) errs.push(`音效 id 重复: ${cue.id}`)
+    cueIds.add(cue.id)
+    if (!(cue.durationMs > 0)) errs.push(`音效时长非法: ${cue.id}`)
+    if (!(cue.gain > 0 && cue.gain <= 1)) errs.push(`音效音量非法: ${cue.id}`)
+    if (!Array.isArray(cue.freqs) || cue.freqs.length === 0) errs.push(`音效缺少音高: ${cue.id}`)
+    for (const fr of cue.freqs) if (!(fr > 20 && fr < 20000)) errs.push(`音效音高越界: ${cue.id} -> ${fr}`)
+    if (!['sine', 'square', 'triangle', 'sawtooth', 'noise'].includes(cue.wave)) errs.push(`音效波形非法: ${cue.id}`)
+  }
+  if (fxd.cues.length < 16) errs.push('音效数量不足 16 条')
+  for (const k of ['maxParticles', 'maxBurstParticles', 'maxPopups', 'maxConcurrentVoices'] as const) {
+    if (!(fxd.budget[k] >= 1)) errs.push(`表现预算非法: ${k}`)
+  }
+  if (!(fxd.budget.frameBudgetMs > 0 && fxd.budget.loopBudgetMs > 0)) errs.push('表现层时间预算非法')
+  if (!fxd.fxLevels.includes(fxd.defaults.fx)) errs.push('默认动效档不在档位列表内')
+  if (!(fxd.defaults.volume >= 0 && fxd.defaults.volume <= 100)) errs.push('默认音量非法')
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -373,6 +394,7 @@ export const CONTENT: ContentTables = {
   expeditions: expeditionsJson,
   season: seasonJson,
   abyss: abyssJson,
+  fx: fxJson,
   config: configJson,
 } as unknown as ContentTables
 

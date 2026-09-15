@@ -1,0 +1,211 @@
+{
+  "cues": [
+    {
+      "id": "actionStart",
+      "name": "开始动作",
+      "wave": "triangle",
+      "freqs": [
+        220
+      ],
+      "durationMs": 60,
+      "gain": 0.5
+    },
+    {
+      "id": "actionComplete",
+      "name": "动作完成",
+      "wave": "triangle",
+      "freqs": [
+        330
+      ],
+      "durationMs": 80,
+      "gain": 0.45
+    },
+    {
+      "id": "queueAdvance",
+      "name": "队列接力",
+      "wave": "triangle",
+      "freqs": [
+        294
+      ],
+      "durationMs": 70,
+      "gain": 0.4
+    },
+    {
+      "id": "levelUp",
+      "name": "技能升级",
+      "wave": "sine",
+      "freqs": [
+        440,
+        554,
+        659
+      ],
+      "durationMs": 320,
+      "gain": 0.5
+    },
+    {
+      "id": "prestige",
+      "name": "传承",
+      "wave": "sine",
+      "freqs": [
+        392,
+        523,
+        659,
+        784
+      ],
+      "durationMs": 700,
+      "gain": 0.55
+    },
+    {
+      "id": "seasonLevel",
+      "name": "赛季升级",
+      "wave": "sine",
+      "freqs": [
+        523,
+        659
+      ],
+      "durationMs": 260,
+      "gain": 0.45
+    },
+    {
+      "id": "enhanceSuccess",
+      "name": "强化成功",
+      "wave": "square",
+      "freqs": [
+        660,
+        990
+      ],
+      "durationMs": 180,
+      "gain": 0.4
+    },
+    {
+      "id": "enhanceFail",
+      "name": "强化失败",
+      "wave": "noise",
+      "freqs": [
+        200
+      ],
+      "durationMs": 160,
+      "gain": 0.45
+    },
+    {
+      "id": "enhanceGuarded",
+      "name": "庇护生效",
+      "wave": "triangle",
+      "freqs": [
+        392
+      ],
+      "durationMs": 140,
+      "gain": 0.4
+    },
+    {
+      "id": "crateOpen",
+      "name": "开箱",
+      "wave": "noise",
+      "freqs": [
+        420,
+        660
+      ],
+      "durationMs": 220,
+      "gain": 0.45
+    },
+    {
+      "id": "rareDrop",
+      "name": "稀有掉落",
+      "wave": "sine",
+      "freqs": [
+        880,
+        1320
+      ],
+      "durationMs": 400,
+      "gain": 0.42
+    },
+    {
+      "id": "lootBig",
+      "name": "大奖",
+      "wave": "sine",
+      "freqs": [
+        660,
+        990,
+        1320
+      ],
+      "durationMs": 600,
+      "gain": 0.5
+    },
+    {
+      "id": "taskComplete",
+      "name": "任务完成",
+      "wave": "triangle",
+      "freqs": [
+        523,
+        659
+      ],
+      "durationMs": 240,
+      "gain": 0.45
+    },
+    {
+      "id": "achievement",
+      "name": "成就达成",
+      "wave": "sine",
+      "freqs": [
+        659,
+        784,
+        988
+      ],
+      "durationMs": 420,
+      "gain": 0.5
+    },
+    {
+      "id": "abyssClear",
+      "name": "深渊通关",
+      "wave": "sine",
+      "freqs": [
+        196,
+        247,
+        294
+      ],
+      "durationMs": 520,
+      "gain": 0.5
+    },
+    {
+      "id": "purchase",
+      "name": "购买",
+      "wave": "triangle",
+      "freqs": [
+        494,
+        587
+      ],
+      "durationMs": 180,
+      "gain": 0.42
+    },
+    {
+      "id": "blocked",
+      "name": "操作被阻塞",
+      "wave": "square",
+      "freqs": [
+        220,
+        165
+      ],
+      "durationMs": 160,
+      "gain": 0.35
+    }
+  ],
+  "budget": {
+    "maxParticles": 260,
+    "maxBurstParticles": 60,
+    "maxBurstsPerSecond": 4,
+    "maxPopups": 6,
+    "frameBudgetMs": 1.5,
+    "loopBudgetMs": 0.5,
+    "maxConcurrentVoices": 8
+  },
+  "defaults": {
+    "sound": true,
+    "volume": 60,
+    "fx": "full"
+  },
+  "fxLevels": [
+    "full",
+    "reduced",
+    "off"
+  ]
+}
