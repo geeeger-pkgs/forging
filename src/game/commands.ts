@@ -14,6 +14,7 @@ import {
 import { CONTENT, MAX_ENHANCE, RECIPES_BY_ID, SITES_BY_ID, itemDef } from './content'
 import {
   HOUR_MS,
+  busyCompanions,
   claimExpedition,
   dispatchBlockReason,
   recruit,
@@ -437,8 +438,11 @@ function dispatchExpedition(
 ): GameEvent[] {
   const reason = dispatchBlockReason(state, routeId, hours)
   if (reason) return [{ type: 'blocked', reason }]
-  const ids = team.filter((id) => state.companions[id])
-  if (ids.length === 0) return [{ type: 'blocked', reason: '队伍里没有伙伴' }]
+  const busy = busyCompanions(state)
+  const ids = team.filter((id) => state.companions[id] && !busy.has(id))
+  if (ids.length === 0) {
+    return [{ type: 'blocked', reason: team.some((id) => busy.has(id)) ? '所选伙伴都在远征中' : '队伍里没有伙伴' }]
+  }
   if (ids.length > teamSize(state)) return [{ type: 'blocked', reason: `队伍上限 ${teamSize(state)} 人` }]
   const route = routeDef(routeId)
   const supply = supplyCost(state, route, hours, ids)

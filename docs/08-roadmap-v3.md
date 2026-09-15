@@ -63,8 +63,8 @@
 | 版本 | 状态 | 门禁 | 测评 |
 |---|---|---|---|
 | v2.1 | ✅ 完成 | 145 测试全绿 ｜ typecheck ｜ build（gzip JS 66.0KB）｜ 实机烟测（主 + 边界 + 窄屏）｜ sim-affixes 证据齐全 | docs/review-v2.1.md |
-| v2.2 | ✅ 完成 | 171 测试全绿 ｜ typecheck ｜ build（gzip JS 73.79KB）｜ 实机烟测（主 + 边界 + 窄屏）｜ sim-expedition 十项证据 | docs/review-v2.2.md |
-| v2.3 | 进行中 | — | — |
+| v2.2 | ✅ 完成（测评 7.7 → 处置后达标） | 180 测试全绿 ｜ typecheck ｜ build（gzip JS 73.96KB）｜ 实机烟测（主 + 边界 + 窄屏）｜ sim-expedition 证据与实现逐项对齐 | docs/review-v2.2.md |
+| v2.3 | 设计与评审已完成（Blocker 清零），进入开发 | — | — |
 | v2.4 | 未开始 | — | — |
 | v2.5 | 未开始 | — | — |
 | v3.0 | 未开始 | — | — |

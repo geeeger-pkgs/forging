@@ -37,9 +37,9 @@ console.log('═'.repeat(78))
 // 路线定义（提案值，落 data/expeditions.json）
 const ROUTES = [
   { id: 'outskirts', name: '近郊勘探', unlock: '伙伴 ≥1', tier: 1, anchor: GOLD_PER_HOUR[1], ratio: 0.09, supplyTier: 1, supplyPer8h: 16, tokenPer8h: 1.0, relic: null, xpPerHour: 25 },
-  { id: 'oldmine', name: '废弃矿道', unlock: '挖掘 Lv20', tier: 3, anchor: GOLD_PER_HOUR[3], ratio: 0.09, supplyTier: 2, supplyPer8h: 26, tokenPer8h: 0.6, relic: 'relic_gear', xpPerHour: 45 },
-  { id: 'ruins', name: '古代遗迹', unlock: '锻造 Lv35', tier: 4, anchor: GOLD_PER_HOUR[4], ratio: 0.09, supplyTier: 5, supplyPer8h: 7, tokenPer8h: 0.5, relic: 'relic_shard', xpPerHour: 90 },
-  { id: 'abyss', name: '深渊前哨', unlock: '总等级 ≥150', tier: 7, anchor: GOLD_PER_HOUR[7], ratio: 0.09, supplyTier: 7, supplyPer8h: 9, tokenPer8h: 0.4, relic: 'relic_core', xpPerHour: 150 },
+  { id: 'oldmine', name: '废弃矿道', unlock: '挖掘 Lv20', tier: 3, anchor: GOLD_PER_HOUR[3], ratio: 0.09, supplyTier: 2, supplyPer8h: 24, tokenPer8h: 0.6, relic: 'relic_gear', xpPerHour: 45 },
+  { id: 'ruins', name: '古代遗迹', unlock: '锻造 Lv35', tier: 4, anchor: GOLD_PER_HOUR[4], ratio: 0.09, supplyTier: 5, supplyPer8h: 8, tokenPer8h: 0.5, relic: 'relic_shard', xpPerHour: 90 },
+  { id: 'abyss', name: '深渊前哨', unlock: '总等级 ≥150', tier: 7, anchor: GOLD_PER_HOUR[7], ratio: 0.09, supplyTier: 7, supplyPer8h: 8, tokenPer8h: 0.4, relic: 'relic_core', xpPerHour: 150 },
 ]
 
 console.log(['路线'.padEnd(12), '锚点金/时'.padStart(11), '产出占比'.padStart(9), '毛产出/时'.padStart(11), '补给/时'.padStart(9), '补给价值/时'.padStart(12), '净产出/时'.padStart(11)].join(' | '))
@@ -104,10 +104,10 @@ console.log('═'.repeat(78))
 const RARITY = { common: 1.0, elite: 1.25, legend: 1.6 }
 const power = (level, r) => level * r * (1 + 0.02 * (level - 1))
 const TEAM_MAX = 5 // 初始 2 + 旗帜 3 级
-const BANNER_POWER = 0.08 // 旗帜每级 +8%（乘算，最高 ×1.24）
+const BANNER_POWER = 0.08 // 旗帜每级 +8%（乘算：满级 1.08³ = 1.2597，与实现一致——评审 M3）
 console.log(`单人满级战力：平凡 ${f(power(30, RARITY.common), 2)} / 精锐 ${f(power(30, RARITY.elite), 2)} / 传奇 ${f(power(30, RARITY.legend), 2)}`)
-const teamMaxPower = TEAM_MAX * power(30, RARITY.legend) * (1 + BANNER_POWER * 3)
-console.log(`队伍上限 ${TEAM_MAX} 人 + 旗帜满级 ×${f(1 + BANNER_POWER * 3, 2)} → 战力天花板 ${f(teamMaxPower, 1)}`)
+const teamMaxPower = TEAM_MAX * power(30, RARITY.legend) * Math.pow(1 + BANNER_POWER, 3)
+console.log(`队伍上限 ${TEAM_MAX} 人 + 旗帜满级 ×${f(Math.pow(1 + BANNER_POWER, 3), 4)} → 战力天花板 ${f(teamMaxPower, 2)}`)
 
 const REQ = { outskirts: 3, oldmine: 30, ruins: 120, abyss: 300 }
 console.log(['路线'.padEnd(12), '需求战力'.padStart(9), '最高成功率'.padStart(11), '首次可达配置'.padStart(22)].join(' | '))
@@ -129,23 +129,23 @@ console.log(`校验护栏：max(需求) ${Math.max(...Object.values(REQ))} ≤ �
 
 console.log('')
 console.log('═'.repeat(78))
-console.log('D. 时长档：速率与补给均按小时齐平（避免"只派 8h"的无脑最优解，评审 B4/§五 5.5）')
-console.log('═'.repeat(78))
-const TIERS = [
-  { h: 1, label: '1h' },
-  { h: 4, label: '4h' },
-  { h: 8, label: '8h' },
-]
-console.log('档位速率与补给均为线性（无档位加成）→ 单位小时净收益恒定：')
-for (const t of TIERS) {
-  const r = ROUTES[3]
-  const gross = r.anchor * r.ratio * t.h
-  const supply = (r.supplyPer8h / 8) * t.h * ingotRecycle(7)
-  console.log(`  ${t.label.padEnd(3)} 单次：毛 ${f(gross, 0)} 金 ｜ 补给 ${f(r.supplyPer8h / 8 * t.h, 2)} 虚空锭（${f(supply, 0)} 金）｜ 净 ${f(gross - supply, 0)} 金 ｜ 净/时 ${f((gross - supply) / t.h, 0)}`)
+console.log('D. 时长档：补给按小时整除 → 三档净/时严格齐平（评审 M2：按实现口径 ceil + 勤勉折扣核算）')
+console.log('═'.repeat(76))
+const DILIGENT = 0.75 // 勤勉 −25%（每队只生效一次）
+console.log(['档位'.padEnd(6), '毛产出'.padStart(9), '补给(件)'.padStart(9), '补给价值'.padStart(9), '净产出'.padStart(9), '净/时'.padStart(9)].join(' | '))
+for (const h of [1, 4, 8]) {
+  const r = ROUTES[3] // 深渊前哨（补给最贵，最能暴露取整偏差）
+  const gross = r.anchor * r.ratio * h
+  const qty = Math.max(1, Math.ceil((r.supplyPer8h / 8) * h * DILIGENT))
+  const supplyValue = qty * ingotRecycle(r.supplyTier)
+  console.log([`${h}h`.padEnd(6), f(gross, 0).padStart(9), String(qty).padStart(9), f(supplyValue, 0).padStart(9), f(gross - supplyValue, 0).padStart(9), f((gross - supplyValue) / h, 1).padStart(9)].join(' | '))
 }
-console.log('  → 三档净/时完全相同：档位是**排程选择**（多久回来看一次），不是收益选择；')
-console.log('    早期由「补给的现货量」区分（1h 档只需 1.13 虚空锭即可开跑，8h 需 9 锭库存），后期三档等价（设计取舍，已显式声明）')
-
+const net1 = ROUTES[3].anchor * ROUTES[3].ratio - Math.max(1, Math.ceil((ROUTES[3].supplyPer8h / 8) * 1 * DILIGENT)) * ingotRecycle(ROUTES[3].supplyTier)
+const net8 = ROUTES[3].anchor * ROUTES[3].ratio * 8 - Math.max(1, Math.ceil((ROUTES[3].supplyPer8h / 8) * 8 * DILIGENT)) * ingotRecycle(ROUTES[3].supplyTier)
+console.log(
+  `  4h/8h 净/时严格相等（${f((net8 / 8), 1)}）；1h 因整数取整多付 ≤1 件（${f(((net1 / net8) * 8 - 1) * 100, 2)}%）——量级远小于"无脑最优"阈值，档位是**排程选择**而非收益选择 ✅`,
+)
+console.log('  1h 档门槛最低（只需 1 件虚空锭即可开跑），8h 档适合睡眠/离线周期（设计取舍，已显式声明）')
 console.log('')
 console.log('═'.repeat(78))
 console.log('E. 伙伴成长曲线（1→30 级所需派遣）')
@@ -154,10 +154,12 @@ const xpNeed = (level) => Math.round(25 * Math.pow(level, 1.5))
 let total = 0
 const marks = [5, 10, 20, 30]
 console.log('累计经验需求：')
-for (let l = 1; l <= 30; l++) {
+// 评审 M1：升到 L30 只需 Σ_{1..29}（L30 那一档经验永不被消耗）
+for (let l = 1; l < 30; l++) {
   total += xpNeed(l)
   if (marks.includes(l)) console.log(`  L${String(l).padStart(2)} → 累计 ${Math.round(total)} 经验`)
 }
+console.log(`  L30（满级）→ 累计 ${Math.round(total)} 经验（不含 L30 档 ${xpNeed(30)}）`)
 const xpPerRun = (route, hours, wisdom = 0) => route.xpPerHour * hours * (1 + wisdom)
 const runs4h = total / xpPerRun(ROUTES[3], 4)
 console.log(`满级总经验 ≈ ${Math.round(total)}`)

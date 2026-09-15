@@ -189,6 +189,13 @@ function claim(): void {
     border-top: none;
     padding-top: 0;
     flex-direction: row;
+    /* v2.2 测评 M5：6 个工具按钮在 390px 下会溢出（设置不可达）→ 允许换行 */
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+  }
+  .tools .item {
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .tutorial {
     margin-top: 0;

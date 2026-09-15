@@ -20,6 +20,7 @@ import {
   supplyCost,
   teamPower,
   teamSize,
+  traitFactors,
   upgradeBanner,
   xpForLevel,
 } from '../src/game/expeditions'
@@ -419,15 +420,15 @@ describe('路线解锁文案（E3 补充）', () => {
 })
 
 describe('离线语义补强（并行 run / 期望标记）', () => {
-  it('多条不同路线的 run 可在同一窗口内各自结算', () => {
+  it('多条不同路线的 run 可在同一窗口内各自结算（需各派不同伙伴）', () => {
     const s = newGame('T', 0)
-    withCompanions(s, ['apprentice'])
+    withCompanions(s, ['apprentice', 'prospector'])
     s.skills.mining = 1e12
     s.skills.forging = 1e12
     s.materials['ingot_copper'] = 999
     s.materials['ingot_iron'] = 999
     applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 4, team: ['apprentice'] }, 0, mulberry32(1))
-    applyCommand(s, { type: 'dispatchExpedition', routeId: 'oldmine', hours: 4, team: ['apprentice'] }, 0, mulberry32(2))
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'oldmine', hours: 4, team: ['prospector'] }, 0, mulberry32(2))
     expect(s.meta.expeditions.runs.length).toBe(2)
     advanceExpeditions(s, 5 * HOUR_MS, 'expectation', null)
     expect(s.meta.expeditions.runs.filter((r) => r.done).length).toBe(2)
@@ -494,5 +495,82 @@ describe('编队上限（烟测发现的边界）', () => {
     for (let i = 0; i < 3; i++) upgradeBanner(s, [])
     expect(teamSize(s)).toBe(CONTENT.expeditions.team.base + 3)
     expect(teamSize(s)).toBe(CONTENT.expeditions.team.base + CONTENT.expeditions.banner.maxLevel)
+  })
+})
+
+describe('v2.2 测评处置回归', () => {
+  it('B1：离线（期望）徽记/遗物 = 在线长期均值（按成功率加权，不再是 2/(1+rate) 倍）', () => {
+    const s = newGame('T', 0)
+    s.companions = {}
+    withCompanions(s, ['apprentice']) // 战力 1.0
+    const route = R('oldmine') // 需求 30 → rate ≈ 0.033
+    const rate = successRate(s, route, ['apprentice'])
+    const exp = rollOutcome(s, route, 8, ['apprentice'], null, 'expectation')
+    // 在线 MC
+    let tokens = 0
+    let relics = 0
+    const N = 20000
+    const rng = mulberry32(20240915)
+    for (let i = 0; i < N; i++) {
+      const o = rollOutcome(s, route, 8, ['apprentice'], rng, 'online')
+      tokens += o.tokens
+      relics += o.relics.reduce((acc, r) => acc + r.qty, 0)
+    }
+    const onlineTokens = tokens / N
+    const onlineRelics = relics / N
+    // 期望应与在线均值一致（±3%，二项噪声）；且不再是对称的 2/(1+rate) 高估
+    expect(exp.tokens).toBeGreaterThan(onlineTokens * 0.9)
+    expect(exp.tokens).toBeLessThan(onlineTokens * 1.1)
+    expect(exp.relics[0]?.qty ?? 0).toBeLessThan(onlineRelics * 1.15 + 1e-9)
+    expect(rate).toBeLessThan(0.1) // 低成功率场景（原实现此处会高估 ~1.94×）
+  })
+
+  it('M4a：同一伙伴不能同时被派往两条路线（编队成为真实取舍）', () => {
+    const s = newGame('T', 0)
+    withCompanions(s, ['apprentice'])
+    s.skills.mining = 1e12
+    s.materials['ingot_copper'] = 999
+    s.materials['ingot_iron'] = 999
+    const first = applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 4, team: ['apprentice'] }, 0, mulberry32(1))
+    expect(first.some((e) => e.type === 'expeditionDispatched')).toBe(true)
+    const second = applyCommand(s, { type: 'dispatchExpedition', routeId: 'oldmine', hours: 4, team: ['apprentice'] }, 0, mulberry32(2))
+    const b = second.find((e) => e.type === 'blocked')
+    expect(b && b.type === 'blocked' ? b.reason : '').toMatch(/远征中/)
+    expect(s.meta.expeditions.runs.length).toBe(1)
+    // 领取后可再派
+    advanceExpeditions(s, 5 * HOUR_MS, 'expectation', null)
+    claimExpedition(s, s.meta.expeditions.runs[0].id, [])
+    const third = applyCommand(s, { type: 'dispatchExpedition', routeId: 'oldmine', hours: 4, team: ['apprentice'] }, 0, mulberry32(3))
+    expect(third.some((e) => e.type === 'expeditionDispatched')).toBe(true)
+  })
+
+  it('M4b：同一特质每队只生效一次（不再出现「全员贪婪」唯一解）', () => {
+    const s = newGame('T', 0)
+    for (const id of ['apprentice', 'prospector', 'ranger', 'scholar']) {
+      const def = CONTENT.companions.companions.find((c) => c.id === id)!
+      s.companions[id] = { level: def.startLevel, xp: 0, trait: 'greedy' }
+    }
+    const f = traitFactors(s)
+    expect(f.gold).toBeCloseTo(0.2, 6) // 4 名贪婪仍只 +20%
+    // 换成不同特质则可叠加（各一次）
+    s.companions['ranger'].trait = 'scholar'
+    s.companions['scholar'].trait = 'seeker'
+    const f2 = traitFactors(s)
+    expect(f2.gold).toBeCloseTo(0.2, 6)
+    expect(f2.xp).toBeCloseTo(0.25, 6)
+    expect(f2.find).toBeCloseTo(0.3, 6)
+  })
+
+  it('M2：三档补给按小时整除 → 净/时严格齐平（含勤勉折扣取整）', () => {
+    const s = newGame('T', 0)
+    s.companions = {}
+    withCompanions(s, ['apprentice'])
+    s.companions['apprentice'].trait = 'scholar' // 不带勤勉，检查基础比例
+    for (const routeId of ['outskirts', 'oldmine', 'ruins', 'abyss']) {
+      const route = R(routeId)
+      const per = [1, 4, 8].map((h) => supplyCost(s, route, h, ['apprentice']).qty / h)
+      expect(per[0]).toBeCloseTo(per[2], 6)
+      expect(per[1]).toBeCloseTo(per[2], 6)
+    }
   })
 })

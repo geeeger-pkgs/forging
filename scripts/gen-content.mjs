@@ -268,10 +268,10 @@ const companions = [
 ]
 
 const traits = [
-  { id: 'diligent', name: '勤勉', desc: '补给消耗 −15%（每名携带者叠乘）', effect: 'supply', value: -0.15 },
-  { id: 'greedy', name: '贪婪', desc: '金币产出 +25%（每名携带者叠加）', effect: 'gold', value: 0.25 },
-  { id: 'scholar', name: '博识', desc: '伙伴经验 +25%（每名携带者叠加）', effect: 'xp', value: 0.25 },
-  { id: 'seeker', name: '寻宝', desc: '徽记与遗物概率 +30%（每名携带者叠加）', effect: 'find', value: 0.3 },
+  { id: 'diligent', name: '勤勉', desc: '补给消耗 −25%（每队只生效一次）', effect: 'supply', value: -0.25 },
+  { id: 'greedy', name: '贪婪', desc: '金币产出 +20%（每队只生效一次）', effect: 'gold', value: 0.2 },
+  { id: 'scholar', name: '博识', desc: '伙伴经验 +25%（每队只生效一次）', effect: 'xp', value: 0.25 },
+  { id: 'seeker', name: '寻宝', desc: '徽记与遗物概率 +30%（每队只生效一次）', effect: 'find', value: 0.3 },
 ]
 
 const TIER_SUFFIX = { 1: 'copper', 2: 'iron', 3: 'silver', 4: 'gold', 5: 'mithril', 6: 'starlite', 7: 'void' }
@@ -285,19 +285,19 @@ const routes = [
   {
     id: 'oldmine', name: '废弃矿道', unlock: { type: 'skill', skill: 'mining', value: 20 }, reqPower: 30,
     anchorGoldPerHour: 18527, ratio: 0.09, tier: 3,
-    supply: { itemId: 'ingot_iron', qtyPer8h: 26 }, tokenPer8h: 0.6, relic: 'relic_gear', relicChancePerHour: 0.045,
+    supply: { itemId: 'ingot_iron', qtyPer8h: 24 }, tokenPer8h: 0.6, relic: 'relic_gear', relicChancePerHour: 0.045,
     stonePer8h: 0, xpPerHour: 45, materialItemId: 'ore_silver',
   },
   {
     id: 'ruins', name: '古代遗迹', unlock: { type: 'skill', skill: 'forging', value: 35 }, reqPower: 120,
     anchorGoldPerHour: 30590, ratio: 0.09, tier: 4,
-    supply: { itemId: 'ingot_mithril', qtyPer8h: 7 }, tokenPer8h: 0.5, relic: 'relic_shard', relicChancePerHour: 0.045,
+    supply: { itemId: 'ingot_mithril', qtyPer8h: 8 }, tokenPer8h: 0.5, relic: 'relic_shard', relicChancePerHour: 0.045,
     stonePer8h: 3, xpPerHour: 90, materialItemId: 'ore_gold',
   },
   {
     id: 'abyss', name: '深渊前哨', unlock: { type: 'totalLevel', value: 150 }, reqPower: 300,
     anchorGoldPerHour: 74845, ratio: 0.09, tier: 7,
-    supply: { itemId: 'ingot_void', qtyPer8h: 9 }, tokenPer8h: 0.4, relic: 'relic_core', relicChancePerHour: 0.045,
+    supply: { itemId: 'ingot_void', qtyPer8h: 8 }, tokenPer8h: 0.4, relic: 'relic_core', relicChancePerHour: 0.045,
     stonePer8h: 0, xpPerHour: 150, materialItemId: 'ore_void',
   },
 ]

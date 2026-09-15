@@ -66,11 +66,14 @@ export function teamPower(state: GameState, ids?: readonly string[]): number {
 export function traitFactors(state: GameState, ids?: readonly string[]): Record<string, number> {
   const list = ids ?? Object.keys(state.companions)
   const out = { supply: 1, gold: 0, xp: 0, find: 0 }
+  // 评审 M4：**同一特质每队只生效一次**（不叠加）——否则「全员洗成贪婪」是唯一最优解
+  const seen = new Set<string>()
   for (const id of list) {
     const st = state.companions[id]
     if (!st) continue
     const t = TRAIT_BY_ID.get(st.trait)
-    if (!t) continue
+    if (!t || seen.has(t.id)) continue
+    seen.add(t.id)
     if (t.effect === 'supply') out.supply *= 1 + t.value
     else if (t.effect === 'gold') out.gold += t.value
     else if (t.effect === 'xp') out.xp += t.value
@@ -105,11 +108,20 @@ export function dispatchBlockReason(state: GameState, routeId: string, hours: nu
   if (freeze) return freeze
   if (Object.keys(state.companions).length === 0) return '还没有伙伴'
   if (state.meta.expeditions.runs.some((r) => r.routeId === routeId)) return `${route.name}已有远征在进行`
+  const busy = busyCompanions(state)
+  if (busy.size >= Object.keys(state.companions).length) return '所有伙伴都在远征中（先领取已完成的远征）'
   const supply = supplyCost(state, route, hours, Object.keys(state.companions))
   if (materialCount(state, supply.itemId) < supply.qty) {
     return `补给不足：${itemDef(supply.itemId).name} ×${supply.qty}`
   }
   return null
+}
+
+/** 正在远征中的伙伴（含已完成待领取的 run）——同一伙伴同一时刻只能参与一条路线（评审 M4） */
+export function busyCompanions(state: GameState): Set<string> {
+  const busy = new Set<string>()
+  for (const run of state.meta.expeditions.runs) for (const id of run.team) busy.add(id)
+  return busy
 }
 
 /** 路线解锁条件文案（未满足返回原因，满足返回 null） */
@@ -176,7 +188,8 @@ export function rollOutcome(
   const matValue = gross * (1 - DEF.goldShare)
   const matQty = matValue / itemDef(route.materialItemId).value
 
-  const findMul = (1 + f.find) * (success ? 1 : 0.5)
+  // 评审 B1：期望模式必须按成功率加权（否则离线徽记/遗物最高可达在线的 2×）
+  const findMul = (1 + f.find) * (mode === 'expectation' ? rate + (1 - rate) * 0.5 : success ? 1 : 0.5)
   const tokenExpected = (route.tokenPer8h / 8) * hours * findMul
   const relicExpected = route.relic ? route.relicChancePerHour * hours * findMul : 0
   const stoneExpected = (route.stonePer8h / 8) * hours * yieldShare
