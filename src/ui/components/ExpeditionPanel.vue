@@ -105,8 +105,10 @@ function togglePick(id: string): void {
   else if (picked.value.length < maxTeam.value) picked.value.push(id)
 }
 
+/** 未编队时按「全员出战」提交（与面板文案一致；否则会因空队伍被内核拒绝） */
 function dispatch(routeId: string): void {
-  cmd({ type: 'dispatchExpedition', routeId, hours: pickHours.value, team: [...picked.value] })
+  const team = picked.value.length ? [...picked.value] : Object.keys(store.state.companions)
+  cmd({ type: 'dispatchExpedition', routeId, hours: pickHours.value, team })
 }
 
 function fmtLeft(ms: number): string {
