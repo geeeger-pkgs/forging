@@ -3,7 +3,7 @@
 // 载入 data/*.json → 结构校验 → 交叉引用校验 → 导出强类型 CONTENT
 // 校验失败直接 throw（启动即失败，避免脏数据流入运行时）
 // ============================================================
-import type { ContentTables, ItemDef, ItemId, SkillId, SlotId, TaskCounter } from './types'
+import type { ContentTables, ItemDef, ItemId, RuneDef, SkillId, SlotId, TaskCounter } from './types'
 
 import skillsJson from '../../data/skills.json'
 import oresJson from '../../data/ores.json'
@@ -14,6 +14,7 @@ import enhanceJson from '../../data/enhance.json'
 import tutorialJson from '../../data/tutorial.json'
 import achievementsJson from '../../data/achievements.json'
 import tasksJson from '../../data/tasks.json'
+import runesJson from '../../data/runes.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -30,6 +31,7 @@ const SLOT_IDS: readonly SlotId[] = [
   'ring',
 ]
 const EQUIP_CATEGORIES = new Set(['tool', 'weapon', 'armor', 'jewelry'])
+const RUNE_EFFECTS = new Set(['speed', 'efficiency', 'rareFind', 'enhanceRate'])
 const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalMines',
   'totalSmelts',
@@ -39,6 +41,7 @@ const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalGoldEarned',
   'totalCratesOpened',
   'totalJewelryForged',
+  'totalRunesCrafted',
 ]
 
 function validate(t: ContentTables): string[] {
@@ -97,7 +100,7 @@ function validate(t: ContentTables): string[] {
     for (const rw of s.rewards) if (rw.itemId && !hasItem(rw.itemId)) errs.push(`教程奖励物品不存在: 步骤 ${s.step}`)
   }
 
-  // 成就（v1.1）
+  // 成就（v1.1 / v1.3 / v1.4）
   const achIds = new Set<string>()
   for (const a of t.achievements) {
     if (achIds.has(a.id)) errs.push(`成就 id 重复: ${a.id}`)
@@ -130,6 +133,17 @@ function validate(t: ContentTables): string[] {
     if (task.target <= 0) errs.push(`任务目标非法: ${task.id}`)
   }
 
+  // 符文（v1.4）
+  const runeIds = new Set<string>()
+  for (const r of t.runes) {
+    if (runeIds.has(r.id)) errs.push(`符文 id 重复: ${r.id}`)
+    runeIds.add(r.id)
+    if (!hasItem(r.id)) errs.push(`符文物品不存在: ${r.id}`)
+    if (!RUNE_EFFECTS.has(r.effect)) errs.push(`符文效果非法: ${r.id} -> ${r.effect}`)
+    if (!(r.value > 0)) errs.push(`符文数值非法: ${r.id}`)
+    if (r.durationMs <= 0) errs.push(`符文时长非法: ${r.id}`)
+  }
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -150,6 +164,7 @@ export const CONTENT: ContentTables = {
   tutorial: tutorialJson,
   achievements: achievementsJson,
   tasks: tasksJson,
+  runes: runesJson,
   config: configJson,
 } as unknown as ContentTables
 
@@ -166,6 +181,7 @@ export const ENHANCE_BY_TARGET = new Map(CONTENT.enhance.map((e) => [e.targetLev
 export const TUTORIAL_BY_STEP = new Map(CONTENT.tutorial.map((s) => [s.step, s] as const))
 export const TASK_DAILY_BY_ID = new Map(CONTENT.tasks.daily.map((t) => [t.id, t] as const))
 export const TASK_WEEKLY_BY_ID = new Map(CONTENT.tasks.weekly.map((t) => [t.id, t] as const))
+export const RUNE_BY_ID: ReadonlyMap<ItemId, RuneDef> = new Map(CONTENT.runes.map((r) => [r.id, r] as const))
 export const MAX_LEVEL = Math.max(...CONTENT.skills.map((s) => s.maxLevel))
 export const MAX_ENHANCE = Math.max(...CONTENT.enhance.map((e) => e.targetLevel))
 

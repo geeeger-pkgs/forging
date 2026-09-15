@@ -81,7 +81,7 @@ describe('存档持久化', () => {
     expect(await importSaveFile(wrongShape)).toBeNull()
   })
 
-  it('v1 → v4 链式迁移：补齐成就/计数/任务/饰品统计（保留旧数据）', () => {
+  it('v1 → v5 链式迁移：补齐成就/计数/任务/饰品/符文（保留旧数据）', () => {
     const v1 = {
       version: 1,
       character: { name: '旧档', createdAt: 1 },
@@ -100,31 +100,36 @@ describe('存档持久化', () => {
     localStorage.setItem('forging.save', JSON.stringify(v1))
     const loaded = loadGame()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(4)
+    expect(loaded!.version).toBe(5)
     expect(loaded!.stats.totalMines).toBe(0)
     expect(loaded!.stats.totalCrafts).toBe(7)
     expect(loaded!.stats.totalGoldEarned).toBe(0)
     expect(loaded!.stats.totalTasksDone).toBe(0)
     expect(loaded!.stats.totalJewelryForged).toBe(0)
+    expect(loaded!.stats.totalRunesCrafted).toBe(0)
+    expect(loaded!.buffs).toEqual([])
     expect(loaded!.flags.achievements.unlocked).toEqual([])
     expect(loaded!.flags.tutorial.current).toBe(3)
     expect(loaded!.materials['ore_copper']).toBe(9)
     expect(loaded!.meta.tasks.daily).toEqual([]) // 待首启 refreshTasks 生成
   })
 
-  it('v2 → v4 链式迁移：补齐任务与累计计数', () => {
+  it('v2 → v5 链式迁移：补齐任务/饰品/符文计数', () => {
     const s = newGame('V2', 1)
     const v2 = { ...s, version: 2 }
     delete (v2 as Record<string, unknown>).meta // 重建 v2 形态
     const statsV2 = { totalCrafts: 3, totalEnhances: 1, totalMines: 5 }
     ;(v2 as Record<string, unknown>).meta = { lastSeenAt: 1, carry: { items: {} } }
     ;(v2 as Record<string, unknown>).stats = statsV2
+    delete (v2 as Record<string, unknown>).buffs
     localStorage.setItem('forging.save', JSON.stringify(v2))
     const loaded = loadGame()
-    expect(loaded!.version).toBe(4)
+    expect(loaded!.version).toBe(5)
     expect(loaded!.stats.totalMines).toBe(5)
     expect(loaded!.stats.totalSmelts).toBe(0)
     expect(loaded!.stats.totalTasksDone).toBe(0)
+    expect(loaded!.stats.totalRunesCrafted).toBe(0)
+    expect(loaded!.buffs).toEqual([])
     expect(loaded!.meta.tasks.paidRerollsLeft).toBe(3)
   })
 

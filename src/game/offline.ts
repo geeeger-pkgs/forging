@@ -42,7 +42,11 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   if (state.actions.queue.length !== qBefore) notes.push('队列中的强化动作不参与离线结算，已跳过')
 
   const events: GameEvent[] = []
+  // v1.4：临时增益（符文）不参与离线结算——结算期间临时清空 buffs，结束后恢复（照常计时/过期）
+  const buffsBackup = state.buffs
+  state.buffs = []
   simulate(state, state.meta.lastSeenAt + counted, { mode: 'expectation', events, maxRounds: 200_000 })
+  state.buffs = buffsBackup
   state.meta.lastSeenAt = now // 超出 cap 的时长不结转
 
   // ---- 汇总 ----

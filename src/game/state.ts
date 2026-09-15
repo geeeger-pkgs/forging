@@ -17,6 +17,7 @@ export function newGame(name: string, now: number): GameState {
     gold: 0,
     actions: { current: null, queue: [] },
     queueSlots: CONTENT.config.defaultQueueSlots,
+    buffs: [],
     flags: {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },
       achievements: { unlocked: [] },
@@ -37,6 +38,7 @@ export function newGame(name: string, now: number): GameState {
       totalTasksDone: 0,
       totalWeekliesDone: 0,
       totalJewelryForged: 0,
+      totalRunesCrafted: 0,
     },
   }
 }

@@ -159,10 +159,54 @@ for (const cat of CATS) {
   }
 }
 
+// ---------------- 符文（v1.4）：物品 + 配方 + runes.json 定义 ----------------
+const RUNE_EFFECTS = [
+  { key: 'speed', name: '疾风', vals: [0.15, 0.25, 0.4] },
+  { key: 'efficiency', name: '丰饶', vals: [0.1, 0.15, 0.25] },
+  { key: 'rarefind', name: '幸运', vals: [0.2, 0.35, 0.6] },
+  { key: 'enhance', name: '祝福', vals: [0.03, 0.05, 0.08] },
+]
+const RUNE_TIERS = [
+  { essence: 3, ingotSuffix: 'copper', ingotQty: 5, unlock: 1, xp: 12, time: 6 },
+  { essence: 8, ingotSuffix: 'silver', ingotQty: 8, unlock: 20, xp: 35, time: 10 },
+  { essence: 20, ingotSuffix: 'mithril', ingotQty: 12, unlock: 50, xp: 90, time: 16 },
+]
+const RUNE_TIER_CN = ['一', '二', '三']
+const runes = []
+for (const eff of RUNE_EFFECTS) {
+  RUNE_TIERS.forEach((tier, i) => {
+    const t = i + 1
+    const id = `rune_${eff.key}_${t}`
+    const name = `${eff.name}符文·${RUNE_TIER_CN[i]}阶`
+    const ingotId = `ingot_${tier.ingotSuffix}`
+    const value = Math.round((tier.essence * 15 + tier.ingotQty * ingotPrice(t)) * 0.8)
+    addItem({ id, name, tier: t, category: 'rune', enhanceable: false, value, stackable: true })
+    recipes.push({
+      id: `craft_${id}`,
+      name,
+      skill: 'forging',
+      category: 'rune',
+      tier: t,
+      unlockLevel: tier.unlock,
+      baseTimeMs: tier.time * 1000,
+      xp: tier.xp,
+      inputs: [
+        { itemId: 'essence', qty: tier.essence },
+        { itemId: ingotId, qty: tier.ingotQty },
+      ],
+      outputs: [{ itemId: id, qty: 1 }],
+      rareDrops: [],
+    })
+    const effect = eff.key === 'enhance' ? 'enhanceRate' : eff.key === 'rarefind' ? 'rareFind' : eff.key
+    runes.push({ id, name, effect, value: eff.vals[i], durationMs: 600000 })
+  })
+}
+
 // ---------------- 输出 ----------------
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
+writeFileSync(join(dataDir, 'runes.json'), JSON.stringify(runes, null, 2) + '\n')
 
 const itemCount = Object.keys(items).length
-console.log(`[gen-content] items: ${itemCount}（材料 13 + 装备 ${itemCount - 13}），recipes: ${recipes.length}（熔炼 5 + 锻造 ${recipes.length - 5}）`)
-console.log('[gen-content] 输出: data/items.json, data/recipes.json')
+console.log(`[gen-content] items: ${itemCount}（材料 13 + 装备 ${itemCount - 13 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}（熔炼 5 + 锻造 ${recipes.length - 5}）`)
+console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json')

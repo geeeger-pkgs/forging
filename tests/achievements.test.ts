@@ -92,4 +92,15 @@ describe('成就系统', () => {
     checkAchievements(s)
     expect(s.flags.achievements.unlocked).toContain('slots_10')
   })
+
+  it('符文成就（v1.4）：双符共鸣（buffSlots ≥ 2）', () => {
+    const s = newGame('T', 0)
+    s.buffs.push({ defId: 'rune_speed_1', until: Date.now() + 600_000 })
+    checkAchievements(s)
+    expect(s.flags.achievements.unlocked).not.toContain('rune_both')
+
+    s.buffs.push({ defId: 'rune_rarefind_1', until: Date.now() + 600_000 })
+    checkAchievements(s)
+    expect(s.flags.achievements.unlocked).toContain('rune_both')
+  })
 })

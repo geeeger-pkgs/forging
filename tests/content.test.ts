@@ -9,11 +9,23 @@ import {
 
 describe('内容表', () => {
   it('载入并通过校验（模块导入即校验）', () => {
-    expect(Object.keys(CONTENT.items).length).toBe(68)
-    expect(CONTENT.recipes.length).toBe(60)
+    expect(Object.keys(CONTENT.items).length).toBe(80)
+    expect(CONTENT.recipes.length).toBe(72)
     expect(CONTENT.enhance.length).toBe(10)
     expect(CONTENT.tutorial.length).toBe(8)
     expect(CONTENT.ores.length).toBe(6)
+  })
+
+  it('符文（v1.4）：12 个定义 / 配方存在 / 效果合法', () => {
+    expect(CONTENT.runes.length).toBe(12)
+    expect(RECIPES_BY_ID.get('craft_rune_speed_1')?.inputs).toEqual([
+      { itemId: 'essence', qty: 3 },
+      { itemId: 'ingot_copper', qty: 5 },
+    ])
+    const r3 = RECIPES_BY_ID.get('craft_rune_enhance_3')!
+    expect(r3.unlockLevel).toBe(50)
+    expect(r3.inputs.map((i) => i.itemId)).toEqual(['essence', 'ingot_mithril'])
+    expect(CONTENT.runes.find((r) => r.id === 'rune_rarefind_3')?.value).toBeCloseTo(0.6)
   })
 
   it('饰品（v1.3）：项链强化成功率 / 戒指效率 / 配方生成', () => {

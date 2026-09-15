@@ -52,6 +52,8 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       for (const v of Object.values(state.slots)) if (v !== undefined) filled++
       return filled >= def.target
     }
+    case 'buffSlots':
+      return state.buffs.length >= def.target
   }
 }
 

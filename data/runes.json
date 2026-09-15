@@ -1,0 +1,86 @@
+[
+  {
+    "id": "rune_speed_1",
+    "name": "疾风符文·一阶",
+    "effect": "speed",
+    "value": 0.15,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_speed_2",
+    "name": "疾风符文·二阶",
+    "effect": "speed",
+    "value": 0.25,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_speed_3",
+    "name": "疾风符文·三阶",
+    "effect": "speed",
+    "value": 0.4,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_efficiency_1",
+    "name": "丰饶符文·一阶",
+    "effect": "efficiency",
+    "value": 0.1,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_efficiency_2",
+    "name": "丰饶符文·二阶",
+    "effect": "efficiency",
+    "value": 0.15,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_efficiency_3",
+    "name": "丰饶符文·三阶",
+    "effect": "efficiency",
+    "value": 0.25,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_rarefind_1",
+    "name": "幸运符文·一阶",
+    "effect": "rareFind",
+    "value": 0.2,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_rarefind_2",
+    "name": "幸运符文·二阶",
+    "effect": "rareFind",
+    "value": 0.35,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_rarefind_3",
+    "name": "幸运符文·三阶",
+    "effect": "rareFind",
+    "value": 0.6,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_enhance_1",
+    "name": "祝福符文·一阶",
+    "effect": "enhanceRate",
+    "value": 0.03,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_enhance_2",
+    "name": "祝福符文·二阶",
+    "effect": "enhanceRate",
+    "value": 0.05,
+    "durationMs": 600000
+  },
+  {
+    "id": "rune_enhance_3",
+    "name": "祝福符文·三阶",
+    "effect": "enhanceRate",
+    "value": 0.08,
+    "durationMs": 600000
+  }
+]

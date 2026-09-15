@@ -7,6 +7,7 @@
 //   - v1.3：饰品（项链=强化成功率 / 戒指=效率）
 //   - v1.2 套装：≥5 件同档 +4% 全速；8 件同档再 +4% 效率
 // ============================================================
+import { buffBonuses } from './buffs'
 import { itemDef } from './content'
 import { skillOf } from './refs'
 import type { ActionRef, GameState, SlotId } from './types'
@@ -102,7 +103,7 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
   return agg
 }
 
-/** 某动作的技能速度加成合计（0.15 = +15%） */
+/** 某动作的技能速度加成合计（0.15 = +15%；含 v1.4 符文增益） */
 export function speedFor(state: GameState, ref: ActionRef): number {
   const agg = aggregateEquipment(state)
   const skill = skillOf(ref)
@@ -110,5 +111,6 @@ export function speedFor(state: GameState, ref: ActionRef): number {
   if (skill === 'mining') bonus += agg.toolSpeed.mining
   else if (skill === 'smelting') bonus += agg.toolSpeed.smelting
   else if (skill === 'forging') bonus += agg.toolSpeed.forging
+  bonus += buffBonuses(state, Date.now()).speed
   return bonus
 }

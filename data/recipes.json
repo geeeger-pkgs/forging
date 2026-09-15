@@ -1998,5 +1998,329 @@
         "rate": 0.071
       }
     ]
+  },
+  {
+    "id": "craft_rune_speed_1",
+    "name": "疾风符文·一阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 3
+      },
+      {
+        "itemId": "ingot_copper",
+        "qty": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_speed_1",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_speed_2",
+    "name": "疾风符文·二阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 2,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 35,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 8
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_speed_2",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_speed_3",
+    "name": "疾风符文·三阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 3,
+    "unlockLevel": 50,
+    "baseTimeMs": 16000,
+    "xp": 90,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 20
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_speed_3",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_efficiency_1",
+    "name": "丰饶符文·一阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 3
+      },
+      {
+        "itemId": "ingot_copper",
+        "qty": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_efficiency_1",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_efficiency_2",
+    "name": "丰饶符文·二阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 2,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 35,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 8
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_efficiency_2",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_efficiency_3",
+    "name": "丰饶符文·三阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 3,
+    "unlockLevel": 50,
+    "baseTimeMs": 16000,
+    "xp": 90,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 20
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_efficiency_3",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_rarefind_1",
+    "name": "幸运符文·一阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 3
+      },
+      {
+        "itemId": "ingot_copper",
+        "qty": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_rarefind_1",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_rarefind_2",
+    "name": "幸运符文·二阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 2,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 35,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 8
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_rarefind_2",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_rarefind_3",
+    "name": "幸运符文·三阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 3,
+    "unlockLevel": 50,
+    "baseTimeMs": 16000,
+    "xp": 90,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 20
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_rarefind_3",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_enhance_1",
+    "name": "祝福符文·一阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 6000,
+    "xp": 12,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 3
+      },
+      {
+        "itemId": "ingot_copper",
+        "qty": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_enhance_1",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_enhance_2",
+    "name": "祝福符文·二阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 2,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 35,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 8
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_enhance_2",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
+  },
+  {
+    "id": "craft_rune_enhance_3",
+    "name": "祝福符文·三阶",
+    "skill": "forging",
+    "category": "rune",
+    "tier": 3,
+    "unlockLevel": 50,
+    "baseTimeMs": 16000,
+    "xp": 90,
+    "inputs": [
+      {
+        "itemId": "essence",
+        "qty": 20
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 12
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "rune_enhance_3",
+        "qty": 1
+      }
+    ],
+    "rareDrops": []
   }
 ]

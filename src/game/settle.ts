@@ -6,6 +6,7 @@
 //   expectation 期望 + 小数结转（离线结算；强化被排除）
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
+import { buffBonuses } from './buffs'
 import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
 import { levelInfo } from './level'
 import { randInt, systemRng, type Rng } from './rng'
@@ -118,6 +119,10 @@ function applyRewards(
   rng: Rng,
 ): boolean {
   const agg = aggregateEquipment(state)
+  // v1.4：在线模式叠加符文增益（离线结算期间 buffs 被临时清空 → 自动为 0）
+  const buff = buffBonuses(state, Date.now())
+  const eff = agg.efficiency + buff.efficiency
+  const rare = agg.rareFind + buff.rareFind
 
   if (ref.kind === 'mine') {
     state.stats.totalMines += 1
@@ -128,12 +133,12 @@ function applyRewards(
       grantItem(state, itemId, qty, events)
       events.push(...tutorialProgress(state, 'mineItem', qty, { itemId }))
     } else {
-      const expected = ((min + max) / 2) * (1 + agg.quantity) * (1 + agg.efficiency)
+      const expected = ((min + max) / 2) * (1 + agg.quantity) * (1 + eff)
       grantExpected(state, itemId, expected, events)
       events.push(...tutorialProgress(state, 'mineItem', Math.floor(expected), { itemId }))
     }
-    grantRareDrops(state, rareDropsOf(ref), agg.rareFind, mode, rng, events)
-    const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + agg.efficiency : 1)
+    grantRareDrops(state, rareDropsOf(ref), rare, mode, rng, events)
+    const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + eff : 1)
     grantXp(state, 'mining', xpOf(ref) * xpMul, events)
     events.push(...tutorialCheckTotalLevel(state))
     return true
@@ -164,19 +169,20 @@ function applyRewards(
       }
       events.push(...tutorialProgress(state, 'craftItem', out.qty, { itemId: out.itemId }))
     } else {
-      grantExpected(state, out.itemId, out.qty * (1 + agg.quantity) * (1 + agg.efficiency), events)
+      grantExpected(state, out.itemId, out.qty * (1 + agg.quantity) * (1 + eff), events)
       events.push(
         ...tutorialProgress(state, 'craftItem', Math.floor(out.qty * (1 + agg.quantity)), { itemId: out.itemId }),
       )
     }
   }
-  grantRareDrops(state, recipe.rareDrops, agg.rareFind, mode, rng, events)
-  const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + agg.efficiency : 1)
+  grantRareDrops(state, recipe.rareDrops, rare, mode, rng, events)
+  const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + eff : 1)
   grantXp(state, recipe.skill, xpOf(ref) * xpMul, events)
   state.stats.totalCrafts += 1
   if (recipe.skill === 'smelting') state.stats.totalSmelts += 1
   else if (recipe.skill === 'forging') state.stats.totalForges += 1
   if (recipe.category === 'jewelry') state.stats.totalJewelryForged += 1
+  if (recipe.category === 'rune') state.stats.totalRunesCrafted += 1
   events.push(...tutorialCheckTotalLevel(state))
   return true
 }
@@ -217,9 +223,9 @@ function performEnhance(
   }
   for (const c of cost) removeMaterial(state, c.itemId, c.qty)
 
-  // v1.3：强化成功率 = 档位基础 + 饰品加成（项链；上限 100%）
+  // v1.3/v1.4：强化成功率 = 档位基础 + 饰品加成 + 祝福符文增益（上限 100%）
   const agg = aggregateEquipment(state)
-  const rate = Math.min(1, step.successRate + agg.enhanceRate)
+  const rate = Math.min(1, step.successRate + agg.enhanceRate + buffBonuses(state, Date.now()).enhanceRate)
   const success = rng.next() < rate
   const from = inst.enhanceLevel
   let to = from

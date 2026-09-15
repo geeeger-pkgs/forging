@@ -5,7 +5,7 @@ import type { GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
 export function saveGame(state: GameState): void {
   try {
@@ -63,6 +63,12 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       totalWeekliesDone: s.stats.totalWeekliesDone ?? 0,
       totalJewelryForged: s.stats.totalJewelryForged ?? 0,
     },
+  }),
+  4: (s) => ({
+    ...s,
+    version: 5,
+    buffs: (s as unknown as { buffs?: GameState['buffs'] }).buffs ?? [],
+    stats: { ...s.stats, totalRunesCrafted: s.stats.totalRunesCrafted ?? 0 },
   }),
 }
 

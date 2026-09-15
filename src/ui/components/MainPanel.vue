@@ -69,6 +69,7 @@ const forgeCats = [
   { id: 'tool', label: '工具' },
   { id: 'weapon', label: '武器' },
   { id: 'armor', label: '护甲' },
+  { id: 'rune', label: '符文' },
 ] as const
 
 const forgeCards = computed<ActionCard[]>(() =>

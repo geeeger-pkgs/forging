@@ -6,7 +6,8 @@
     { "id": "enhance", "title": "精益求精", "desc": "进行强化尝试", "counter": "totalEnhances", "unit": "次", "targets": [5, 10, 20], "gold": [60, 140, 300], "essence": [1, 2, 3], "crates": [0, 0, 0] },
     { "id": "gold", "title": "日进斗金", "desc": "累计获得金币", "counter": "totalGoldEarned", "unit": "金", "targets": [300, 800, 1600], "gold": [0, 0, 0], "essence": [0, 1, 2], "crates": [0, 1, 1] },
     { "id": "crate", "title": "开箱时刻", "desc": "开启工匠小箱", "counter": "totalCratesOpened", "unit": "个", "targets": [1, 2, 4], "gold": [60, 140, 260], "essence": [0, 1, 1], "crates": [0, 0, 1] },
-    { "id": "jewelry", "title": "巧手饰匠", "desc": "锻造任意饰品", "counter": "totalJewelryForged", "unit": "件", "targets": [1, 2, 4], "gold": [60, 140, 280], "essence": [0, 1, 2], "crates": [0, 0, 0] }
+    { "id": "jewelry", "title": "巧手饰匠", "desc": "锻造任意饰品", "counter": "totalJewelryForged", "unit": "件", "targets": [1, 2, 4], "gold": [60, 140, 280], "essence": [0, 1, 2], "crates": [0, 0, 0] },
+    { "id": "rune", "title": "符文匠", "desc": "制作任意符文", "counter": "totalRunesCrafted", "unit": "个", "targets": [1, 2, 4], "gold": [60, 140, 280], "essence": [0, 1, 2], "crates": [0, 0, 0] }
   ],
   "weekly": [
     { "id": "mine_w", "title": "矿脉征服者", "desc": "挖掘任意矿脉", "counter": "totalMines", "unit": "次", "target": 600, "gold": 500, "essence": 3, "crates": 2 },

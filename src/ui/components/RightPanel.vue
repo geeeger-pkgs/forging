@@ -153,6 +153,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
         </span>
         <span class="qty">×{{ m.qty }}</span>
         <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
+        <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
         <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
         <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
         <button class="btn sm" @click="recycleAll(m.id, m.qty)">全部</button>

@@ -5,6 +5,7 @@
 // ============================================================
 import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
+import { pruneBuffs } from '../game/buffs'
 import { dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
 import { settleOffline } from '../game/offline'
@@ -42,7 +43,7 @@ export const store = reactive({
   ui: {
     view: 'mining' as UiView,
     dialogRef: null as ActionRef | null,
-    forgeCategory: 'tool' as 'tool' | 'weapon' | 'armor',
+    forgeCategory: 'tool' as 'tool' | 'weapon' | 'armor' | 'rune',
     searchText: '',
     inspectItemId: null as string | null,
   },
@@ -99,6 +100,9 @@ function handleEvents(events: GameEvent[]): void {
         break
       case 'crateOpened':
         pushToast(e.text, 'good')
+        break
+      case 'buffActivated':
+        pushToast(`符文生效：${e.name}`, 'good')
         break
       case 'enhanceResult':
         pushToast(
@@ -163,11 +167,12 @@ export function boot(): void {
   const state = saved ?? newGame('矿工', Date.now())
   store.state = state
   const now = Date.now()
-  // ① 离线结算（不计入今日任务）
+  // ① 离线结算（不计入今日任务；临时增益不参与——settleOffline 内部临时清空 buffs）
   const summary = settleOffline(state, now)
   // ② 任务轮换 + 基线快照（离线收益之前的历史以基线隔离）
   refreshTasks(state, now)
   checkTasks(state)
+  pruneBuffs(state, now)
   store.summary = summary
   if (summary) {
     for (const n of summary.notes) pushToast(n, 'info')
@@ -182,6 +187,7 @@ export function startLoop(): void {
     events.push(...checkAchievements(store.state))
     events.push(...refreshTasks(store.state, store.now))
     events.push(...checkTasks(store.state))
+    pruneBuffs(store.state, store.now)
     if (events.length) handleEvents(events)
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)

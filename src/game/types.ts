@@ -24,6 +24,7 @@ export type ItemCategory =
   | 'weapon'
   | 'armor'
   | 'jewelry'
+  | 'rune'
 
 /** 装备槽位（设计 §8；v1.3 起扩展至 10 槽：+ 项链/戒指） */
 export type SlotId =
@@ -174,6 +175,7 @@ export type AchievementType =
   | 'totalValue'
   | 'itemCount'
   | 'slotsFilled'
+  | 'buffSlots'
 
 export interface AchievementReward {
   gold?: number
@@ -212,6 +214,7 @@ export type TaskCounter =
   | 'totalGoldEarned'
   | 'totalCratesOpened'
   | 'totalJewelryForged'
+  | 'totalRunesCrafted'
 
 export interface TaskTemplate {
   id: string
@@ -265,6 +268,24 @@ export interface TaskState {
   weekly: TaskSlot | null
 }
 
+// ---------- 符文增益（v1.4） ----------
+
+export type RuneEffect = 'speed' | 'efficiency' | 'rareFind' | 'enhanceRate'
+
+export interface RuneDef {
+  id: ItemId
+  name: string
+  effect: RuneEffect
+  value: number
+  durationMs: number
+}
+
+/** 增益槽（until 为真实时间戳） */
+export interface BuffSlot {
+  defId: ItemId
+  until: number
+}
+
 export interface ContentTables {
   skills: SkillDef[]
   ores: OreSiteDef[]
@@ -275,6 +296,7 @@ export interface ContentTables {
   tutorial: TutorialStepDef[]
   achievements: AchievementDef[]
   tasks: TasksDef
+  runes: RuneDef[]
   config: ConfigDef
 }
 
@@ -339,6 +361,8 @@ export interface GameState {
   }
   /** 队列位总数（1 = 默认；最多 4） */
   queueSlots: number
+  /** 符文增益槽（v1.4；至多 2 个，until 为真实时间戳） */
+  buffs: BuffSlot[]
   flags: {
     tutorial: TutorialFlags
     achievements: AchievementFlags
@@ -363,6 +387,8 @@ export interface GameState {
     totalWeekliesDone: number
     /** v1.3：累计锻造饰品件数 */
     totalJewelryForged: number
+    /** v1.4：累计制作符文数 */
+    totalRunesCrafted: number
   }
 }
 
@@ -381,6 +407,7 @@ export type Command =
   | { type: 'claimTutorial'; step: number }
   | { type: 'openCrate' }
   | { type: 'rerollTask'; index: number }
+  | { type: 'useRune'; itemId: ItemId }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -398,6 +425,7 @@ export type GameEvent =
   | { type: 'taskCompleted'; title: string }
   | { type: 'tasksRotated'; period: 'daily' | 'weekly' }
   | { type: 'crateOpened'; text: string }
+  | { type: 'buffActivated'; name: string; until: number }
   | { type: 'goldGained'; amount: number }
   | { type: 'blocked'; reason: string }
 

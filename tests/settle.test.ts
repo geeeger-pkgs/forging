@@ -188,4 +188,37 @@ describe('在线结算', () => {
     expect(claim8.some((e) => e.type === 'tutorialRewarded' && e.step === 8)).toBe(true)
     expect(s.flags.tutorial.current).toBe(9)
   })
+
+  it('符文制作（v1.4）：消耗精华+锭，计数与产出正确', () => {
+    const s = newGame('T', 0)
+    s.materials['essence'] = 3
+    s.materials['ingot_copper'] = 5
+    startCurrent(s, { kind: 'craft', recipeId: 'craft_rune_speed_1' }, 1)
+    simulate(s, 6_000, { mode: 'online', rng: mulberry32(1) })
+    expect(s.materials['rune_speed_1']).toBe(1)
+    expect(s.stats.totalRunesCrafted).toBe(1)
+    expect(s.materials['essence']).toBeUndefined()
+    expect(s.materials['ingot_copper']).toBeUndefined()
+  })
+
+  it('祝福符文（v1.4）：强化成功率 +3% 使 0.37 掷点成功（0.36 + 0.03）', () => {
+    const s = newGame('T', 0)
+    const id = addInstance(s, 'pick_copper', 9)
+    s.materials['ingot_copper'] = 100
+    s.materials['essence'] = 100
+    s.buffs.push({ defId: 'rune_enhance_1', until: Date.now() + 600_000 })
+    startCurrent(s, { kind: 'enhance', instanceId: id, targetLevel: 10 }, 1)
+    const ev = simulate(s, 6_000, { mode: 'online', rng: { next: () => 0.37 } })
+    expect(ev.find((e) => e.type === 'enhanceResult')).toMatchObject({ success: true, to: 10 })
+  })
+
+  it('临时增益不参与离线结算（离线轮数按无 buff 计算，结算后恢复）', () => {
+    const s = newGame('T', 0)
+    s.buffs.push({ defId: 'rune_speed_1', until: Date.now() + 3_600_000 })
+    startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, null)
+    const summary = settleOffline(s, 60_000)!
+    const rounds = summary.rounds.find((r) => r.ref.kind === 'mine')!.count
+    expect(rounds).toBe(10) // 60s ÷ 6s；若错误应用 +15% 速度则为 ≈11
+    expect(s.buffs.length).toBe(1) // 结算后 buffs 恢复
+  })
 })

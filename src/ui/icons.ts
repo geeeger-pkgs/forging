@@ -24,6 +24,18 @@ export function skillIcon(id: string): string {
   return m[id] ?? '❔'
 }
 
+/** 符文效果图标（v1.4） */
+export const BUFF_ICON: Record<string, string> = {
+  speed: '⚡',
+  efficiency: '✨',
+  rareFind: '🍀',
+  enhanceRate: '⚒️',
+}
+
+export function buffIcon(effect: string): string {
+  return BUFF_ICON[effect] ?? '🔷'
+}
+
 export function fmtDuration(ms: number): string {
   const s = ms / 1000
   return `${s.toFixed(s >= 10 ? 0 : 1)}s`

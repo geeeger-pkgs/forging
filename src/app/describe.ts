@@ -2,6 +2,7 @@
 // Forging · 动作描述器（UI 展示用；只读，不改状态）
 // ============================================================
 import { ENHANCE_BY_TARGET, RECIPES_BY_ID, SITES_BY_ID, itemDef, skillName } from '../game/content'
+import { buffBonuses } from '../game/buffs'
 import { startBlockReason } from '../game/commands'
 import { levelInfo } from '../game/level'
 import { baseTimeOf, durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf } from '../game/rules'
@@ -128,7 +129,7 @@ export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
     baseTimeMs: baseTimeOf(ref),
     xp: step.xpBase,
     xpSuccessDoubled: true,
-    enhanceRate: Math.min(1, step.successRate + agg.enhanceRate),
+    enhanceRate: Math.min(1, step.successRate + agg.enhanceRate + buffBonuses(state, Date.now()).enhanceRate),
     inputs,
     outputs: [],
     drops: [],

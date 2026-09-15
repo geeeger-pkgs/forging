@@ -849,5 +849,113 @@
     "enhanceable": true,
     "value": 3313,
     "stackable": false
+  },
+  "rune_speed_1": {
+    "id": "rune_speed_1",
+    "name": "疾风符文·一阶",
+    "tier": 1,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 56,
+    "stackable": true
+  },
+  "rune_speed_2": {
+    "id": "rune_speed_2",
+    "name": "疾风符文·二阶",
+    "tier": 2,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 224,
+    "stackable": true
+  },
+  "rune_speed_3": {
+    "id": "rune_speed_3",
+    "name": "疾风符文·三阶",
+    "tier": 3,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 672,
+    "stackable": true
+  },
+  "rune_efficiency_1": {
+    "id": "rune_efficiency_1",
+    "name": "丰饶符文·一阶",
+    "tier": 1,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 56,
+    "stackable": true
+  },
+  "rune_efficiency_2": {
+    "id": "rune_efficiency_2",
+    "name": "丰饶符文·二阶",
+    "tier": 2,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 224,
+    "stackable": true
+  },
+  "rune_efficiency_3": {
+    "id": "rune_efficiency_3",
+    "name": "丰饶符文·三阶",
+    "tier": 3,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 672,
+    "stackable": true
+  },
+  "rune_rarefind_1": {
+    "id": "rune_rarefind_1",
+    "name": "幸运符文·一阶",
+    "tier": 1,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 56,
+    "stackable": true
+  },
+  "rune_rarefind_2": {
+    "id": "rune_rarefind_2",
+    "name": "幸运符文·二阶",
+    "tier": 2,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 224,
+    "stackable": true
+  },
+  "rune_rarefind_3": {
+    "id": "rune_rarefind_3",
+    "name": "幸运符文·三阶",
+    "tier": 3,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 672,
+    "stackable": true
+  },
+  "rune_enhance_1": {
+    "id": "rune_enhance_1",
+    "name": "祝福符文·一阶",
+    "tier": 1,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 56,
+    "stackable": true
+  },
+  "rune_enhance_2": {
+    "id": "rune_enhance_2",
+    "name": "祝福符文·二阶",
+    "tier": 2,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 224,
+    "stackable": true
+  },
+  "rune_enhance_3": {
+    "id": "rune_enhance_3",
+    "name": "祝福符文·三阶",
+    "tier": 3,
+    "category": "rune",
+    "enhanceable": false,
+    "value": 672,
+    "stackable": true
   }
 }

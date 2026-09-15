@@ -38,5 +38,8 @@
   { "id": "crate_10", "name": "开箱上瘾", "desc": "累计开启 10 个工匠小箱", "type": "stat", "stat": "totalCratesOpened", "target": 10, "rewards": [{ "gold": 150 }] },
   { "id": "crate_50", "name": "开箱大师", "desc": "累计开启 50 个工匠小箱", "type": "stat", "stat": "totalCratesOpened", "target": 50, "rewards": [{ "itemId": "essence", "qty": 10 }] },
   { "id": "gold_earn_10000", "name": "掘金者", "desc": "累计获得 10,000 金币", "type": "stat", "stat": "totalGoldEarned", "target": 10000, "rewards": [{ "gold": 300 }] },
-  { "id": "gold_earn_100000", "name": "金库管理员", "desc": "累计获得 100,000 金币", "type": "stat", "stat": "totalGoldEarned", "target": 100000, "rewards": [{ "itemId": "essence", "qty": 20 }] }
+  { "id": "gold_earn_100000", "name": "金库管理员", "desc": "累计获得 100,000 金币", "type": "stat", "stat": "totalGoldEarned", "target": 100000, "rewards": [{ "itemId": "essence", "qty": 20 }] },
+  { "id": "rune_craft_1", "name": "初试符能", "desc": "制作第 1 个符文", "type": "stat", "stat": "totalRunesCrafted", "target": 1, "rewards": [{ "gold": 60 }] },
+  { "id": "rune_craft_10", "name": "符文大师", "desc": "累计制作 10 个符文", "type": "stat", "stat": "totalRunesCrafted", "target": 10, "rewards": [{ "itemId": "essence", "qty": 5 }] },
+  { "id": "rune_both", "name": "双符共鸣", "desc": "同时激活 2 个符文", "type": "buffSlots", "target": 2, "rewards": [{ "gold": 100 }] }
 ]

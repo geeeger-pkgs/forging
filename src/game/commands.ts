@@ -16,6 +16,7 @@ import {
   materialCount,
   removeMaterial,
 } from './state'
+import { useRune } from './buffs'
 import { openCrate } from './crates'
 import { rerollTask } from './tasks'
 import { claimTutorial, tutorialProgress } from './tutorial'
@@ -58,6 +59,8 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return openCrate(state, rng)
     case 'rerollTask':
       return rerollTask(state, cmd.index)
+    case 'useRune':
+      return useRune(state, cmd.itemId, now)
   }
 }
 
