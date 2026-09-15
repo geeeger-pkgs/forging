@@ -71,3 +71,15 @@ export function equippedIdOf(state: GameState, itemId: ItemId): number | undefin
 export function addGold(state: GameState, amount: number): void {
   state.gold += amount
 }
+
+// ---------- 装备查询 ----------
+
+/** 未被装备的实例（配方消耗与强化判定使用） */
+export function freeInstances(state: GameState, itemId: ItemId): EquipInstance[] {
+  const equipped = new Set(Object.values(state.slots).filter((v): v is number => v !== undefined))
+  return state.equipment.filter((e) => e.itemId === itemId && !equipped.has(e.instanceId))
+}
+
+export function isEquipped(state: GameState, instanceId: number): boolean {
+  return Object.values(state.slots).includes(instanceId)
+}

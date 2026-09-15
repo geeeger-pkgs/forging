@@ -10,7 +10,7 @@ import { ENHANCE_BY_TARGET, RECIPES_BY_ID, itemDef } from './content'
 import { levelInfo } from './level'
 import { randInt, systemRng, type Rng } from './rng'
 import { durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf, xpOf } from './rules'
-import { addInstance, addMaterial, instanceById, materialCount, removeMaterial } from './state'
+import { addInstance, addMaterial, freeInstances, instanceById, materialCount, removeMaterial } from './state'
 import { aggregateEquipment } from './stats'
 import { tutorialCheckTotalLevel, tutorialProgress } from './tutorial'
 import type {
@@ -321,12 +321,4 @@ function consumeInputs(
     }
   }
   return true
-}
-
-/** 未被装备的实例 */
-function freeInstances(state: GameState, itemId: ItemId) {
-  const equipped = new Set(
-    Object.values(state.slots).filter((v): v is number => v !== undefined),
-  )
-  return state.equipment.filter((e) => e.itemId === itemId && !equipped.has(e.instanceId))
 }
