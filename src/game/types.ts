@@ -191,6 +191,9 @@ export type AchievementType =
   | 'seasonLevel'
   /** 单赛季声望总量（如三线全金 = 120） */
   | 'seasonRenown'
+  /** v2.4：深渊最高层与累计结晶 */
+  | 'abyssFloor'
+  | 'abyssCrystals'
   | 'companionCount'
   | 'companionRarity'
   | 'relicCount'
@@ -367,6 +370,53 @@ export interface AffixesDef {
     /** 每锁定 1 条消耗的重铸石数量 */
     emberstonePerLock: number
   }
+}
+
+// ---------- 深渊回廊（v2.4） ----------
+
+export type AbyssWeightKey = 'speed' | 'efficiency' | 'quantity' | 'rareFind' | 'wisdom' | 'enhanceRate'
+
+export interface AbyssShopItemDef {
+  id: string
+  name: string
+  desc: string
+  crystal: number
+  max: number
+  /** 每次购买后的价格倍数（一次性项 = 1） */
+  priceGrowth: number
+  /** permanent_speed 用：每级加成 */
+  perLevel?: number
+  /** 遗物兑换用：发放的物品 */
+  itemId?: ItemId
+}
+
+export interface AbyssDef {
+  staminaMax: number
+  staminaRegenMinutes: number
+  weights: Record<AbyssWeightKey, number>
+  base: number
+  growth: number
+  themes: string[]
+  firstClearCrystal: { base: number; perFloor: number }
+  repeatCrystal: { base: number; perFloor: number }
+  shop: AbyssShopItemDef[]
+}
+
+export interface AbyssState {
+  /** 已通关的最高层（0 = 未通关） */
+  bestFloor: number
+  crystals: number
+  stamina: number
+  /** 上次结算体力的时间戳（真实时间；单调守卫用） */
+  staminaAt: number
+  /** 商店购买次数（itemId → 次数） */
+  purchased: Record<string, number>
+  /** 定向重铸券余量 */
+  tickets: number
+  /** 永久速度等级 */
+  permanentSpeed: number
+  /** 称号是否已购买 */
+  title: boolean
 }
 
 // ---------- 图鉴与赛季（v2.3） ----------
@@ -598,6 +648,7 @@ export interface ContentTables {
   companions: CompanionsDef
   expeditions: ExpeditionsDef
   season: SeasonDef
+  abyss: AbyssDef
   config: ConfigDef
 }
 
@@ -660,6 +711,8 @@ export interface GameState {
   }
   /** v2.2：伙伴（id → 状态） */
   companions: Record<string, CompanionState>
+  /** v2.4：深渊回廊 */
+  abyss: Record<string, never> | AbyssState
   /** v2.3：图鉴与赛季（赛季未解锁时 season.index = -1） */
   codex: CodexState
   season: SeasonState
@@ -709,6 +762,9 @@ export interface GameState {
     /** v2.1：重铸次数与累计产出的「完美词缀」条数（单调递增） */
     totalReforges: number
     perfectAffixes: number
+    /** v2.4：深渊统计（单调递增） */
+    totalAbyssSweeps: number
+    totalAbyssPurchases: number
     /** v2.2：远征/伙伴统计（单调递增） */
     totalExpeditions: number
     totalRecruits: number
@@ -741,13 +797,17 @@ export type Command =
   | { type: 'applyLoadout'; loadoutId: string }
   | { type: 'deleteLoadout'; loadoutId: string }
   /** v2.1：重铸词缀（locks = 保留不重摇的词缀下标） */
-  | { type: 'reforge'; instanceId: number; locks: number[] }
+  | { type: 'reforge'; instanceId: number; locks: number[]; ticketAffixId?: string }
   /** v2.2：远征 */
   | { type: 'recruitCompanion' }
   | { type: 'rerollTrait'; companionId: string }
   | { type: 'dispatchExpedition'; routeId: string; hours: number; team: string[] }
   | { type: 'claimExpedition'; runId: number }
   | { type: 'upgradeBanner' }
+  /** v2.4：深渊回廊 */
+  | { type: 'challengeAbyss' }
+  | { type: 'sweepAbyss' }
+  | { type: 'buyAbyssItem'; itemId: string }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -767,9 +827,16 @@ export type GameEvent =
   | { type: 'companionLevelUp'; name: string; level: number }
   | { type: 'traitRerolled'; name: string; trait: string }
   | { type: 'bannerUpgraded'; level: number }
+  /** v2.4：深渊 */
+  | { type: 'challengeAbyss' }
+  | { type: 'sweepAbyss' }
+  | { type: 'buyAbyssItem'; itemId: string }
   | { type: 'codexMilestone'; pct: number; gold: number }
   | { type: 'seasonLevelUp'; level: number }
   | { type: 'seasonRotated'; index: number }
+  | { type: 'abyssCleared'; floor: number; crystals: number }
+  | { type: 'abyssSwept'; crystals: number }
+  | { type: 'abyssItemBought'; name: string }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
   | { type: 'achievementUnlocked'; id: string; name: string }

@@ -360,10 +360,39 @@ const season = {
   ],
 }
 
+// ---------------- 深渊回廊（v2.4） ----------------
+// 数值口径：docs/design-v2.4.md（先模拟后定档，scripts/sim-abyss.mjs → docs/sim-abyss-output.json）
+// base/growth 由 sim-abyss.mjs **反解 + ±3% 邻域搜索**定档（34 个取值满足三档目标带）
+const abyss = {
+  /** 体力：上限与恢复间隔（毫秒）；溢出丢弃（见 abyss.ts regenStamina） */
+  staminaMax: 12,
+  staminaRegenMinutes: 30,
+  /** 战力权重（六项加权和；口径逐项见 abyss.ts abyssScore） */
+  weights: { speed: 1.0, efficiency: 1.5, quantity: 1.0, rareFind: 0.7, wisdom: 0.5, enhanceRate: 2.0 },
+  /** 门槛 = base × growth^(层−1) */
+  base: 2.764,
+  growth: 1.031,
+  themes: ['矿脉裂隙', '熔岩回廊', '符文甬道', '无光深渊', '虚空之喉'],
+  /** 首通结晶 = base + perFloor × 层 */
+  firstClearCrystal: { base: 10, perFloor: 2 },
+  /** 扫荡结晶 = base + ⌊层 / perFloor⌋ */
+  repeatCrystal: { base: 1, perFloor: 20 },
+  /** 商店：可重复项用 priceGrowth 递增；一次性项 priceGrowth = 1 */
+  shop: [
+    { id: 'reroll_ticket', name: '定向重铸券', desc: '重铸时指定一条词缀 id 保底出现（可重复购买，价格递增）', crystal: 100, max: 12, priceGrowth: 1.3 },
+    { id: 'permanent_speed', name: '永久速度', desc: '永久 +1% 速度 / 级（可重复购买，价格递增）', crystal: 150, max: 8, priceGrowth: 1.3, perLevel: 0.01 },
+    { id: 'relic_gear', name: '遗物·锈蚀齿轮', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_gear' },
+    { id: 'relic_shard', name: '遗物·铭文碎片', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_shard' },
+    { id: 'relic_core', name: '遗物·深渊之核', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_core' },
+    { id: 'title', name: '称号「深渊行者」', desc: '顶栏展示称号', crystal: 200, max: 1, priceGrowth: 1 },
+  ],
+}
+
 // ---------------- 输出 ----------------
 writeFileSync(join(dataDir, 'companions.json'), JSON.stringify(companionsDef, null, 2) + '\n')
 writeFileSync(join(dataDir, 'expeditions.json'), JSON.stringify(expeditions, null, 2) + '\n')
 writeFileSync(join(dataDir, 'season.json'), JSON.stringify(season, null, 2) + '\n')
+writeFileSync(join(dataDir, 'abyss.json'), JSON.stringify(abyss, null, 2) + '\n')
 void TIER_SUFFIX
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
@@ -375,4 +404,5 @@ console.log(`[gen-content] items: ${itemCount}（材料 18 + 装备 ${itemCount 
 console.log(`[gen-content] affixes: ${AFFIXES.length}（4 池）`)
 console.log(`[gen-content] companions: ${companions.length}（按 ${companionsDef.startLevelCap} 级上限）｜ routes: ${routes.length} × ${expeditions.hours.length} 档`)
 console.log(`[gen-content] season: ${season.days} 天 / ${season.levels} 级 / ${season.templates.length} 模板`)
-console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json, data/season.json')
+console.log(`[gen-content] abyss: 体力 ${abyss.staminaMax} / 门槛 ${abyss.base}×${abyss.growth}^n / 商店 ${abyss.shop.length} 项`)
+console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json, data/affixes.json, data/companions.json, data/expeditions.json, data/season.json, data/abyss.json')

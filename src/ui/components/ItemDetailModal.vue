@@ -4,7 +4,7 @@
 // ============================================================
 import { computed, ref, watch } from 'vue'
 import { cmd, inspectInstance, store } from '../../app/store'
-import { affixDef, affixQuality, maxLocks, perfectScore, reforgeCost } from '../../game/affixes'
+import { affixDef, affixQuality, maxLocks, perfectScore, poolOf, reforgeCost } from '../../game/affixes'
 import { reforgeBlockReason } from '../../game/commands'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById, isEquipped, materialCount } from '../../game/state'
@@ -36,6 +36,7 @@ watch(
   () => store.ui.inspectInstanceId,
   () => {
     locks.value = []
+    ticketAffixId.value = null
   },
 )
 
@@ -108,10 +109,20 @@ const have = computed(() => ({
   emberstone: materialCount(store.state, 'emberstone'),
 }))
 
+const tickets = computed(() => store.state.abyss?.tickets ?? 0)
+const ticketAffixId = ref<string | null>(null)
+/** 该装备原型池的可选词缀 */
+const poolIds = computed(() => (def.value ? [...poolOf(def.value)] : []))
+
 function doReforge(): void {
   const i = inst.value
   if (!i) return
-  cmd({ type: 'reforge', instanceId: i.instanceId, locks: [...locks.value] })
+  cmd({
+    type: 'reforge',
+    instanceId: i.instanceId,
+    locks: [...locks.value],
+    ticketAffixId: ticketAffixId.value ?? undefined,
+  })
 }
 
 function close(): void {
@@ -189,6 +200,16 @@ function close(): void {
             (1 + LOCK_GOLD_FACTOR * locks.length).toFixed(1)
           }}
         </p>
+      </div>
+
+      <div v-if="tickets > 0" class="ticket">
+        <label class="dim small">定向重铸券（{{ tickets }} 张）：</label>
+        <select v-model="ticketAffixId" class="sel">
+          <option :value="null">不使用</option>
+          <option v-for="id in poolIds" :key="id" :value="id">
+            {{ affixDef(id).name }} —— 保底出现（数值仍随机）
+          </option>
+        </select>
       </div>
 
       <p v-if="blockReason" class="reason bad">⚠ {{ blockReason }}</p>
@@ -307,6 +328,22 @@ header h3 {
   margin-top: 10px;
   border-top: 1px solid var(--c-border);
   padding-top: 8px;
+}
+.ticket {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sel {
+  flex: 1;
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-family: var(--font);
+  font-size: 12px;
 }
 .reason {
   margin: 8px 0 0;

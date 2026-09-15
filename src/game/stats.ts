@@ -10,7 +10,7 @@
 // ============================================================
 import { affixBonusOf } from './affixes'
 import { buffBonuses } from './buffs'
-import { itemDef } from './content'
+import { CONTENT, itemDef } from './content'
 import { perkBonuses } from './prestige'
 import { skillOf } from './refs'
 import type { ActionRef, GameState, SlotId } from './types'
@@ -124,6 +124,13 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
       bestTier = tier
       bestCount = count
     }
+  }
+  // v2.4：深渊商店的永久速度（与既有加法池同源；战力与时长都从这里读）
+  const abyssDef = CONTENT.abyss
+  const permLevel = state.abyss?.permanentSpeed ?? 0
+  if (permLevel > 0) {
+    const perLevel = abyssDef.shop.find((x: { id: string; perLevel?: number }) => x.id === 'permanent_speed')?.perLevel ?? 0
+    agg.allSpeed += perLevel * permLevel
   }
   agg.setTier = bestCount >= 3 ? bestTier : null
   agg.setCount = bestCount

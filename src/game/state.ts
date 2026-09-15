@@ -21,6 +21,7 @@ export function newGame(name: string, now: number): GameState {
     queueSlots: CONTENT.config.defaultQueueSlots,
     buffs: [],
     companions: {},
+    abyss: { bestFloor: 0, crystals: 0, stamina: 12, staminaAt: now, purchased: {}, tickets: 0, permanentSpeed: 0, title: false },
     codex: { items: '', recipes: '', affixes: '', ores: '' },
     season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
     flags: {
@@ -59,6 +60,8 @@ export function newGame(name: string, now: number): GameState {
       totalRecruits: 0,
       totalRelics: 0,
       totalTokensEarned: 0,
+      totalAbyssSweeps: 0,
+      totalAbyssPurchases: 0,
     },
   }
   // v2.2：初始伙伴（避免「无伙伴→无徽记→无法招募」死锁）

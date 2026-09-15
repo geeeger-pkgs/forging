@@ -65,6 +65,7 @@ const buffs = computed(() =>
         <span v-for="(b, i) in buffs" :key="i" class="buff" :title="b.name">{{ b.icon }} {{ b.min }}m</span>
       </div>
       <span class="pname">{{ store.state.character.name }}</span>
+      <span v-if="store.state.abyss?.title" class="title-badge" title="深渊商店购买的称号">深渊行者</span>
       <span class="dim">总等级 {{ tl }}</span>
     </div>
   </header>
@@ -144,6 +145,13 @@ const buffs = computed(() =>
   padding: 1px 8px;
   font-size: 11px;
   color: var(--c-accent);
+}
+.title-badge {
+  font-size: 11px;
+  color: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  border-radius: 4px;
+  padding: 0 4px;
 }
 .pname {
   font-weight: 600;

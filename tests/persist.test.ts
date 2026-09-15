@@ -315,3 +315,58 @@ describe('v2.3 迁移（S10）', () => {
     expect(Object.keys(loaded.companions).length).toBe(1)
   })
 })
+
+describe('v2.4 迁移（A10）', () => {
+  it('v10 → v11：补齐深渊状态（体力给满、无最高层记录）', () => {
+    const s = newGame('T', 1)
+    const v10 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    delete v10.abyss
+    const st = v10.stats as Record<string, unknown>
+    delete st.totalAbyssSweeps
+    delete st.totalAbyssPurchases
+    localStorage.setItem('forging.save', JSON.stringify({ ...v10, version: 10 }))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(SAVE_VERSION)
+    expect(loaded!.abyss.bestFloor).toBe(0)
+    expect(loaded!.abyss.crystals).toBe(0)
+    expect(loaded!.abyss.stamina).toBe(CONTENT.abyss.staminaMax)
+    expect(loaded!.abyss.tickets).toBe(0)
+    expect(loaded!.abyss.permanentSpeed).toBe(0)
+    expect(loaded!.abyss.title).toBe(false)
+    expect(loaded!.stats.totalAbyssSweeps).toBe(0)
+    expect(loaded!.stats.totalAbyssPurchases).toBe(0)
+  })
+
+  it('v11 往返：深渊状态完整保留（含已购次数与券）', () => {
+    const s = newGame('T', 1)
+    s.abyss.bestFloor = 12
+    s.abyss.crystals = 345
+    s.abyss.stamina = 4
+    s.abyss.tickets = 2
+    s.abyss.permanentSpeed = 3
+    s.abyss.title = true
+    s.abyss.purchased = { reroll_ticket: 2, title: 1 }
+    saveGame(s)
+    const loaded = loadGame()!
+    expect(loaded.abyss).toEqual(s.abyss)
+  })
+
+  it('v1 → v11 全链：深渊字段齐全且不产生满体力（staminaAt = 迁移时刻）', () => {
+    const s = newGame('T', 1)
+    const v1 = {
+      ...s,
+      version: 1,
+      abyss: undefined,
+      stats: { totalCrafts: 1 },
+      meta: { lastSeenAt: 1, carry: { items: {} } },
+      flags: { tutorial: { current: 1, progress: 0, completed: [], claimed: [] } },
+    }
+    localStorage.setItem('forging.save', JSON.stringify(v1))
+    const loaded = loadGame()!
+    expect(loaded.version).toBe(SAVE_VERSION)
+    expect(loaded.abyss.bestFloor).toBe(0)
+    expect(loaded.abyss.stamina).toBeLessThanOrEqual(CONTENT.abyss.staminaMax)
+    expect(loaded.abyss.staminaAt).toBeGreaterThan(0)
+  })
+})

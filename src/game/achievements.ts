@@ -98,6 +98,12 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       const { pct } = codexProgress(state)
       return pct * 100 >= def.target
     }
+    case 'abyssFloor':
+      // v2.4：深渊最高层
+      return (state.abyss?.bestFloor ?? 0) >= def.target
+    case 'abyssCrystals':
+      // v2.4：当前持有的深渊结晶
+      return (state.abyss?.crystals ?? 0) >= def.target
     case 'seasonRenown':
       // v2.3：单赛季声望总量（未解锁时不计）
       return state.season.index >= 0 && state.season.renown >= def.target

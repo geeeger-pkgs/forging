@@ -74,5 +74,11 @@
   { "id": "codex_75", "name": "博物学者", "desc": "图鉴收集度达到 75%", "type": "codexPercent", "target": 75, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
   { "id": "codex_100", "name": "百科全书", "desc": "图鉴收集度达到 100%", "type": "codexPercent", "target": 100, "rewards": [{ "gold": 30000 }, { "itemId": "expedition_token", "qty": 20 }] },
   { "id": "season_max", "name": "赛季圆满", "desc": "赛季声望等级达到 20 级", "type": "seasonLevel", "target": 20, "rewards": [{ "gold": 10000 }, { "itemId": "expedition_token", "qty": 10 }] },
-  { "id": "season_gold3", "name": "三线全金", "desc": "单赛季三条任务全部达成金档（120 声望）", "type": "seasonRenown", "target": 120, "rewards": [{ "itemId": "expedition_token", "qty": 10 }] }
+  { "id": "season_gold3", "name": "三线全金", "desc": "单赛季三条任务全部达成金档（120 声望）", "type": "seasonRenown", "target": 120, "rewards": [{ "itemId": "expedition_token", "qty": 10 }] },
+  { "id": "abyss_first", "name": "初入深渊", "desc": "通关深渊第 1 层", "type": "abyssFloor", "target": 1, "rewards": [{ "itemId": "emberstone", "qty": 5 }] },
+  { "id": "abyss_10", "name": "下潜者", "desc": "通关深渊第 10 层", "type": "abyssFloor", "target": 10, "rewards": [{ "gold": 2000 }] },
+  { "id": "abyss_25", "name": "深渊行者", "desc": "通关深渊第 25 层", "type": "abyssFloor", "target": 25, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
+  { "id": "abyss_crystal_1000", "name": "结晶收藏家", "desc": "同时持有 1,000 深渊结晶", "type": "abyssCrystals", "target": 1000, "rewards": [{ "gold": 2000 }] },
+  { "id": "abyss_sweep_1", "name": "轻车熟路", "desc": "完成第 1 次扫荡", "type": "stat", "stat": "totalAbyssSweeps", "target": 1, "rewards": [{ "gold": 200 }] },
+  { "id": "abyss_buy_1", "name": "深渊交易", "desc": "在深渊商店完成第 1 次购买", "type": "stat", "stat": "totalAbyssPurchases", "target": 1, "rewards": [{ "gold": 300 }] }
 ]

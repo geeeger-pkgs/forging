@@ -7,6 +7,7 @@ import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
+import { regenStamina } from '../game/abyss'
 import { checkCodexMilestones } from '../game/codex'
 import { checkSeason, refreshSeason } from '../game/season'
 import { advanceExpeditions } from '../game/expeditions'
@@ -35,7 +36,16 @@ export interface Toast {
 }
 
 /** 主面板视图：四技能 + 传承 + 任务 + 商店 + 成就 + 设置 */
-export type UiView = SkillId | 'prestige' | 'tasks' | 'expedition' | 'codex' | 'shop' | 'achievements' | 'settings'
+export type UiView =
+  | SkillId
+  | 'prestige'
+  | 'tasks'
+  | 'expedition'
+  | 'abyss'
+  | 'codex'
+  | 'shop'
+  | 'achievements'
+  | 'settings'
 
 const TITLE = 'Forging · 挖矿锻造放置游戏'
 
@@ -157,6 +167,16 @@ function handleEvents(events: GameEvent[]): void {
       case 'bannerUpgraded':
         pushToast(`🧭 远征队旗帜升至 ${e.level} 级`, 'good')
         break
+      case 'abyssCleared':
+        pushToast(`🕳 深渊第 ${e.floor} 层通关（+${e.crystals} 结晶）`, 'good')
+        if (document.hidden) markUnread()
+        break
+      case 'abyssSwept':
+        pushToast(`🕳 扫荡获得 ${e.crystals} 结晶`, 'info')
+        break
+      case 'abyssItemBought':
+        pushToast(`🕳 已购买：${e.name}`, 'good')
+        break
       case 'codexMilestone':
         pushToast(`📖 图鉴里程碑 ${Math.round(e.pct * 100)}%（+${e.gold} 金）`, 'good')
         if (document.hidden) markUnread()
@@ -186,6 +206,7 @@ function handleEvents(events: GameEvent[]): void {
 
 export function cmd(command: Command): void {
   const now = Date.now()
+  regenStamina(store.state, now)
   const events = dispatch(store.state, command, now)
   events.push(...checkSeason(store.state))
   events.push(...refreshSeason(store.state, now))
@@ -262,6 +283,7 @@ export function boot(): void {
 export function startLoop(): void {
   window.setInterval(() => {
     store.now = Date.now()
+    regenStamina(store.state, store.now)
     const events = simulate(store.state, store.now, { mode: 'online', rng: systemRng() })
     advanceExpeditions(store.state, store.now, 'online', systemRng(), events)
     // v2.3 次序契约：先结算赛季（旧赛季）再轮换，随后成就与图鉴里程碑，最后由调用方做自动回收

@@ -8,6 +8,7 @@ import {
   affixQuality,
   lockIssue,
   perfectScore,
+  poolOf,
   reforgeCost,
   rerollAffixes,
 } from './affixes'
@@ -24,6 +25,7 @@ import {
   teamSize,
   upgradeBanner,
 } from './expeditions'
+import { buyAbyssItem, challengeAbyss, consumeTicket, sweepAbyss, ticketUsable } from './abyss'
 import { recordAffix } from './codex'
 import { recycleGain } from './economy'
 import { levelInfo } from './level'
@@ -100,7 +102,7 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
     case 'deleteLoadout':
       return deleteLoadout(state, cmd.loadoutId)
     case 'reforge':
-      return reforgeInstance(state, cmd.instanceId, cmd.locks, rng ?? systemRng())
+      return reforgeInstance(state, cmd.instanceId, cmd.locks, rng ?? systemRng(), cmd.ticketAffixId)
     case 'recruitCompanion':
       return recruitCmd(state, rng ?? systemRng())
     case 'rerollTrait':
@@ -110,6 +112,21 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
     case 'claimExpedition': {
       const events: GameEvent[] = []
       claimExpedition(state, cmd.runId, events)
+      return events
+    }
+    case 'challengeAbyss': {
+      const events: GameEvent[] = []
+      challengeAbyss(state, now, events)
+      return events
+    }
+    case 'sweepAbyss': {
+      const events: GameEvent[] = []
+      sweepAbyss(state, now, events)
+      return events
+    }
+    case 'buyAbyssItem': {
+      const events: GameEvent[] = []
+      buyAbyssItem(state, cmd.itemId, events)
       return events
     }
     case 'upgradeBanner': {
@@ -362,6 +379,7 @@ function reforgeInstance(
   instanceId: number,
   locks: readonly number[],
   rng: Rng,
+  ticketAffixId?: string,
 ): GameEvent[] {
   const reason = reforgeBlockReason(state, instanceId, locks)
   if (reason) return [{ type: 'blocked', reason }]
@@ -370,6 +388,18 @@ function reforgeInstance(
   const cost = reforgeCost(inst.itemId, locks.length)
   if (!cost) return [{ type: 'blocked', reason: '该物品没有词缀，无法重铸' }]
 
+  // v2.4 定向重铸券（5 条契约，design-v2.4 §2.5 规则 7）：
+  // 持有券 / 池内存在 / 不与锁定冲突 / 池内剩余条数足够；任一不满足 → blocked 且**不消耗券**
+  if (ticketAffixId !== undefined) {
+    const lockedIds = locks.map((i) => inst.affixes[i]?.id).filter((x): x is string => Boolean(x))
+    const issue = ticketUsable(state, inst.itemId, ticketAffixId, lockedIds)
+    if (issue) return [{ type: 'blocked', reason: issue }]
+    const pool = poolOf(itemDef(inst.itemId))
+    const remain = pool.filter((id) => id !== ticketAffixId && !lockedIds.includes(id)).length
+    const need = inst.affixes.length - locks.length - 1
+    if (remain < need) return [{ type: 'blocked', reason: '池内可用词缀不足，无法使用定向重铸券' }]
+  }
+
   addGold(state, -cost.gold)
   if (cost.essence > 0) removeMaterial(state, 'essence', cost.essence)
   if (cost.emberstone > 0) removeMaterial(state, REFORGE_STONE, cost.emberstone)
@@ -377,7 +407,9 @@ function reforgeInstance(
   const before = perfectScore(inst.itemId, inst.affixes)
   const locked = new Set(locks)
   // 评审 B1：锁定条的 id 必须从抽取池剔除，否则同名词缀会重复
-  const next = rerollAffixes(rng, inst.itemId, inst.affixes, locks)
+  const next = rerollAffixes(rng, inst.itemId, inst.affixes, locks, ticketAffixId)
+  // 契约 5：券只在成功路径消耗
+  if (ticketAffixId !== undefined) consumeTicket(state)
 
   // 累计完美词缀：只统计本次新摇出的完美条（锁定条不重复计数）
   const threshold = CONTENT.affixes.perfectThreshold

@@ -51,7 +51,7 @@ function hintOf(cat: CodexCategory): string {
     case 'companions':
       return '提示：消耗远征徽记招募（近郊路线保底产出）'
     case 'relics':
-      return '提示：废弃矿道/古代遗迹/深渊前哨 的稀有掉落（需对应路线解锁）'
+      return '提示：废弃矿道/古代遗迹/深渊前哨 的稀有掉落，或在深渊商店直接兑换'
     default:
       return '提示：在对应矿脉开采一次即登记'
   }

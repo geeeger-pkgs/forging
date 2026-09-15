@@ -84,7 +84,12 @@ function rollValue(rng: Rng, def: AffixDef, tier: number): number {
  * 用给定随机源抽取一整套词缀（池内不重复，条数由档位决定）。
  * excludeIds：本次**不参与抽取**的词缀 id（重铸锁定条占用，见 rerollAffixes）
  */
-export function rollAffixesWith(rng: Rng, itemId: ItemId, excludeIds: readonly string[] = []): AffixRoll[] {
+export function rollAffixesWith(
+  rng: Rng,
+  itemId: ItemId,
+  excludeIds: readonly string[] = [],
+  forcedId?: string,
+): AffixRoll[] {
   const def = itemDef(itemId)
   const n = affixCountOf(def)
   if (n <= 0 || !def.tier) return []
@@ -96,7 +101,12 @@ export function rollAffixesWith(rng: Rng, itemId: ItemId, excludeIds: readonly s
     const j = Math.floor(rng.next() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
-  return pool.slice(0, need).map((id) => ({ id, value: rollValue(rng, affixDef(id), def.tier as number) }))
+  const chosen = pool.slice(0, need)
+  // v2.4 定向重铸券：forcedId 必占一个槽位（调用方已保证它在池内且未被排除）
+  if (forcedId !== undefined && poolOf(def).includes(forcedId) && !chosen.includes(forcedId) && chosen.length > 0) {
+    chosen[chosen.length - 1] = forcedId
+  }
+  return chosen.map((id) => ({ id, value: rollValue(rng, affixDef(id), def.tier as number) }))
 }
 
 /** 确定性种子：(itemId, instanceId, salt) → uint32 */
@@ -123,17 +133,20 @@ export function rollAffixes(itemId: ItemId, instanceId: number, salt = 0): Affix
 
 /**
  * 重铸：保留锁定下标对应的词缀（含原值与品质），其余按「池 − 已锁定 id」重新抽取。
- * 规则保证：条数不变、同名词缀不重复（设计 §2.3 / 评审 B1）。
+ * v2.4：可传入 `ticketAffixId`（定向重铸券）——该 id 从抽取池剔除后由 `forcedId` 保证必出现，
+ * 数值仍按正常 roll 抽取；条数不变、同名词缀不重复（设计 §2.3 / 评审 B1）。
  */
 export function rerollAffixes(
   rng: Rng,
   itemId: ItemId,
   current: readonly AffixRoll[],
   locks: readonly number[],
+  ticketAffixId?: string,
 ): AffixRoll[] {
   const locked = new Set(locks)
   const keptIds = current.filter((_, i) => locked.has(i)).map((a) => a.id)
-  const fresh = rollAffixesWith(rng, itemId, keptIds)
+  const exclude = ticketAffixId ? [...keptIds, ticketAffixId] : keptIds
+  const fresh = rollAffixesWith(rng, itemId, exclude, ticketAffixId)
   let k = 0
   return current.map((a, i) => (locked.has(i) ? a : fresh[k++] ?? a))
 }

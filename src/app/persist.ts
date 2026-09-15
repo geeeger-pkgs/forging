@@ -8,7 +8,7 @@ import type { EquipInstance, GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 10
+export const SAVE_VERSION = 11
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -145,6 +145,27 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       totalTokensEarned: s.stats.totalTokensEarned ?? 0,
     },
   }),
+  // v2.4：深渊回廊（体力给满 12：迁移不纯但被持久化，与 newAffixSalt 同先例）
+  10: (s) => ({
+    ...s,
+    version: 11,
+    abyss:
+      (s as unknown as { abyss?: GameState['abyss'] }).abyss ?? {
+        bestFloor: 0,
+        crystals: 0,
+        stamina: CONTENT.abyss.staminaMax,
+        staminaAt: Date.now(),
+        purchased: {},
+        tickets: 0,
+        permanentSpeed: 0,
+        title: false,
+      },
+    stats: {
+      ...s.stats,
+      totalAbyssSweeps: s.stats.totalAbyssSweeps ?? 0,
+      totalAbyssPurchases: s.stats.totalAbyssPurchases ?? 0,
+    },
+  }),
   // v2.3：图鉴与赛季（codex 空串起步 + season 未解锁态 + 里程碑记录；冷启动回溯在 loadGame 后执行）
   9: (s) => ({
     ...s,
@@ -184,6 +205,12 @@ function ensureFields(s: GameState): GameState {
   }
   if (!out.companions) out = { ...out, companions: {} }
   if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
+  if (!out.abyss) {
+    out = {
+      ...out,
+      abyss: { bestFloor: 0, crystals: 0, stamina: CONTENT.abyss.staminaMax, staminaAt: Date.now(), purchased: {}, tickets: 0, permanentSpeed: 0, title: false },
+    }
+  }
   if (!out.season) out = { ...out, season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] } }
   if (typeof out.meta.codexMilestones !== 'string') out = { ...out, meta: { ...out.meta, codexMilestones: '' } }
   if (typeof out.meta.seasonUnlockedOnce !== 'boolean') {

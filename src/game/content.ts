@@ -36,6 +36,7 @@ import affixesJson from '../../data/affixes.json'
 import companionsJson from '../../data/companions.json'
 import expeditionsJson from '../../data/expeditions.json'
 import seasonJson from '../../data/season.json'
+import abyssJson from '../../data/abyss.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -322,6 +323,28 @@ export function validateContent(t: ContentTables): string[] {
   }
   if (!(s.levelReward.goldBase >= 0 && s.levelReward.tokenEvery >= 1)) errs.push('赛季等级奖励配置非法')
 
+  // 深渊回廊（v2.4）
+  const ab = t.abyss
+  if (!(ab.staminaMax >= 1)) errs.push('深渊体力上限非法')
+  if (!(ab.staminaRegenMinutes > 0)) errs.push('深渊体力恢复间隔非法')
+  if (!(ab.base > 0)) errs.push('深渊门槛基数非法')
+  if (!(ab.growth > 1)) errs.push('深渊门槛增长率必须 > 1')
+  if (ab.themes.length === 0) errs.push('深渊主题为空')
+  for (const k of ['speed', 'efficiency', 'quantity', 'rareFind', 'wisdom', 'enhanceRate'] as const) {
+    if (!(ab.weights[k] > 0)) errs.push(`深渊权重非法: ${k}`)
+  }
+  const shopIds = new Set<string>()
+  for (const it of ab.shop) {
+    if (shopIds.has(it.id)) errs.push(`深渊商品 id 重复: ${it.id}`)
+    shopIds.add(it.id)
+    if (!(it.crystal > 0)) errs.push(`深渊商品价格非法: ${it.id}`)
+    if (!(it.max >= 1)) errs.push(`深渊商品上限非法: ${it.id}`)
+    if (!(it.priceGrowth >= 1)) errs.push(`深渊商品涨价系数非法: ${it.id}`)
+    if (it.itemId && !hasItem(it.itemId)) errs.push(`深渊商品发放的物品不存在: ${it.id} -> ${it.itemId}`)
+  }
+  if (!shopIds.has('reroll_ticket')) errs.push('深渊商店缺少定向重铸券')
+  if (!shopIds.has('permanent_speed')) errs.push('深渊商店缺少永久速度')
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -349,6 +372,7 @@ export const CONTENT: ContentTables = {
   companions: companionsJson,
   expeditions: expeditionsJson,
   season: seasonJson,
+  abyss: abyssJson,
   config: configJson,
 } as unknown as ContentTables
 
