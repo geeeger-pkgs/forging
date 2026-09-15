@@ -1,13 +1,12 @@
 // ============================================================
 // Forging · 动作描述器（UI 展示用；只读，不改状态）
 // ============================================================
-import { CONTENT, RECIPES_BY_ID, SITES_BY_ID, itemDef, skillName } from '../game/content'
+import { ENHANCE_BY_TARGET, RECIPES_BY_ID, SITES_BY_ID, itemDef, skillName } from '../game/content'
 import { startBlockReason } from '../game/commands'
 import { levelInfo } from '../game/level'
 import { baseTimeOf, durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf } from '../game/rules'
-import { instanceById, materialCount, freeInstances } from '../game/state'
+import { freeInstances, instanceById, materialCount } from '../game/state'
 import { aggregateEquipment } from '../game/stats'
-import { ENHANCE_BY_TARGET } from '../game/content'
 import type { ActionRef, GameState, ItemId, SkillId } from '../game/types'
 
 export interface InputInfo {
@@ -142,13 +141,3 @@ function dropsInfo(ref: ActionRef, rareFind: number): DropInfo[] {
     rate: d.rate * (1 + rareFind),
   }))
 }
-
-/** 供 UI 快速取当前标签的总价值（近似） */
-export function totalValue(state: GameState): number {
-  let sum = 0
-  for (const [id, qty] of Object.entries(state.materials)) sum += itemDef(id).value * qty
-  for (const inst of state.equipment) sum += itemDef(inst.itemId).value * (1 + 0.1 * inst.enhanceLevel)
-  return Math.round(sum)
-}
-
-export { CONTENT }

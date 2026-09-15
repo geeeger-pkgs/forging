@@ -12,6 +12,7 @@ import recipesJson from '../../data/recipes.json'
 import levelCurveJson from '../../data/levelCurve.json'
 import enhanceJson from '../../data/enhance.json'
 import tutorialJson from '../../data/tutorial.json'
+import achievementsJson from '../../data/achievements.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -74,6 +75,21 @@ function validate(t: ContentTables): string[] {
     for (const rw of s.rewards) if (rw.itemId && !hasItem(rw.itemId)) errs.push(`教程奖励物品不存在: 步骤 ${s.step}`)
   }
 
+  // 成就（v1.1）
+  const achIds = new Set<string>()
+  for (const a of t.achievements) {
+    if (achIds.has(a.id)) errs.push(`成就 id 重复: ${a.id}`)
+    achIds.add(a.id)
+    if (a.target <= 0) errs.push(`成就目标非法: ${a.id}`)
+    if (a.type === 'skillLevel' && (!a.skill || !SKILL_IDS.includes(a.skill))) errs.push(`成就技能非法: ${a.id}`)
+    if (a.type === 'itemCount' && (!a.itemId || !hasItem(a.itemId))) errs.push(`成就物品不存在: ${a.id}`)
+    if (a.type === 'stat' && !a.stat) errs.push(`成就缺少计数器: ${a.id}`)
+    for (const rw of a.rewards) {
+      if (rw.itemId && !hasItem(rw.itemId)) errs.push(`成就奖励物品不存在: ${a.id} -> ${rw.itemId}`)
+      if (!rw.gold && !rw.itemId) errs.push(`成就奖励为空: ${a.id}`)
+    }
+  }
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -92,6 +108,7 @@ export const CONTENT: ContentTables = {
   levelCurve: levelCurveJson,
   enhance: enhanceJson,
   tutorial: tutorialJson,
+  achievements: achievementsJson,
   config: configJson,
 } as unknown as ContentTables
 

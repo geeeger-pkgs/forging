@@ -80,4 +80,31 @@ describe('存档持久化', () => {
     const wrongShape = new File([JSON.stringify({ version: 1 })], 'wrong.json')
     expect(await importSaveFile(wrongShape)).toBeNull()
   })
+
+  it('v1 → v2 迁移：补齐成就与挖矿计数（保留旧数据）', () => {
+    const v1 = {
+      version: 1,
+      character: { name: '旧档', createdAt: 1 },
+      skills: { mining: 0, smelting: 0, forging: 0, enhancing: 0 },
+      materials: { ore_copper: 9 },
+      equipment: [],
+      slots: {},
+      nextInstanceId: 1,
+      gold: 5,
+      actions: { current: null, queue: [] },
+      queueSlots: 1,
+      flags: { tutorial: { current: 3, progress: 1, completed: [1, 2], claimed: [1, 2] } },
+      meta: { lastSeenAt: 1, carry: { items: {} } },
+      stats: { totalCrafts: 7, totalEnhances: 2 },
+    }
+    localStorage.setItem('forging.save', JSON.stringify(v1))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.version).toBe(2)
+    expect(loaded!.stats.totalMines).toBe(0)
+    expect(loaded!.stats.totalCrafts).toBe(7)
+    expect(loaded!.flags.achievements.unlocked).toEqual([])
+    expect(loaded!.flags.tutorial.current).toBe(3)
+    expect(loaded!.materials['ore_copper']).toBe(9)
+  })
 })

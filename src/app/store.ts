@@ -3,6 +3,7 @@
 // 约定：UI 组件只读 store.state；一切变更经 cmd() / dispatch
 // ============================================================
 import { reactive } from 'vue'
+import { checkAchievements } from '../game/achievements'
 import { dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
 import { settleOffline } from '../game/offline'
@@ -25,8 +26,8 @@ export interface Toast {
   kind: 'info' | 'good' | 'bad'
 }
 
-/** 主面板视图：四技能 + 商店 + 设置 */
-export type UiView = SkillId | 'shop' | 'settings'
+/** 主面板视图：四技能 + 商店 + 成就 + 设置 */
+export type UiView = SkillId | 'shop' | 'achievements' | 'settings'
 
 export const store = reactive({
   /** 内核状态（可序列化对象；模块加载后由 boot() 注入） */
@@ -64,6 +65,9 @@ function handleEvents(events: GameEvent[]): void {
       case 'tutorialGoalMet':
         pushToast(`教程任务达成（第 ${e.step} 步）`, 'good')
         break
+      case 'achievementUnlocked':
+        pushToast(`🏆 成就达成：${e.name}`, 'good')
+        break
       case 'enhanceResult':
         pushToast(
           e.success ? `强化成功：+${e.from} → +${e.to}` : `强化失败：+${e.from} → +${e.to}`,
@@ -86,6 +90,7 @@ function handleEvents(events: GameEvent[]): void {
 
 export function cmd(command: Command): void {
   const events = dispatch(store.state, command, Date.now())
+  events.push(...checkAchievements(store.state))
   handleEvents(events)
   saveNow()
 }
@@ -131,6 +136,7 @@ export function startLoop(): void {
   window.setInterval(() => {
     store.now = Date.now()
     const events = simulate(store.state, store.now, { mode: 'online', rng: systemRng() })
+    events.push(...checkAchievements(store.state))
     if (events.length) handleEvents(events)
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)

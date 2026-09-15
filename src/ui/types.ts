@@ -5,6 +5,8 @@ export interface ActionCard {
   ref: ActionRef
   title: string
   icon: string
+  /** 优先使用程序化 SVG 图标 */
+  itemId?: string
   locked: boolean
   note: string
 }

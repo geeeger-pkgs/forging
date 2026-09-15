@@ -159,6 +159,42 @@ export interface SkillDef {
   maxLevel: number
 }
 
+// ---------- 成就（v1.1） ----------
+
+export type AchievementType =
+  | 'stat'
+  | 'skillLevel'
+  | 'enhanceLevel'
+  | 'totalLevel'
+  | 'totalValue'
+  | 'itemCount'
+
+export interface AchievementReward {
+  gold?: number
+  itemId?: ItemId
+  qty?: number
+}
+
+export interface AchievementDef {
+  id: string
+  name: string
+  desc: string
+  type: AchievementType
+  /** type=stat：计数器名（totalMines / totalCrafts / totalEnhances） */
+  stat?: string
+  /** type=skillLevel：目标技能 */
+  skill?: SkillId
+  /** type=itemCount：目标物品 */
+  itemId?: ItemId
+  target: number
+  rewards: AchievementReward[]
+}
+
+export interface AchievementFlags {
+  /** 已解锁成就 id（解锁即自动发奖） */
+  unlocked: string[]
+}
+
 export interface ContentTables {
   skills: SkillDef[]
   ores: OreSiteDef[]
@@ -167,6 +203,7 @@ export interface ContentTables {
   levelCurve: LevelCurveDef
   enhance: EnhanceStepDef[]
   tutorial: TutorialStepDef[]
+  achievements: AchievementDef[]
   config: ConfigDef
 }
 
@@ -233,6 +270,7 @@ export interface GameState {
   queueSlots: number
   flags: {
     tutorial: TutorialFlags
+    achievements: AchievementFlags
   }
   meta: {
     /** 上次结算时间戳（ms） */
@@ -242,6 +280,7 @@ export interface GameState {
   stats: {
     totalCrafts: number
     totalEnhances: number
+    totalMines: number
   }
 }
 
@@ -271,6 +310,7 @@ export type GameEvent =
   | { type: 'enhanceResult'; instanceId: number; from: number; to: number; success: boolean }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
+  | { type: 'achievementUnlocked'; id: string; name: string }
   | { type: 'goldGained'; amount: number }
   | { type: 'blocked'; reason: string }
 

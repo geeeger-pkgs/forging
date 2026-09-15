@@ -5,7 +5,7 @@ import type { GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 
 export function saveGame(state: GameState): void {
   try {
@@ -25,7 +25,14 @@ function isValidSave(s: unknown): s is GameState {
 }
 
 /** 版本迁移链（v→v+1）；后续版本在此登记 */
-const MIGRATIONS: Record<number, (s: GameState) => GameState> = {}
+const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
+  1: (s) => ({
+    ...s,
+    version: 2,
+    stats: { ...s.stats, totalMines: s.stats.totalMines ?? 0 },
+    flags: { ...s.flags, achievements: s.flags.achievements ?? { unlocked: [] } },
+  }),
+}
 
 function migrate(s: GameState): GameState {
   let cur = s

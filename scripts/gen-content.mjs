@@ -96,18 +96,35 @@ for (const s of SMELT) {
 }
 
 // 锻造配方（设计 §5.2）
+// v1.1：T4/T5 装备附加第二属性（增强高阶打造动机）
+const SECONDARY = {
+  pick: { stat: 'efficiency', vals: [0.02, 0.04] },
+  crucible: { stat: 'efficiency', vals: [0.02, 0.04] },
+  hammer: { stat: 'efficiency', vals: [0.02, 0.04] },
+  sword: { stat: 'quantity', vals: [0.03, 0.06] },
+  warhammer: { stat: 'efficiency', vals: [0.02, 0.04] },
+  helmet: { stat: 'efficiency', vals: [0.02, 0.04] },
+  chest: { stat: 'wisdom', vals: [0.03, 0.06] },
+  legs: { stat: 'wisdom', vals: [0.03, 0.06] },
+  boots: { stat: 'rareFind', vals: [0.03, 0.06] },
+}
 for (const cat of CATS) {
   for (const t of TIERS) {
     const id = `${cat.key}_${SUFFIX[t]}`
     const ingots = ingotsByTier[cat.key][t]
     const value = Math.round(ingots * ingotPrice(t) * 0.5)
+    const stats = { [cat.stat]: cat.vals[t - 1] }
+    if (t >= 4) {
+      const sec = SECONDARY[cat.key]
+      stats[sec.stat] = sec.vals[t - 4]
+    }
     addItem({
       id,
       name: `${TIER_CN[t]}${cat.name}`,
       tier: t,
       category: cat.category,
       slot: cat.slot,
-      stats: { [cat.stat]: cat.vals[t - 1] },
+      stats,
       enhanceable: true,
       value,
       stackable: false,

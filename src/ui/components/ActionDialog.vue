@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { closeDialog, cmd, store } from '../../app/store'
 import { describeAction, type ActionDesc } from '../../app/describe'
 import { nextQueueSlotCost } from '../../game/commands'
-import { fmtDuration, fmtPct, itemIcon } from '../icons'
+import { fmtDuration, fmtPct } from '../icons'
+import ItemIcon from './ItemIcon.vue'
 
 const desc = computed<ActionDesc | null>(() =>
   store.ui.dialogRef ? describeAction(store.state, store.ui.dialogRef) : null,
@@ -23,9 +24,9 @@ watch(
 )
 
 function iconOf(d: ActionDesc): string {
-  if (d.mineYield) return itemIcon(d.mineYield.itemId)
-  if (d.outputs.length > 0) return itemIcon(d.outputs[0].itemId)
-  return '✨'
+  if (d.mineYield) return d.mineYield.itemId
+  if (d.outputs.length > 0) return d.outputs[0].itemId
+  return ''
 }
 
 function start(mode: 'now' | 'enqueue'): void {
@@ -45,7 +46,8 @@ function start(mode: 'now' | 'enqueue'): void {
   <div v-if="desc" class="overlay" @click.self="closeDialog">
     <div class="dialog action-dialog">
       <header>
-        <span class="icon">{{ iconOf(desc) }}</span>
+        <ItemIcon v-if="iconOf(desc)" :item-id="iconOf(desc)" :size="24" />
+        <span v-else class="icon">✨</span>
         <h3>{{ desc.title }}</h3>
         <button class="btn sm" @click="closeDialog">✕</button>
       </header>

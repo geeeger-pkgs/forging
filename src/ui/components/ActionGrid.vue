@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActionCard } from '../types'
+import ItemIcon from './ItemIcon.vue'
 
 defineProps<{ cards: ActionCard[] }>()
 const emit = defineEmits<{ pick: [ActionCard] }>()
@@ -14,7 +15,8 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
       :class="{ locked: c.locked }"
       @click="!c.locked && emit('pick', c)"
     >
-      <span class="icon">{{ c.icon }}</span>
+      <ItemIcon v-if="c.itemId" :item-id="c.itemId" :size="38" />
+      <span v-else class="icon">{{ c.icon }}</span>
       <span class="title">{{ c.title }}</span>
       <span class="note">{{ c.note }}</span>
     </button>

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { totalLevel } from '../../game/level'
 import { refLabel } from '../../game/refs'
-import { totalValue } from '../../app/describe'
+import { totalValue } from '../../game/economy'
 import ProgressBar from './ProgressBar.vue'
 
 const cur = computed(() => store.state.actions.current)

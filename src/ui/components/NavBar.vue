@@ -47,6 +47,10 @@ function claim(): void {
         <span class="icon">🛒</span>
         <span class="body"><span class="name">商店</span></span>
       </button>
+      <button class="item" :class="{ active: store.ui.view === 'achievements' }" @click="setView('achievements')">
+        <span class="icon">🏆</span>
+        <span class="body"><span class="name">成就</span></span>
+      </button>
       <button class="item" :class="{ active: store.ui.view === 'settings' }" @click="setView('settings')">
         <span class="icon">⚙️</span>
         <span class="body"><span class="name">设置</span></span>

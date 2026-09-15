@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { exportCurrent, store } from '../../app/store'
 import { clearSave, importSaveFile, saveGame } from '../../app/persist'
-import { totalValue } from '../../app/describe'
+import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
 
 const fileInput = ref<HTMLInputElement | null>(null)

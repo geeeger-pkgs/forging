@@ -1,0 +1,94 @@
+// ============================================================
+// Forging · 程序化物品图标（SVG，无外部素材）
+// 形状 × 档位配色（铜/铁/银/金/秘银）
+// ============================================================
+export type ItemShape =
+  | 'pick'
+  | 'crucible'
+  | 'hammer'
+  | 'sword'
+  | 'mace'
+  | 'helmet'
+  | 'chest'
+  | 'legs'
+  | 'boots'
+  | 'ore'
+  | 'ingot'
+  | 'coal'
+  | 'essence'
+  | 'crate'
+  | 'unknown'
+
+const SHAPE_BY_PREFIX: [string, ItemShape][] = [
+  ['pick', 'pick'],
+  ['crucible', 'crucible'],
+  ['hammer', 'hammer'],
+  ['sword', 'sword'],
+  ['warhammer', 'mace'],
+  ['helmet', 'helmet'],
+  ['chest', 'chest'],
+  ['legs', 'legs'],
+  ['boots', 'boots'],
+  ['ore_', 'ore'],
+  ['ingot_', 'ingot'],
+]
+
+export function shapeOf(itemId: string): ItemShape {
+  if (itemId === 'coal') return 'coal'
+  if (itemId === 'essence') return 'essence'
+  if (itemId === 'crate') return 'crate'
+  const hit = SHAPE_BY_PREFIX.find(([p]) => itemId.startsWith(p))
+  return hit ? hit[1] : 'unknown'
+}
+
+const TIER_COLORS: Record<number, string> = {
+  1: '#c98a5b',
+  2: '#9aa4b0',
+  3: '#cfd6e4',
+  4: '#e8c05a',
+  5: '#7fd4c1',
+}
+
+export function colorOf(itemId: string, tier?: number): string {
+  if (tier && TIER_COLORS[tier]) return TIER_COLORS[tier]
+  if (itemId === 'coal') return '#3a4152'
+  if (itemId === 'essence') return '#b48ef0'
+  if (itemId === 'crate') return '#b08756'
+  return '#8a93ad'
+}
+
+/** 返回 24×24 viewBox 内的 SVG 内容片段 */
+export function svgFor(shape: ItemShape, c: string): string {
+  switch (shape) {
+    case 'pick':
+      return `<rect x="11" y="6" width="2.4" height="15" rx="1" fill="#8a6a4a"/><path d="M5 9c4-4 10-5 14-3l-1.6 3c-3-1.4-7-1-9.6 1.6z" fill="${c}"/>`
+    case 'crucible':
+      return `<path d="M6 9h12l-1.6 9H7.6z" fill="${c}"/><rect x="9.6" y="5" width="4.8" height="3" rx="1" fill="#000" opacity="0.3"/><circle cx="12" cy="6.2" r="1.6" fill="${c}"/>`
+    case 'hammer':
+      return `<rect x="11" y="10" width="2.2" height="11" rx="1" fill="#8a6a4a"/><rect x="6.5" y="4.5" width="11" height="6.5" rx="1.5" fill="${c}"/>`
+    case 'sword':
+      return `<path d="M12 2l2 13h-4z" fill="${c}"/><rect x="8" y="15" width="8" height="2" rx="1" fill="#8a6a4a"/><rect x="11" y="17" width="2" height="5" rx="1" fill="#8a6a4a"/>`
+    case 'mace':
+      return `<rect x="11" y="11" width="2.2" height="10" rx="1" fill="#8a6a4a"/><circle cx="12" cy="8" r="5" fill="${c}"/><path d="M12 1.5v2.5M5.2 8h2.6M16.2 8h2.6M12 12.5V15" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`
+    case 'helmet':
+      return `<path d="M5 14a7 7 0 0 1 14 0v3H5z" fill="${c}"/><rect x="8" y="11.5" width="8" height="2" rx="1" fill="#000" opacity="0.3"/>`
+    case 'chest':
+      return `<path d="M7 4h10l1.5 5v11H5.5V9z" fill="${c}"/><path d="M5.5 12h13" stroke="#000" stroke-width="1.2" opacity="0.3"/>`
+    case 'legs':
+      return `<rect x="7.5" y="3" width="3.6" height="18" rx="1.4" fill="${c}"/><rect x="12.9" y="3" width="3.6" height="18" rx="1.4" fill="${c}"/>`
+    case 'boots':
+      return `<path d="M8 3h4v11l4.5 3v3H8z" fill="${c}"/><rect x="8" y="17.5" width="8.5" height="2.5" rx="1" fill="#000" opacity="0.3"/>`
+    case 'ore':
+      return `<path d="M5 18l2-8 5-4 6 3 2 9z" fill="${c}"/><path d="M9 10l3 2 4-1" stroke="#000" stroke-width="1" opacity="0.25"/>`
+    case 'ingot':
+      return `<path d="M6 17l2-5h8l2 5z" fill="${c}"/><path d="M9 14l.8-2h4.4l.8 2z" fill="#fff" opacity="0.18"/>`
+    case 'coal':
+      return `<circle cx="12" cy="12" r="7" fill="${c}"/><circle cx="9.5" cy="10" r="2" fill="#fff" opacity="0.12"/>`
+    case 'essence':
+      return `<path d="M12 2l2.2 7.4L22 12l-7.8 2.6L12 22l-2.2-7.4L2 12l7.8-2.6z" fill="${c}"/>`
+    case 'crate':
+      return `<rect x="4.5" y="6" width="15" height="12" rx="1.5" fill="${c}"/><path d="M4.5 11h15M12 6v12" stroke="#000" stroke-width="1.2" opacity="0.35"/>`
+    default:
+      return `<circle cx="12" cy="12" r="7" fill="${c}"/>`
+  }
+}

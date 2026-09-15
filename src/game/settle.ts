@@ -120,6 +120,7 @@ function applyRewards(
   const agg = aggregateEquipment(state)
 
   if (ref.kind === 'mine') {
+    state.stats.totalMines += 1
     const { min, max, itemId } = yieldRangeOf(ref.siteId)
     if (mode === 'online') {
       const base = randInt(rng, min, max)

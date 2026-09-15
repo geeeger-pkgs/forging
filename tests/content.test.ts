@@ -53,4 +53,21 @@ describe('内容表', () => {
       { itemId: 'coal', qty: 1 },
     ])
   })
+
+  it('T4/T5 装备拥有第二属性（v1.1 副属性）', () => {
+    const pick5 = CONTENT.items['pick_mithril']
+    expect(pick5.stats?.speed).toBeCloseTo(1.05)
+    expect(pick5.stats?.efficiency).toBeCloseTo(0.04)
+
+    const pick4 = CONTENT.items['pick_gold']
+    expect(pick4.stats?.efficiency).toBeCloseTo(0.02)
+
+    const pick3 = CONTENT.items['pick_silver']
+    expect(pick3.stats?.efficiency).toBeUndefined()
+  })
+
+  it('成就表已载入并通过校验', () => {
+    expect(CONTENT.achievements.length).toBeGreaterThanOrEqual(25)
+    expect(CONTENT.achievements.some((a) => a.id === 'mine_10')).toBe(true)
+  })
 })

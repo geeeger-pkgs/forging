@@ -5,7 +5,7 @@ import { itemDef } from '../../game/content'
 import { instanceById } from '../../game/state'
 import { SLOT_IDS, aggregateEquipment } from '../../game/stats'
 import type { SlotId } from '../../game/types'
-import { itemIcon } from '../icons'
+import ItemIcon from './ItemIcon.vue'
 
 const SLOT_LABEL: Record<SlotId, string> = {
   pick: '镐',
@@ -27,7 +27,6 @@ const slots = computed(() =>
       label: SLOT_LABEL[id],
       inst: inst ?? null,
       name: inst ? itemDef(inst.itemId).name : '',
-      icon: inst ? itemIcon(inst.itemId) : '',
     }
   }),
 )
@@ -36,14 +35,14 @@ const materials = computed(() =>
   Object.entries(store.state.materials)
     .filter(([, qty]) => qty > 0)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, qty]) => ({ id, qty, name: itemDef(id).name, icon: itemIcon(id) })),
+    .map(([id, qty]) => ({ id, qty, name: itemDef(id).name })),
 )
 
 const bagItems = computed(() => {
   const equipped = new Set(Object.values(store.state.slots))
   return store.state.equipment
     .filter((e) => !equipped.has(e.instanceId))
-    .map((e) => ({ inst: e, name: itemDef(e.itemId).name, icon: itemIcon(e.itemId) }))
+    .map((e) => ({ inst: e, name: itemDef(e.itemId).name }))
 })
 
 const agg = computed(() => aggregateEquipment(store.state))
@@ -74,7 +73,7 @@ function recycleInstance(instanceId: number): void {
           <div class="slot-label">{{ s.label }}</div>
           <template v-if="s.inst">
             <div class="slot-item">
-              <span>{{ s.icon }}</span>
+              <ItemIcon :item-id="s.inst.itemId" :size="18" />
               <span class="slot-name">{{ s.name }}<em>+{{ s.inst.enhanceLevel }}</em></span>
             </div>
             <button class="btn sm" @click="unequip(s.id)">卸下</button>
@@ -93,7 +92,7 @@ function recycleInstance(instanceId: number): void {
       <h4>资源</h4>
       <div v-if="materials.length === 0" class="dim">暂无</div>
       <div v-for="m in materials" :key="m.id" class="row">
-        <span class="icon">{{ m.icon }}</span>
+        <ItemIcon :item-id="m.id" :size="16" />
         <span class="name">{{ m.name }}</span>
         <span class="qty">×{{ m.qty }}</span>
         <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
@@ -105,7 +104,7 @@ function recycleInstance(instanceId: number): void {
       <h4>行囊（装备）</h4>
       <div v-if="bagItems.length === 0" class="dim">暂无</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
-        <span class="icon">{{ b.icon }}</span>
+        <ItemIcon :item-id="b.inst.itemId" :size="16" />
         <span class="name">{{ b.name }}<em class="dim"> +{{ b.inst.enhanceLevel }}</em></span>
         <button class="btn sm" @click="equipInstance(b.inst.instanceId)">装备</button>
         <button class="btn sm" @click="recycleInstance(b.inst.instanceId)">回收</button>
@@ -177,9 +176,6 @@ h4 {
   gap: 6px;
   font-size: 13px;
   padding: 3px 0;
-}
-.icon {
-  font-size: 16px;
 }
 .name {
   flex: 1;

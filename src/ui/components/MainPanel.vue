@@ -4,19 +4,25 @@ import { pickAction, store } from '../../app/store'
 import { CONTENT, itemDef, skillName } from '../../game/content'
 import { levelInfo } from '../../game/level'
 import type { RecipeDef } from '../../game/types'
-import { itemIcon } from '../icons'
 import type { ActionCard } from '../types'
+import AchievementsPanel from './AchievementsPanel.vue'
 import ActionGrid from './ActionGrid.vue'
 import EnhancePanel from './EnhancePanel.vue'
+import SceneCanvas from './SceneCanvas.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 
 const view = computed(() => store.ui.view)
 const title = computed(() => {
   if (view.value === 'shop') return '商店'
+  if (view.value === 'achievements') return '成就'
   if (view.value === 'settings') return '设置'
   return skillName(view.value)
 })
+/** 场景动画仅展示在技能视图 */
+const showScene = computed(() =>
+  ['mining', 'smelting', 'forging', 'enhancing'].includes(view.value),
+)
 
 const miningCards = computed<ActionCard[]>(() => {
   const lv = levelInfo(store.state.skills.mining).level
@@ -25,7 +31,8 @@ const miningCards = computed<ActionCard[]>(() => {
     return {
       ref: { kind: 'mine', siteId: s.id } as const,
       title: s.name,
-      icon: itemIcon(s.outputItemId),
+      icon: '🪨',
+      itemId: s.outputItemId,
       locked,
       note: locked ? `需要 Lv${s.unlockLevel}` : `${itemDef(s.outputItemId).name} ${s.yieldMin}~${s.yieldMax}`,
     }
@@ -35,10 +42,12 @@ const miningCards = computed<ActionCard[]>(() => {
 function recipeCard(r: RecipeDef): ActionCard {
   const lv = levelInfo(store.state.skills[r.skill]).level
   const locked = lv < r.unlockLevel
+  const itemId = r.outputs[0]?.itemId
   return {
     ref: { kind: 'craft', recipeId: r.id },
     title: r.name,
-    icon: itemIcon(r.outputs[0]?.itemId ?? ''),
+    icon: '📦',
+    itemId,
     locked,
     note: locked ? `需要 Lv${r.unlockLevel}` : `Lv${r.unlockLevel}`,
   }
@@ -69,6 +78,8 @@ function pick(card: ActionCard): void {
   <main class="main">
     <h2>{{ title }}</h2>
 
+    <SceneCanvas v-if="showScene" />
+
     <template v-if="view === 'mining'">
       <ActionGrid :cards="miningCards" @pick="pick" />
     </template>
@@ -98,6 +109,10 @@ function pick(card: ActionCard): void {
 
     <template v-else-if="view === 'shop'">
       <ShopPanel />
+    </template>
+
+    <template v-else-if="view === 'achievements'">
+      <AchievementsPanel />
     </template>
 
     <template v-else>
