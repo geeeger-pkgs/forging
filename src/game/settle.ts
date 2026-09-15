@@ -6,7 +6,7 @@
 //   expectation 期望 + 小数结转（离线结算；强化被排除）
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
-import { ENHANCE_BY_TARGET, RECIPES_BY_ID, itemDef } from './content'
+import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
 import { levelInfo } from './level'
 import { randInt, systemRng, type Rng } from './rng'
 import { durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf, xpOf } from './rules'
@@ -174,6 +174,8 @@ function applyRewards(
   const xpMul = (1 + agg.wisdom) * (mode === 'expectation' ? 1 + agg.efficiency : 1)
   grantXp(state, recipe.skill, xpOf(ref) * xpMul, events)
   state.stats.totalCrafts += 1
+  if (recipe.skill === 'smelting') state.stats.totalSmelts += 1
+  else if (recipe.skill === 'forging') state.stats.totalForges += 1
   events.push(...tutorialCheckTotalLevel(state))
   return true
 }
@@ -222,6 +224,14 @@ function performEnhance(
   inst.enhanceLevel = to
   state.stats.totalEnhances += 1
   events.push({ type: 'enhanceResult', instanceId: ref.instanceId, from, to, success })
+
+  // 连续强化链（v1.2）：每轮自动重臂到「当前等级 + 1」；失败降级自动跟随
+  // 到达 +10 后本轮结束（remaining 收敛为 1，避免下一轮以“已达上限”报错停止）
+  if (inst.enhanceLevel >= MAX_ENHANCE) {
+    act.remaining = act.remaining === null ? 1 : Math.min(act.remaining, 1)
+  } else {
+    act.ref = { kind: 'enhance', instanceId: ref.instanceId, targetLevel: inst.enhanceLevel + 1 }
+  }
 
   const agg = aggregateEquipment(state)
   grantXp(state, 'enhancing', step.xpBase * (success ? 2 : 1) * (1 + agg.wisdom), events)

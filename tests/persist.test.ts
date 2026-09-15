@@ -81,7 +81,7 @@ describe('存档持久化', () => {
     expect(await importSaveFile(wrongShape)).toBeNull()
   })
 
-  it('v1 → v2 迁移：补齐成就与挖矿计数（保留旧数据）', () => {
+  it('v1 → v3 迁移：补齐成就/挖矿计数/任务/累计金币（保留旧数据）', () => {
     const v1 = {
       version: 1,
       character: { name: '旧档', createdAt: 1 },
@@ -100,11 +100,34 @@ describe('存档持久化', () => {
     localStorage.setItem('forging.save', JSON.stringify(v1))
     const loaded = loadGame()
     expect(loaded).not.toBeNull()
-    expect(loaded!.version).toBe(2)
+    expect(loaded!.version).toBe(3)
     expect(loaded!.stats.totalMines).toBe(0)
     expect(loaded!.stats.totalCrafts).toBe(7)
+    expect(loaded!.stats.totalGoldEarned).toBe(0)
     expect(loaded!.flags.achievements.unlocked).toEqual([])
     expect(loaded!.flags.tutorial.current).toBe(3)
     expect(loaded!.materials['ore_copper']).toBe(9)
+    expect(loaded!.meta.tasks.daily).toEqual([]) // 待首启 refreshTasks 生成
+  })
+
+  it('v2 → v3 迁移：补齐任务与累计计数', () => {
+    const s = newGame('V2', 1)
+    const v2 = { ...s, version: 2 }
+    delete (v2 as Record<string, unknown>).meta // 重建 v2 形态
+    const statsV2 = { totalCrafts: 3, totalEnhances: 1, totalMines: 5 }
+    ;(v2 as Record<string, unknown>).meta = { lastSeenAt: 1, carry: { items: {} } }
+    ;(v2 as Record<string, unknown>).stats = statsV2
+    localStorage.setItem('forging.save', JSON.stringify(v2))
+    const loaded = loadGame()
+    expect(loaded!.version).toBe(3)
+    expect(loaded!.stats.totalMines).toBe(5)
+    expect(loaded!.stats.totalSmelts).toBe(0)
+    expect(loaded!.meta.tasks.paidRerollsLeft).toBe(3)
+  })
+
+  it('拒绝高于当前版本的存档', () => {
+    const s = newGame('Future', 1)
+    localStorage.setItem('forging.save', JSON.stringify({ ...s, version: 99 }))
+    expect(loadGame()).toBeNull()
   })
 })

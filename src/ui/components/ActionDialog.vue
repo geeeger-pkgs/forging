@@ -77,6 +77,11 @@ function start(mode: 'now' | 'enqueue'): void {
         <span>{{ desc.xp.toFixed(1) }}<template v-if="desc.xpSuccessDoubled">（成功 ×2）</template></span>
       </div>
 
+      <div v-if="desc.enhanceRate !== undefined" class="row">
+        <label>成功率</label>
+        <span :class="{ bad: desc.enhanceRate < 0.5 }">{{ (desc.enhanceRate * 100).toFixed(0) }}%</span>
+      </div>
+
       <div v-for="d in desc.drops" :key="'d-' + d.itemId" class="row">
         <label>稀有</label>
         <span>{{ d.name }} ~{{ fmtPct(d.rate) }}</span>

@@ -35,6 +35,8 @@ export interface ActionDesc {
   baseTimeMs: number
   xp: number
   xpSuccessDoubled: boolean
+  /** 强化动作的实际成功率（v1.2 起展示，0~1） */
+  enhanceRate?: number
   inputs: InputInfo[]
   outputs: { itemId: ItemId; name: string; qty: number }[]
   mineYield?: { min: number; max: number; itemId: ItemId; name: string }
@@ -126,6 +128,7 @@ export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
     baseTimeMs: baseTimeOf(ref),
     xp: step.xpBase,
     xpSuccessDoubled: true,
+    enhanceRate: step.successRate,
     inputs,
     outputs: [],
     drops: [],

@@ -3,7 +3,7 @@
 // 载入 data/*.json → 结构校验 → 交叉引用校验 → 导出强类型 CONTENT
 // 校验失败直接 throw（启动即失败，避免脏数据流入运行时）
 // ============================================================
-import type { ContentTables, ItemDef, ItemId, SkillId, SlotId } from './types'
+import type { ContentTables, ItemDef, ItemId, SkillId, SlotId, TaskCounter } from './types'
 
 import skillsJson from '../../data/skills.json'
 import oresJson from '../../data/ores.json'
@@ -13,11 +13,21 @@ import levelCurveJson from '../../data/levelCurve.json'
 import enhanceJson from '../../data/enhance.json'
 import tutorialJson from '../../data/tutorial.json'
 import achievementsJson from '../../data/achievements.json'
+import tasksJson from '../../data/tasks.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
 const SLOT_IDS: readonly SlotId[] = ['pick', 'crucible', 'hammer', 'mainHand', 'head', 'body', 'legs', 'feet']
 const EQUIP_CATEGORIES = new Set(['tool', 'weapon', 'armor'])
+const TASK_COUNTERS: readonly TaskCounter[] = [
+  'totalMines',
+  'totalSmelts',
+  'totalForges',
+  'totalCrafts',
+  'totalEnhances',
+  'totalGoldEarned',
+  'totalCratesOpened',
+]
 
 function validate(t: ContentTables): string[] {
   const errs: string[] = []
@@ -90,6 +100,24 @@ function validate(t: ContentTables): string[] {
     }
   }
 
+  // 任务（v1.2）
+  const taskIds = new Set<string>()
+  for (const task of t.tasks.daily) {
+    if (taskIds.has(task.id)) errs.push(`任务 id 重复: ${task.id}`)
+    taskIds.add(task.id)
+    if (!TASK_COUNTERS.includes(task.counter)) errs.push(`任务计数器非法: ${task.id} -> ${task.counter}`)
+    for (const arr of [task.targets, task.gold, task.essence, task.crates]) {
+      if (!Array.isArray(arr) || arr.length !== 3) errs.push(`任务难度数组非法: ${task.id}`)
+    }
+    if (task.targets.some((n) => n <= 0)) errs.push(`任务目标非法: ${task.id}`)
+  }
+  for (const task of t.tasks.weekly) {
+    if (taskIds.has(task.id)) errs.push(`任务 id 重复: ${task.id}`)
+    taskIds.add(task.id)
+    if (!TASK_COUNTERS.includes(task.counter)) errs.push(`任务计数器非法: ${task.id} -> ${task.counter}`)
+    if (task.target <= 0) errs.push(`任务目标非法: ${task.id}`)
+  }
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -109,6 +137,7 @@ export const CONTENT: ContentTables = {
   enhance: enhanceJson,
   tutorial: tutorialJson,
   achievements: achievementsJson,
+  tasks: tasksJson,
   config: configJson,
 } as unknown as ContentTables
 
@@ -123,6 +152,8 @@ export const SITES_BY_ID = new Map(CONTENT.ores.map((s) => [s.id, s] as const))
 export const RECIPES_BY_ID = new Map(CONTENT.recipes.map((r) => [r.id, r] as const))
 export const ENHANCE_BY_TARGET = new Map(CONTENT.enhance.map((e) => [e.targetLevel, e] as const))
 export const TUTORIAL_BY_STEP = new Map(CONTENT.tutorial.map((s) => [s.step, s] as const))
+export const TASK_DAILY_BY_ID = new Map(CONTENT.tasks.daily.map((t) => [t.id, t] as const))
+export const TASK_WEEKLY_BY_ID = new Map(CONTENT.tasks.weekly.map((t) => [t.id, t] as const))
 export const MAX_LEVEL = Math.max(...CONTENT.skills.map((s) => s.maxLevel))
 export const MAX_ENHANCE = Math.max(...CONTENT.enhance.map((e) => e.targetLevel))
 

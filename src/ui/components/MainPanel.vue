@@ -11,9 +11,11 @@ import EnhancePanel from './EnhancePanel.vue'
 import SceneCanvas from './SceneCanvas.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import ShopPanel from './ShopPanel.vue'
+import TasksPanel from './TasksPanel.vue'
 
 const view = computed(() => store.ui.view)
 const title = computed(() => {
+  if (view.value === 'tasks') return '任务'
   if (view.value === 'shop') return '商店'
   if (view.value === 'achievements') return '成就'
   if (view.value === 'settings') return '设置'
@@ -109,6 +111,10 @@ function pick(card: ActionCard): void {
 
     <template v-else-if="view === 'shop'">
       <ShopPanel />
+    </template>
+
+    <template v-else-if="view === 'tasks'">
+      <TasksPanel />
     </template>
 
     <template v-else-if="view === 'achievements'">

@@ -19,7 +19,10 @@ function enhance(instanceId: number, level: number): void {
 
 <template>
   <div class="enhance">
-    <p class="hint">选择要强化的装备（+1 ~ +4 失败不掉级；+5 起失败降 1 级，永不销毁）</p>
+    <p class="hint">
+      选择要强化的装备（+1 ~ +4 失败不掉级；+5 起失败降 1 级，永不销毁）。<br />
+      提示：使用 <b>∞ 无限模式</b>将自动连续强化——逐级锤到 +10 或材料耗尽（降级自动跟随当前等级）。
+    </p>
     <p v-if="rows.length === 0" class="hint">尚无装备，先去锻造吧。</p>
     <div v-for="r in rows" :key="r.inst.instanceId" class="row">
       <ItemIcon :item-id="r.inst.itemId" :size="22" />

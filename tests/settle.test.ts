@@ -122,6 +122,21 @@ describe('在线结算', () => {
     expect(events.find((e) => e.type === 'enhanceResult')).toMatchObject({ success: true, from: 0, to: 1 })
   })
 
+  it('连续强化链：∞ 模式自动逐级重臂，+10 后自然收束（无报错）', () => {
+    const s = newGame('T', 0)
+    const id = equip(s, 'pick_copper')
+    s.materials['ingot_copper'] = 100
+    s.materials['essence'] = 100
+    startCurrent(s, { kind: 'enhance', instanceId: id, targetLevel: 1 }, null) // ∞
+    // rng 恒 0 → 所有成功率（0.36~1）均判定成功
+    const events = simulate(s, 60_000, { mode: 'online', rng: { next: () => 0 } })
+    const inst = s.equipment.find((e) => e.instanceId === id)!
+    expect(inst.enhanceLevel).toBe(10) // 0 → 10 共 10 次尝试（+1~+10 各一次）
+    expect(s.stats.totalEnhances).toBe(10)
+    expect(s.actions.current).toBeNull() // +10 后收束，无队列残留
+    expect(events.some((e) => e.type === 'blocked')).toBe(false) // 未触发“已达上限”报错
+  })
+
   it('教程步骤 1 达成 + 升级事件 + 领取奖励', () => {
     const s = newGame('T', 0)
     startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, 10)

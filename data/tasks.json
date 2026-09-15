@@ -1,0 +1,16 @@
+{
+  "daily": [
+    { "id": "mine", "title": "勤勉的矿工", "desc": "挖掘任意矿脉", "counter": "totalMines", "unit": "次", "targets": [30, 60, 120], "gold": [40, 100, 220], "essence": [0, 1, 2], "crates": [0, 0, 1] },
+    { "id": "smelt", "title": "炉边时光", "desc": "熔炼任意矿石", "counter": "totalSmelts", "unit": "次", "targets": [20, 40, 80], "gold": [40, 100, 220], "essence": [0, 1, 2], "crates": [0, 0, 1] },
+    { "id": "forge", "title": "打铁匠人", "desc": "锻造任意装备", "counter": "totalForges", "unit": "次", "targets": [8, 16, 32], "gold": [50, 120, 260], "essence": [0, 1, 2], "crates": [0, 0, 1] },
+    { "id": "enhance", "title": "精益求精", "desc": "进行强化尝试", "counter": "totalEnhances", "unit": "次", "targets": [5, 10, 20], "gold": [60, 140, 300], "essence": [1, 2, 3], "crates": [0, 0, 0] },
+    { "id": "gold", "title": "日进斗金", "desc": "累计获得金币", "counter": "totalGoldEarned", "unit": "金", "targets": [300, 800, 1600], "gold": [0, 0, 0], "essence": [0, 1, 2], "crates": [0, 1, 1] },
+    { "id": "crate", "title": "开箱时刻", "desc": "开启工匠小箱", "counter": "totalCratesOpened", "unit": "个", "targets": [1, 2, 4], "gold": [60, 140, 260], "essence": [0, 1, 1], "crates": [0, 0, 1] }
+  ],
+  "weekly": [
+    { "id": "mine_w", "title": "矿脉征服者", "desc": "挖掘任意矿脉", "counter": "totalMines", "unit": "次", "target": 600, "gold": 500, "essence": 3, "crates": 2 },
+    { "id": "craft_w", "title": "全职工匠", "desc": "熔炼或锻造", "counter": "totalCrafts", "unit": "次", "target": 300, "gold": 500, "essence": 3, "crates": 2 },
+    { "id": "enhance_w", "title": "千锤百炼", "desc": "进行强化尝试", "counter": "totalEnhances", "unit": "次", "target": 60, "gold": 600, "essence": 5, "crates": 2 },
+    { "id": "gold_w", "title": "财富之路", "desc": "累计获得金币", "counter": "totalGoldEarned", "unit": "金", "target": 8000, "gold": 0, "essence": 5, "crates": 3 }
+  ]
+}

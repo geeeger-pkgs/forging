@@ -1,5 +1,5 @@
 // ============================================================
-// Forging · 内核类型契约（M1 接口冻结稿）
+// Forging · 内核类型契约（M1 接口冻结稿；v1.2 迭代中）
 // 规则：
 //   - 本文件是【内核线（src/game）】与【壳线（src/app、src/ui）】唯一接口
 //   - 内核纯函数：无 DOM、无 Vue、可单测、可序列化
@@ -195,6 +195,69 @@ export interface AchievementFlags {
   unlocked: string[]
 }
 
+// ---------- 任务（v1.2） ----------
+
+export type TaskCounter =
+  | 'totalMines'
+  | 'totalSmelts'
+  | 'totalForges'
+  | 'totalCrafts'
+  | 'totalEnhances'
+  | 'totalGoldEarned'
+  | 'totalCratesOpened'
+
+export interface TaskTemplate {
+  id: string
+  title: string
+  desc: string
+  counter: TaskCounter
+  unit: string
+  /** 三档难度（易/中/难） */
+  targets: [number, number, number]
+  gold: [number, number, number]
+  essence: [number, number, number]
+  crates: [number, number, number]
+}
+
+export interface WeeklyTaskTemplate {
+  id: string
+  title: string
+  desc: string
+  counter: TaskCounter
+  unit: string
+  target: number
+  gold: number
+  essence: number
+  crates: number
+}
+
+export interface TasksDef {
+  daily: TaskTemplate[]
+  weekly: WeeklyTaskTemplate[]
+}
+
+/** 任务槽运行时状态（进度 = 计数器当前值 − base） */
+export interface TaskSlot {
+  defId: string
+  target: number
+  gold: number
+  essence: number
+  crates: number
+  base: number
+  done: boolean
+}
+
+export interface TaskState {
+  /** 本地日期 YYYY-MM-DD */
+  dailyDate: string
+  daily: TaskSlot[]
+  rerollsLeft: number
+  paidRerollsLeft: number
+  /** ISO 周键 YYYY-Www */
+  weekKey: string
+  weekly: TaskSlot | null
+}
+
 export interface ContentTables {
   skills: SkillDef[]
   ores: OreSiteDef[]
@@ -204,6 +267,7 @@ export interface ContentTables {
   enhance: EnhanceStepDef[]
   tutorial: TutorialStepDef[]
   achievements: AchievementDef[]
+  tasks: TasksDef
   config: ConfigDef
 }
 
@@ -276,11 +340,17 @@ export interface GameState {
     /** 上次结算时间戳（ms） */
     lastSeenAt: number
     carry: OfflineCarry
+    tasks: TaskState
   }
   stats: {
     totalCrafts: number
     totalEnhances: number
     totalMines: number
+    totalSmelts: number
+    totalForges: number
+    /** 累计获得金币（单调递增，仅正数入账） */
+    totalGoldEarned: number
+    totalCratesOpened: number
   }
 }
 
@@ -297,6 +367,8 @@ export type Command =
   | { type: 'buyQueueSlot' }
   | { type: 'acceptTutorial'; step: number }
   | { type: 'claimTutorial'; step: number }
+  | { type: 'openCrate' }
+  | { type: 'rerollTask'; index: number }
 
 // ---------- 事件（内核 → UI 回流） ----------
 
@@ -311,6 +383,9 @@ export type GameEvent =
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
   | { type: 'achievementUnlocked'; id: string; name: string }
+  | { type: 'taskCompleted'; title: string }
+  | { type: 'tasksRotated'; period: 'daily' | 'weekly' }
+  | { type: 'crateOpened'; text: string }
   | { type: 'goldGained'; amount: number }
   | { type: 'blocked'; reason: string }
 

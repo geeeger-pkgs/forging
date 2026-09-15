@@ -1,6 +1,7 @@
 // ============================================================
 // Forging · 应用层 store（Vue reactive 快照 + dispatch 桥 + 主循环）
 // 约定：UI 组件只读 store.state；一切变更经 cmd() / dispatch
+// 启动顺序（v1.2 Blocker 修正）：载入→迁移→离线结算→任务轮换+基线快照
 // ============================================================
 import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
@@ -10,6 +11,7 @@ import { settleOffline } from '../game/offline'
 import { systemRng } from '../game/rng'
 import { simulate } from '../game/settle'
 import { newGame } from '../game/state'
+import { checkTasks, refreshTasks } from '../game/tasks'
 import { exportSave, loadGame, saveGame } from './persist'
 import type {
   ActionRef,
@@ -26,8 +28,8 @@ export interface Toast {
   kind: 'info' | 'good' | 'bad'
 }
 
-/** 主面板视图：四技能 + 商店 + 成就 + 设置 */
-export type UiView = SkillId | 'shop' | 'achievements' | 'settings'
+/** 主面板视图：四技能 + 任务 + 商店 + 成就 + 设置 */
+export type UiView = SkillId | 'tasks' | 'shop' | 'achievements' | 'settings'
 
 export const store = reactive({
   /** 内核状态（可序列化对象；模块加载后由 boot() 注入） */
@@ -68,6 +70,15 @@ function handleEvents(events: GameEvent[]): void {
       case 'achievementUnlocked':
         pushToast(`🏆 成就达成：${e.name}`, 'good')
         break
+      case 'taskCompleted':
+        pushToast(`📋 任务完成：${e.title}`, 'good')
+        break
+      case 'tasksRotated':
+        pushToast(e.period === 'daily' ? '📋 每日任务已刷新' : '📋 周常任务已刷新', 'info')
+        break
+      case 'crateOpened':
+        pushToast(e.text, 'good')
+        break
       case 'enhanceResult':
         pushToast(
           e.success ? `强化成功：+${e.from} → +${e.to}` : `强化失败：+${e.from} → +${e.to}`,
@@ -91,6 +102,8 @@ function handleEvents(events: GameEvent[]): void {
 export function cmd(command: Command): void {
   const events = dispatch(store.state, command, Date.now())
   events.push(...checkAchievements(store.state))
+  events.push(...refreshTasks(store.state, Date.now()))
+  events.push(...checkTasks(store.state))
   handleEvents(events)
   saveNow()
 }
@@ -124,7 +137,12 @@ export function boot(): void {
   const saved = loadGame()
   const state = saved ?? newGame('矿工', Date.now())
   store.state = state
-  const summary = settleOffline(state, Date.now())
+  const now = Date.now()
+  // ① 离线结算（不计入今日任务）
+  const summary = settleOffline(state, now)
+  // ② 任务轮换 + 基线快照（离线收益之前的历史以基线隔离）
+  refreshTasks(state, now)
+  checkTasks(state)
   store.summary = summary
   if (summary) {
     for (const n of summary.notes) pushToast(n, 'info')
@@ -137,6 +155,8 @@ export function startLoop(): void {
     store.now = Date.now()
     const events = simulate(store.state, store.now, { mode: 'online', rng: systemRng() })
     events.push(...checkAchievements(store.state))
+    events.push(...refreshTasks(store.state, store.now))
+    events.push(...checkTasks(store.state))
     if (events.length) handleEvents(events)
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)

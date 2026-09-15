@@ -16,18 +16,21 @@ import {
   materialCount,
   removeMaterial,
 } from './state'
+import { openCrate } from './crates'
+import { rerollTask } from './tasks'
 import { claimTutorial, tutorialProgress } from './tutorial'
 import type { ActionRef, ActiveAction, Command, GameEvent, GameState, ItemId } from './types'
 
 /** 壳层便捷入口：先结算已流逝时间，再应用命令 */
 export function dispatch(state: GameState, cmd: Command, now: number, rng?: Rng): GameEvent[] {
   const events: GameEvent[] = []
-  simulate(state, now, { mode: 'online', rng: rng ?? systemRng(), events })
-  events.push(...applyCommand(state, cmd, now))
+  const rand = rng ?? systemRng()
+  simulate(state, now, { mode: 'online', rng: rand, events })
+  events.push(...applyCommand(state, cmd, now, rand))
   return events
 }
 
-export function applyCommand(state: GameState, cmd: Command, now: number): GameEvent[] {
+export function applyCommand(state: GameState, cmd: Command, now: number, rng?: Rng): GameEvent[] {
   switch (cmd.type) {
     case 'startAction':
       return startAction(state, cmd.ref, cmd.count, cmd.mode, now)
@@ -51,6 +54,10 @@ export function applyCommand(state: GameState, cmd: Command, now: number): GameE
       return cmd.step === state.flags.tutorial.current ? [] : []
     case 'claimTutorial':
       return claimTutorial(state, cmd.step)
+    case 'openCrate':
+      return openCrate(state, rng)
+    case 'rerollTask':
+      return rerollTask(state, cmd.index)
   }
 }
 

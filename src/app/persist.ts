@@ -5,7 +5,7 @@ import type { GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 export function saveGame(state: GameState): void {
   try {
@@ -32,6 +32,28 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
     stats: { ...s.stats, totalMines: s.stats.totalMines ?? 0 },
     flags: { ...s.flags, achievements: s.flags.achievements ?? { unlocked: [] } },
   }),
+  2: (s) => ({
+    ...s,
+    version: 3,
+    stats: {
+      ...s.stats,
+      totalSmelts: s.stats.totalSmelts ?? 0,
+      totalForges: s.stats.totalForges ?? 0,
+      totalGoldEarned: s.stats.totalGoldEarned ?? 0,
+      totalCratesOpened: s.stats.totalCratesOpened ?? 0,
+    },
+    meta: {
+      ...s.meta,
+      tasks: s.meta.tasks ?? {
+        dailyDate: '',
+        daily: [],
+        rerollsLeft: 1,
+        paidRerollsLeft: 3,
+        weekKey: '',
+        weekly: null,
+      },
+    },
+  }),
 }
 
 function migrate(s: GameState): GameState {
@@ -51,7 +73,11 @@ export function loadGame(): GameState | null {
     if (!raw) continue
     try {
       const data = JSON.parse(raw)
-      if (isValidSave(data)) return migrate(data)
+      if (isValidSave(data)) {
+        // 拒绝高于当前版本的存档（防止旧客户端破坏新档）
+        if (data.version > SAVE_VERSION) continue
+        return migrate(data)
+      }
     } catch {
       // 尝试下一槽位
     }

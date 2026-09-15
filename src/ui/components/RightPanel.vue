@@ -95,6 +95,7 @@ function recycleInstance(instanceId: number): void {
         <ItemIcon :item-id="m.id" :size="16" />
         <span class="name">{{ m.name }}</span>
         <span class="qty">×{{ m.qty }}</span>
+        <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
         <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
         <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
       </div>

@@ -21,8 +21,20 @@ export function newGame(name: string, now: number): GameState {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },
       achievements: { unlocked: [] },
     },
-    meta: { lastSeenAt: now, carry: { items: {} } },
-    stats: { totalCrafts: 0, totalEnhances: 0, totalMines: 0 },
+    meta: {
+      lastSeenAt: now,
+      carry: { items: {} },
+      tasks: { dailyDate: '', daily: [], rerollsLeft: 1, paidRerollsLeft: 3, weekKey: '', weekly: null },
+    },
+    stats: {
+      totalCrafts: 0,
+      totalEnhances: 0,
+      totalMines: 0,
+      totalSmelts: 0,
+      totalForges: 0,
+      totalGoldEarned: 0,
+      totalCratesOpened: 0,
+    },
   }
 }
 
@@ -73,6 +85,8 @@ export function equippedIdOf(state: GameState, itemId: ItemId): number | undefin
 
 export function addGold(state: GameState, amount: number): void {
   state.gold += amount
+  // 累计获得金币为单调计数器（仅正数入账；消费不回收）
+  if (amount > 0) state.stats.totalGoldEarned += amount
 }
 
 // ---------- 装备查询 ----------
