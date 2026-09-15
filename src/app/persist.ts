@@ -133,6 +133,16 @@ function migrate(s: GameState): GameState {
   return cur
 }
 
+/**
+ * 载入兜底（幂等）：补齐"技术上已是当前版本、但缺字段"的存档。
+ * v2.1 测评 m5：v8 档若缺 affixSalt，旧实现静默回落 0 → 造装词缀可被外部预计算，此处补齐。
+ */
+function ensureFields(s: GameState): GameState {
+  if (typeof s.meta.affixSalt === 'number') return s
+  const salt = newAffixSalt()
+  return { ...s, meta: { ...s.meta, affixSalt: salt } }
+}
+
 /** 载入（主槽 → 备份槽，均失败返回 null） */
 export function loadGame(): GameState | null {
   for (const key of [SAVE_KEY, BAK_KEY]) {
@@ -143,7 +153,7 @@ export function loadGame(): GameState | null {
       if (isValidSave(data)) {
         // 拒绝高于当前版本的存档（防止旧客户端破坏新档）
         if (data.version > SAVE_VERSION) continue
-        return migrate(data)
+        return ensureFields(migrate(data))
       }
     } catch {
       // 尝试下一槽位
@@ -169,7 +179,7 @@ export async function importSaveFile(file: File): Promise<GameState | null> {
     const text = await file.text()
     const data = JSON.parse(text)
     if (!isValidSave(data)) return null
-    return migrate(data)
+    return ensureFields(migrate(data))
   } catch {
     return null
   }

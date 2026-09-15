@@ -199,6 +199,17 @@ describe('存档持久化', () => {
     expect(inst.affixes).toEqual(rollAffixes('pick_copper', id, loaded!.meta.affixSalt))
   })
 
+  it('v8 档缺 affixSalt 时载入自动补齐（测评 m5：不再静默回落 0）', () => {
+    const s = newGame('NoSalt', 1)
+    const v8 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    delete ((v8 as { meta: Record<string, unknown> }).meta as Record<string, unknown>).affixSalt
+    localStorage.setItem('forging.save', JSON.stringify(v8))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(typeof loaded!.meta.affixSalt).toBe('number')
+    expect(loaded!.meta.affixSalt).toBeGreaterThan(0)
+  })
+
   it('v8 往返：词缀与盐完整保留（导出/导入幂等）', () => {
     const s = newGame('Salt', 1)
     const id = addInstance(s, 'pick_void')

@@ -315,6 +315,8 @@ export interface AffixDef {
   id: string
   name: string
   effect: AffixEffect
+  /** 机内效果说明（弹窗展示，玩家必须能读懂——v2.1 评审 B1） */
+  desc: string
   /** 一档（T1）完美值 */
   base: number
   /** 每档递增（完美值 = base + perTier × (tier − 1)） */

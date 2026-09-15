@@ -52,7 +52,10 @@ const score = computed(() => {
 
 const cost = computed(() => {
   const i = inst.value
-  return i ? reforgeCost(i.itemId, locks.value.length) : null
+  if (!i) return null
+  // 锁定数超过上限时不展示造价（该组合不可提交；测评 m4）
+  if (locks.value.length > maxLocks(i.itemId)) return null
+  return reforgeCost(i.itemId, locks.value.length)
 })
 
 const blockReason = computed(() => {
@@ -162,7 +165,10 @@ function close(): void {
           {{ locks.includes(i) ? '🔒' : '🔓' }}
         </button>
         <span v-else class="lockbtn spacer-dot" aria-hidden="true">·</span>
-        <span class="aname">{{ affixDef(a.id).name }}</span>
+        <span class="aname">
+          {{ affixDef(a.id).name }}
+          <em class="adesc">{{ affixDef(a.id).desc }}</em>
+        </span>
         <span class="aval">+{{ (a.value * 100).toFixed(1) }}%</span>
         <span class="aq" :class="{ good: isPerfect(i) }">{{ qualityPct(i) }}<template v-if="isPerfect(i)"> ★</template></span>
       </div>
@@ -278,6 +284,14 @@ header h3 {
 }
 .aname {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.adesc {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--c-text-dim);
 }
 .aval {
   color: var(--c-accent-2);

@@ -501,15 +501,36 @@ describe('词缀内容校验（A12）', () => {
     expect(validateContent(CONTENT)).toEqual([])
   })
 
-  it('负例：池引用不存在的词缀 / 条数超出池容量 / 完美阈值越界 → 报错', () => {
+  it('负例：池引用不存在的词缀 / 条数超出池容量 / 完美阈值越界 / 缺效果说明 → 报错', () => {
     const clone = JSON.parse(JSON.stringify(CONTENT)) as typeof CONTENT
     clone.affixes.pools.tool = ['keen', 'nope']
     clone.affixes.countByTier['7'] = 9
     clone.affixes.perfectThreshold = 2
+    clone.affixes.affixes[0].desc = ''
     const errs = validateContent(clone)
     expect(errs.some((e) => e.includes('引用不存在的词缀'))).toBe(true)
     expect(errs.some((e) => e.includes('超出最小池容量'))).toBe(true)
     expect(errs.some((e) => e.includes('完美阈值'))).toBe(true)
+    expect(errs.some((e) => e.includes('缺少效果说明'))).toBe(true)
+  })
+
+  it('B1（测评）：9 条词缀全部带机内效果说明', () => {
+    for (const a of CONTENT.affixes.affixes) {
+      expect(a.desc.length, `${a.id} 缺少说明`).toBeGreaterThanOrEqual(4)
+    }
+  })
+
+  it('m4（测评）：锁满时不可提交（预检返回阻塞且造价为 null 语义）', () => {
+    const s = newGame('T', 0)
+    s.gold = 1e6
+    s.materials['essence'] = 99
+    s.materials['emberstone'] = 99
+    const id = equip(s, 'pick_copper') // 1 条词缀 → 不可锁定
+    const ev = applyCommand(s, { type: 'reforge', instanceId: id, locks: [0] }, 0, mulberry32(5))
+    const b = ev.find((e) => e.type === 'blocked')
+    expect(b && b.type === 'blocked' ? b.reason : '').toBeTruthy()
+    expect(reforgeCost('pick_copper', 1)).not.toBeNull() // 造价函数仍可算，UI 负责不展示
+    expect(maxLocks('pick_copper')).toBe(0) // UI 据此隐藏造价行
   })
 
   it('重铸石物品已登记且可被采集掉落引用', () => {

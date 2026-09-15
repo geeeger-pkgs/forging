@@ -192,6 +192,8 @@ export function validateContent(t: ContentTables): string[] {
     affixIds.add(a.id)
     if (!AFFIX_EFFECTS.includes(a.effect)) errs.push(`词缀效果非法: ${a.id} -> ${a.effect}`)
     if (!(a.base > 0) || !(a.perTier >= 0)) errs.push(`词缀数值非法: ${a.id}`)
+    // v2.1 评审 B1：词缀必须在游戏内可读（缺说明会导致玩家不知道自己在追什么）
+    if (!a.desc || a.desc.trim().length < 4) errs.push(`词缀缺少效果说明: ${a.id}`)
   }
   for (const arch of ARCHETYPES) {
     const pool = t.affixes.pools[arch]

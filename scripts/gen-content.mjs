@@ -207,16 +207,24 @@ for (const eff of RUNE_EFFECTS) {
 // ---------------- 词缀（v2.1） ----------------
 // 数值口径：max(tier) = base + perTier × (tier − 1)；实际值 = max × roll，roll ∈ [0.55, 1.0]
 // 池按「装备原型 = 物品 category」划分；条数按档位递增（T1~2 一条 → T7 四条）
+// desc：机内效果说明（弹窗展示；评审 B1 —— 玩家必须能读懂每条词缀在做什么）
 const AFFIXES = [
-  { id: 'keen', name: '锋锐', effect: 'speed', base: 0.012, perTier: 0.006 },
-  { id: 'plenty', name: '丰产', effect: 'quantity', base: 0.02, perTier: 0.008 },
-  { id: 'flow', name: '流畅', effect: 'efficiency', base: 0.006, perTier: 0.003 },
-  { id: 'lore', name: '博识', effect: 'wisdom', base: 0.02, perTier: 0.01 },
-  { id: 'fortune', name: '幸运', effect: 'rareFind', base: 0.02, perTier: 0.01 },
-  { id: 'precision', name: '精准', effect: 'enhanceRate', base: 0.01, perTier: 0.005 },
-  { id: 'aegis', name: '庇护', effect: 'guard', base: 0.02, perTier: 0.01 },
-  { id: 'midas', name: '点金', effect: 'goldFind', base: 0.03, perTier: 0.015 },
-  { id: 'prospect', name: '勘探', effect: 'stoneFind', base: 0.05, perTier: 0.025 },
+  { id: 'keen', name: '锋锐', effect: 'speed', base: 0.012, perTier: 0.006, desc: '动作速度（工具=对应技能，武器=全技能）' },
+  { id: 'plenty', name: '丰产', effect: 'quantity', base: 0.02, perTier: 0.008, desc: '产出数量' },
+  { id: 'flow', name: '流畅', effect: 'efficiency', base: 0.006, perTier: 0.003, desc: '效率（每轮概率额外产出一份）' },
+  { id: 'lore', name: '博识', effect: 'wisdom', base: 0.02, perTier: 0.01, desc: '技能经验' },
+  { id: 'fortune', name: '幸运', effect: 'rareFind', base: 0.02, perTier: 0.01, desc: '稀有掉落率（精华/小箱/重铸石）' },
+  { id: 'precision', name: '精准', effect: 'enhanceRate', base: 0.01, perTier: 0.005, desc: '强化成功率' },
+  { id: 'aegis', name: '庇护', effect: 'guard', base: 0.02, perTier: 0.01, desc: '强化失败时免降级概率' },
+  { id: 'midas', name: '点金', effect: 'goldFind', base: 0.03, perTier: 0.015, desc: '回收金币收益' },
+  {
+    id: 'prospect',
+    name: '勘探',
+    effect: 'stoneFind',
+    base: 0.05,
+    perTier: 0.025,
+    desc: '重铸石掉落率（仅 T4 以上矿脉；小箱不受加成）',
+  },
 ]
 
 // 池各 5 条：T7 抽 4 条 → 5 种组合（避免"条数=池大小"导致组合退化，评审 M4）
