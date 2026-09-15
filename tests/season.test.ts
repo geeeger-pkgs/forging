@@ -230,3 +230,33 @@ describe('数值闭环（S12）与成就（S11）', () => {
     expect(s.season.renown).toBe(0)
   })
 })
+
+describe('成就语义（修复：season_gold3 不再与 season_max 重复）', () => {
+  it('season_max 与 season_gold3 的触发条件不同（等级 20 vs 声望 120）', () => {
+    const s = newGame('T', 0)
+    withSeason(s, DEF.epoch + 1000)
+    // 达标到刚好满级（80 声望 = 1金+2银）
+    const slots = s.season.tasks
+    const counters = slots.map((sl) => templateById(sl.defId)!.counter)
+    // 第一条冲金档，其余两条冲银档 → 40 + 20 + 20 = 80
+    const tiers = [2, 1, 1]
+    slots.forEach((sl, i) => {
+      const tpl = templateById(sl.defId)!
+      ;(s.stats as unknown as Record<string, number>)[tpl.counter] = sl.base + tpl.targets[tiers[i]]
+    })
+    checkSeason(s)
+    expect(s.season.rewardedLevel).toBe(DEF.levels) // 满级
+    expect(s.season.renown).toBe(80)
+    void counters
+
+    // 尚未三线全金（120）——但把三条都推到金档即触发
+    const renownBefore = s.season.renown
+    expect(renownBefore).toBeLessThan(120)
+    for (const sl of slots) {
+      const tpl = templateById(sl.defId)!
+      ;(s.stats as unknown as Record<string, number>)[tpl.counter] = sl.base + tpl.targets[2]
+    }
+    checkSeason(s)
+    expect(s.season.renown).toBe(120)
+  })
+})

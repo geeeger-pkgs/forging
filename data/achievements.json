@@ -74,5 +74,5 @@
   { "id": "codex_75", "name": "博物学者", "desc": "图鉴收集度达到 75%", "type": "codexPercent", "target": 75, "rewards": [{ "itemId": "expedition_token", "qty": 5 }] },
   { "id": "codex_100", "name": "百科全书", "desc": "图鉴收集度达到 100%", "type": "codexPercent", "target": 100, "rewards": [{ "gold": 30000 }, { "itemId": "expedition_token", "qty": 20 }] },
   { "id": "season_max", "name": "赛季圆满", "desc": "赛季声望等级达到 20 级", "type": "seasonLevel", "target": 20, "rewards": [{ "gold": 10000 }, { "itemId": "expedition_token", "qty": 10 }] },
-  { "id": "season_gold3", "name": "三线全金", "desc": "单赛季三条任务全部达成金档（120 声望）", "type": "seasonLevel", "target": 20, "rewards": [{ "itemId": "expedition_token", "qty": 10 }] }
+  { "id": "season_gold3", "name": "三线全金", "desc": "单赛季三条任务全部达成金档（120 声望）", "type": "seasonRenown", "target": 120, "rewards": [{ "itemId": "expedition_token", "qty": 10 }] }
 ]

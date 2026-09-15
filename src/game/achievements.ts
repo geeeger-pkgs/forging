@@ -98,6 +98,9 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       const { pct } = codexProgress(state)
       return pct * 100 >= def.target
     }
+    case 'seasonRenown':
+      // v2.3：单赛季声望总量（未解锁时不计）
+      return state.season.index >= 0 && state.season.renown >= def.target
     case 'seasonLevel':
       // v2.3：赛季等级（未解锁时 season.index = -1）
       return state.season.index >= 0 && levelForRenown(state.season.renown) >= def.target

@@ -189,6 +189,8 @@ export type AchievementType =
   /** v2.3：图鉴收集度（百分比）与赛季等级 */
   | 'codexPercent'
   | 'seasonLevel'
+  /** 单赛季声望总量（如三线全金 = 120） */
+  | 'seasonRenown'
   | 'companionCount'
   | 'companionRarity'
   | 'relicCount'
