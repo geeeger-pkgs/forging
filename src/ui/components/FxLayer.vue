@@ -69,10 +69,23 @@ function viewport(): { w: number; h: number } {
   return { w: window.innerWidth, h: window.innerHeight }
 }
 
-/** 锚点：主内容区中部偏上（避开顶栏与底部提示条） */
+/**
+ * 表现锚点。
+ * 技能页有**场景舞台**（`.scene` 画布）时，把爆发/飘字落回舞台里（观感：像在矿洞里炸开）；
+ * 其它页面（深渊/商店/任务…）没有舞台，退化为"主内容区上部居中"。
+ * 实机截图自检：纯视口锚点会把粒子和飘字撒在动作卡网格上，盖住按钮文字。
+ * 只在**事件到达时**读一次 rect（不是每帧），不引入每帧强制布局。
+ */
 function anchor(): { x: number; y: number } {
   const { w, h } = viewport()
-  return { x: w * 0.42, y: Math.min(h * 0.42, 380) }
+  if (typeof document !== 'undefined') {
+    const stage = document.querySelector('canvas.scene') as HTMLCanvasElement | null
+    if (stage) {
+      const r = stage.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.62 }
+    }
+  }
+  return { x: w * 0.42, y: Math.min(h * 0.26, 240) }
 }
 
 function burst(kind: keyof typeof BURST_COLORS, count: number): void {
@@ -105,7 +118,7 @@ function pushPopup(text: string, kind: Popup['kind']): void {
     text,
     kind,
     x: a0.x + (Math.random() - 0.5) * 60,
-    y: a0.y + 60 - slot * 17,
+    y: a0.y + 40 - slot * 17, // 从舞台下沿往上错行，5 条都留在舞台内（截图自检）
     life: 0,
     max: 90,
   })

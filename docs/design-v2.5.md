@@ -84,6 +84,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 - **飘字**：同屏 ≤ `maxPopups`(6)，纵向错行槽位**夹在可见范围内**（测评 Minor-6：原 `slot≥5` 会飘出画布）：`+N 名称` / `+XP` / `+N 金`。
 - **光环**：技能升级/成就/深渊通关时扩散环。
 - **降级**：`fx = reduced` → 关闭常驻浮尘与交互爆发，仅保留飘字与光环；`fx = off` → 覆盖层立即清空并停止绘制（`store.dispatchFx` 短路 + 层内二次判定），**场景本体与音效不受影响**（测评 M3）。
+- **锚点规则（实机自检 D15）**：有场景舞台（`canvas.scene`）的页面，爆发/飘字落在**舞台内**（保持"在矿洞里炸开"的观感）；其它页面（深渊/商店/任务/设置…）没有舞台 → 退化为"主内容区上部居中"。锚点只在事件到达时计算一次（读一次 `getBoundingClientRect`），不引入每帧强制布局。
 - **淘汰语义（测评 B1）**：总线在无订阅者时**直接丢弃**（`sceneDropped()` 计数可见），不做队列补放 —— 表现是即时反馈，过期即无意义。
 - **性能埋点**：`performance.now()` 采样三项，仅在 `document.visibilityState === 'visible'` 时采样，滚动窗口输出 **p50/p95/max/samples**：
   - `draw`：两个画布（场景 + 全局表现层）的单帧绘制耗时；
@@ -213,7 +214,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 - [x] 三类动效 + 四档设置（auto 解析）+ `data-fx` 真关 CSS 动效（F7；R4 实测 off 与 reduced 均生效）
 - [x] 设置三项持久化（存档 v12）+ 迁移无损（F8）+ **引擎启动同步**（烟测 D5 修复）
 - [x] 烟测 R1~**R6** 全过（p50/p95/max 报告 + 2 张截图，`docs/smoke-v2.5.md`；含 D1~D14 缺陷处置）
-- [x] 测试全绿（**309**）/ typecheck / build（gzip JS 94.75KB ← v2.4 84.5KB，+10.25KB 为音效引擎与全局表现层）／`npm run gen:check` 与 `npm run audit:fx:check` 同源断言
+- [x] 测试全绿（**309**）/ typecheck / build（gzip JS 94.85KB ← v2.4 84.5KB，+10.25KB 为音效引擎与全局表现层）／`npm run gen:check` 与 `npm run audit:fx:check` 同源断言
 
 ## 7. 范围外（记入 backlog）
 
