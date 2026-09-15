@@ -74,9 +74,9 @@
       "counter": "totalExpeditions",
       "unit": "次",
       "targets": [
-        15,
-        30,
-        45
+        12,
+        20,
+        28
       ]
     },
     {
@@ -95,27 +95,27 @@
   "codexMilestones": [
     {
       "pct": 0.25,
-      "gold": 1250,
+      "gold": 2500,
       "essence": 10,
       "tokens": 0
     },
     {
       "pct": 0.5,
-      "gold": 5000,
-      "essence": 20,
+      "gold": 12000,
+      "essence": 25,
       "tokens": 3
     },
     {
       "pct": 0.75,
-      "gold": 11250,
-      "essence": 30,
-      "tokens": 3
+      "gold": 30000,
+      "essence": 45,
+      "tokens": 6
     },
     {
       "pct": 1,
-      "gold": 20000,
-      "essence": 40,
-      "tokens": 10
+      "gold": 80000,
+      "essence": 80,
+      "tokens": 15
     }
   ]
 }

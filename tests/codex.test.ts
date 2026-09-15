@@ -14,6 +14,7 @@ import { applyCommand } from '../src/game/commands'
 import { CONTENT, itemDef } from '../src/game/content'
 import { sweepAutoRecycle } from '../src/game/automation'
 import { settleOffline } from '../src/game/offline'
+import { checkSeason, pickSeasonTasks, refreshSeason, seasonUnlocked } from '../src/game/season'
 import { mulberry32 } from '../src/game/rng'
 import { simulate } from '../src/game/settle'
 import { addInstance, addMaterial, newGame } from '../src/game/state'
@@ -159,5 +160,57 @@ describe('冷启动回溯（C6）', () => {
     s.meta.lastSeenAt = 0
     settleOffline(s, 60_000)
     expect(codexIds(s, 'recipes').has('smelt_copper')).toBe(true)
+  })
+})
+
+describe('v2.3 测评处置回归', () => {
+  it('B1：离线窗口采矿同样登记矿场（矿场分区不再对放置玩家残缺）', () => {
+    const s = newGame('T', 0)
+    s.actions.current = {
+      ref: { kind: 'mine', siteId: 'copper_seam' },
+      remaining: null,
+      startedAt: 0,
+      durationMs: 0,
+      procMisses: 0,
+    }
+    s.meta.lastSeenAt = 0
+    const summary = settleOffline(s, 60_000)
+    expect(summary).not.toBeNull()
+    expect(s.stats.totalMines).toBeGreaterThan(0)
+    expect(codexIds(s, 'ores').has('copper_seam')).toBe(true)
+  })
+
+  it('M1：离线期间达成的赛季等级与图鉴里程碑进入摘要（不再静默到账）', () => {
+    const s = newGame('T', 0)
+    for (const k of ['mining', 'smelting', 'forging', 'enhancing'] as const) s.skills[k] = 1e12
+    refreshSeason(s, CONTENT.season.epoch + 1000)
+    checkSeason(s)
+    // 让第一条任务直接达标（离线前已积累）
+    const slot = s.season.tasks[0]
+    const tpl = CONTENT.season.templates.find((t) => t.id === slot.defId)!
+    ;(s.stats as unknown as Record<string, number>)[tpl.counter] = slot.base + tpl.targets[0]
+    s.meta.lastSeenAt = 0
+    const summary = settleOffline(s, 60_000)
+    expect(summary).not.toBeNull()
+    expect(summary!.seasonLevels.length).toBeGreaterThan(0)
+  })
+
+  it('M2：传承后赛季保持解锁（粘性），跨季照常结算', () => {
+    const s = newGame('T', 0)
+    for (const k of ['mining', 'smelting', 'forging', 'enhancing'] as const) s.skills[k] = 1e12
+    refreshSeason(s, CONTENT.season.epoch + 1000)
+    expect(s.meta.seasonUnlockedOnce).toBe(true)
+    // 模拟传承：技能重置到低等级
+    for (const k of ['mining', 'smelting', 'forging', 'enhancing'] as const) s.skills[k] = 100
+    expect(seasonUnlocked(s)).toBe(true) // 粘性
+    const idxBefore = s.season.index
+    refreshSeason(s, CONTENT.season.epoch + 3 * CONTENT.season.days * 86400000 + 1000)
+    expect(s.season.index).toBeGreaterThan(idxBefore) // 仍会轮换
+  })
+
+  it('M3：赛季抽取的组合在 24 季内充分展开（不再以模板数为周期硬循环）', () => {
+    const combos = new Set<string>()
+    for (let i = 0; i < 24; i++) combos.add(pickSeasonTasks(i).map((t) => t.defId).sort().join('+'))
+    expect(combos.size).toBeGreaterThanOrEqual(12) // 原实现只有 5 种
   })
 })

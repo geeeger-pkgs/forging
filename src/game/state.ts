@@ -37,6 +37,7 @@ export function newGame(name: string, now: number): GameState {
       affixSalt: (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0,
       expeditions: { runs: [], banner: 0, nextRunId: 1 },
       codexMilestones: '',
+      seasonUnlockedOnce: false,
     },
     stats: {
       totalCrafts: 0,

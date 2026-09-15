@@ -57,11 +57,13 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   state.buffs = buffsBackup
   state.meta.lastSeenAt = now // 超出 cap 的时长不结转
   // v2.3：赛季进度与图鉴里程碑（计数器单调递增，天然含离线产出；强化/重铸离线不增长）
-  checkSeason(state)
+  events.push(...checkSeason(state))
   events.push(...checkCodexMilestones(state))
 
   // ---- 汇总 ----
   const exped: OfflineSummary['expeditions'] = []
+  const seasonLevels: number[] = []
+  const codexMilestones: number[] = []
   const roundsMap = new Map<string, { ref: ActionRef; count: number }>()
   const itemsMap = new Map<string, number>()
   const xpMap = new Map<SkillId, number>()
@@ -88,6 +90,12 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
       case 'expeditionDone':
         exped.push({ routeName: ev.routeName, hours: ev.hours, success: ev.success, gold: ev.gold, expected: ev.expected })
         break
+      case 'seasonLevelUp':
+        seasonLevels.push(ev.level)
+        break
+      case 'codexMilestone':
+        codexMilestones.push(ev.pct)
+        break
       case 'notice':
         notes.push(ev.text)
         break
@@ -110,12 +118,16 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
     xp: [...xpMap.entries()].map(([skill, xp]) => ({ skill, xp })),
     levels,
     expeditions: exped,
+    seasonLevels,
+    codexMilestones,
     notes,
   }
   // 无任何结算内容时不弹摘要（但 lastSeenAt 已推进）
   const empty =
     summary.rounds.length === 0 &&
     summary.expeditions.length === 0 &&
+    summary.seasonLevels.length === 0 &&
+    summary.codexMilestones.length === 0 &&
     summary.items.length === 0 &&
     summary.xp.length === 0 &&
     summary.levels.length === 0 &&

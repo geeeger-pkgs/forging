@@ -348,15 +348,15 @@ const season = {
     { id: 's_craft', title: '炉火不熄', desc: '熔炼或锻造', counter: 'totalCrafts', unit: '次', targets: [1000, 2400, 4800] },
     { id: 's_gold', title: '财富积累', desc: '累计获得金币', counter: 'totalGoldEarned', unit: '金', targets: [250000, 500000, 800000] },
     { id: 's_enhance', title: '锤炼不止', desc: '强化尝试（需在线）', counter: 'totalEnhances', unit: '次', targets: [120, 320, 600] },
-    { id: 's_expedition', title: '远行不辍', desc: '完成远征', counter: 'totalExpeditions', unit: '次', targets: [15, 30, 45] },
+    { id: 's_expedition', title: '远行不辍', desc: '完成远征', counter: 'totalExpeditions', unit: '次', targets: [12, 20, 28] },
     { id: 's_reforge', title: '精益求精', desc: '重铸词缀（需在线）', counter: 'totalReforges', unit: '次', targets: [15, 35, 60] },
   ],
   /** 图鉴里程碑（每 25%；与赛季解耦，只给自奖励） */
   codexMilestones: [
-    { pct: 0.25, gold: 1250, essence: 10, tokens: 0 },
-    { pct: 0.5, gold: 5000, essence: 20, tokens: 3 },
-    { pct: 0.75, gold: 11250, essence: 30, tokens: 3 },
-    { pct: 1.0, gold: 20000, essence: 40, tokens: 10 },
+    { pct: 0.25, gold: 2500, essence: 10, tokens: 0 },
+    { pct: 0.5, gold: 12000, essence: 25, tokens: 3 },
+    { pct: 0.75, gold: 30000, essence: 45, tokens: 6 },
+    { pct: 1.0, gold: 80000, essence: 80, tokens: 15 },
   ],
 }
 

@@ -11,34 +11,34 @@
       {
         "m": 0.25,
         "need": 56,
-        "gold": 1250,
+        "gold": 2500,
         "essence": 10,
         "tokens": 0,
-        "value": 1400
+        "value": 2650
       },
       {
         "m": 0.5,
         "need": 111,
-        "gold": 5000,
-        "essence": 20,
+        "gold": 12000,
+        "essence": 25,
         "tokens": 3,
-        "value": 5900
+        "value": 12975
       },
       {
         "m": 0.75,
         "need": 167,
-        "gold": 11250,
-        "essence": 30,
-        "tokens": 3,
-        "value": 12300
+        "gold": 30000,
+        "essence": 45,
+        "tokens": 6,
+        "value": 31875
       },
       {
         "m": 1,
         "need": 222,
-        "gold": 20000,
-        "essence": 40,
-        "tokens": 10,
-        "value": 22600
+        "gold": 80000,
+        "essence": 80,
+        "tokens": 15,
+        "value": 84200
       }
     ]
   },
@@ -75,9 +75,9 @@
         "gold": 600
       },
       "expedition": {
-        "bronze": 15,
-        "silver": 30,
-        "gold": 45
+        "bronze": 12,
+        "silver": 20,
+        "gold": 28
       },
       "reforge": {
         "bronze": 15,
@@ -89,18 +89,18 @@
   "rewards": {
     "levelTotalValue": 66675,
     "levelTokens": 16,
-    "codexValue": 42200,
-    "codexTokens": 16,
-    "totalValue": 108875,
-    "tokenInject": 32,
-    "tokenInjectShare": 0.3047619047619048
+    "codexValue": 131700,
+    "codexTokens": 24,
+    "totalValue": 198375,
+    "tokenInject": 40,
+    "tokenInjectShare": 0.38095238095238093
   },
   "feasibility": [
     {
       "offline": "always",
       "scenario": "bronze3",
-      "hoursMid": 22.399425982235805,
-      "hoursEnd": 21.472688864615115,
+      "hoursMid": 164.8994259822358,
+      "hoursEnd": 92.72268886461512,
       "budget": 336,
       "okMid": true,
       "okEnd": true,
@@ -109,111 +109,111 @@
     {
       "offline": "always",
       "scenario": "silver3",
-      "hoursMid": 48.764879099545,
-      "hoursEnd": 50.16377264680402,
+      "hoursMid": 284.764879099545,
+      "hoursEnd": 168.16377264680403,
       "budget": 336,
       "okMid": true,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "always",
       "scenario": "full",
-      "hoursMid": 66.56104190998536,
-      "hoursEnd": 73.72398207088779,
+      "hoursMid": 302.56104190998536,
+      "hoursEnd": 191.72398207088779,
       "budget": 336,
       "okMid": true,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "always",
       "scenario": "gold2",
-      "hoursMid": 82.74227168344815,
-      "hoursEnd": 98.32754529360804,
+      "hoursMid": 379.14994606256744,
+      "hoursEnd": 217.2071264454405,
       "budget": 336,
-      "okMid": true,
+      "okMid": false,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "twice",
       "scenario": "bronze3",
-      "hoursMid": 22.399425982235805,
-      "hoursEnd": 21.472688864615115,
+      "hoursMid": 164.8994259822358,
+      "hoursEnd": 92.72268886461512,
       "budget": 224,
       "okMid": true,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "twice",
       "scenario": "silver3",
-      "hoursMid": 48.764879099545,
-      "hoursEnd": 50.16377264680402,
+      "hoursMid": 284.764879099545,
+      "hoursEnd": 168.16377264680403,
       "budget": 224,
-      "okMid": true,
+      "okMid": false,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "twice",
       "scenario": "full",
-      "hoursMid": 66.56104190998536,
-      "hoursEnd": 73.72398207088779,
+      "hoursMid": 302.56104190998536,
+      "hoursEnd": 191.72398207088779,
       "budget": 224,
-      "okMid": true,
+      "okMid": false,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "twice",
       "scenario": "gold2",
-      "hoursMid": 82.74227168344815,
-      "hoursEnd": 98.32754529360804,
+      "hoursMid": 379.14994606256744,
+      "hoursEnd": 217.2071264454405,
       "budget": 224,
-      "okMid": true,
+      "okMid": false,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "once",
       "scenario": "bronze3",
-      "hoursMid": 22.399425982235805,
-      "hoursEnd": 21.472688864615115,
+      "hoursMid": 164.8994259822358,
+      "hoursEnd": 92.72268886461512,
       "budget": 112,
-      "okMid": true,
+      "okMid": false,
       "okEnd": true,
-      "okSilent": true
+      "okSilent": false
     },
     {
       "offline": "once",
       "scenario": "silver3",
-      "hoursMid": 48.764879099545,
-      "hoursEnd": 50.16377264680402,
+      "hoursMid": 284.764879099545,
+      "hoursEnd": 168.16377264680403,
       "budget": 112,
-      "okMid": true,
-      "okEnd": true,
-      "okSilent": true
+      "okMid": false,
+      "okEnd": false,
+      "okSilent": false
     },
     {
       "offline": "once",
       "scenario": "full",
-      "hoursMid": 66.56104190998536,
-      "hoursEnd": 73.72398207088779,
+      "hoursMid": 302.56104190998536,
+      "hoursEnd": 191.72398207088779,
       "budget": 112,
-      "okMid": true,
-      "okEnd": true,
-      "okSilent": true
+      "okMid": false,
+      "okEnd": false,
+      "okSilent": false
     },
     {
       "offline": "once",
       "scenario": "gold2",
-      "hoursMid": 82.74227168344815,
-      "hoursEnd": 98.32754529360804,
+      "hoursMid": 379.14994606256744,
+      "hoursEnd": 217.2071264454405,
       "budget": 112,
-      "okMid": true,
-      "okEnd": true,
+      "okMid": false,
+      "okEnd": false,
       "okSilent": false
     }
   ]

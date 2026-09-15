@@ -31,7 +31,7 @@ const SEASON_TARGETS = {
   craft: { bronze: 1000, silver: 2400, gold: 4800 },
   gold: { bronze: 250000, silver: 500000, gold: 800000 },
   enhance: { bronze: 120, silver: 320, gold: 600 },
-  expedition: { bronze: 15, silver: 30, gold: 45 },
+  expedition: { bronze: 12, silver: 20, gold: 28 },
   reforge: { bronze: 15, silver: 35, gold: 60 },
 }
 const LEVELS = 20
@@ -44,8 +44,8 @@ const OFFLINE_FACTORS = [
   { key: 'once', label: '每日上线 1 次', factor: 8 / 24 },
 ]
 const STAGE = {
-  mid: { name: '中期 T3', mineRounds: 515, goldPerRound: 36, smeltRounds: 629, orePerSmelt: 3, enhancePerHour: 80 },
-  end: { name: '终局 T7', mineRounds: 382, goldPerRound: 196, smeltRounds: 417, orePerSmelt: 3, enhancePerHour: 160 },
+  mid: { loginsPerDay: 2, expRoutes: 2, name: '中期 T3', mineRounds: 515, goldPerRound: 36, smeltRounds: 629, orePerSmelt: 3, enhancePerHour: 80 },
+  end: { loginsPerDay: 3, expRoutes: 4, name: '终局 T7', mineRounds: 382, goldPerRound: 196, smeltRounds: 417, orePerSmelt: 3, enhancePerHour: 160 },
 }
 
 // ── A 图鉴规模 ────────────────────────────────────────────────
@@ -78,9 +78,10 @@ console.log('═'.repeat(78))
 const MILESTONES = [0.25, 0.5, 0.75, 1.0]
 const milestoneRows = MILESTONES.map((m) => {
   const need = Math.ceil(CODEX_TOTAL * m)
-  const gold = Math.round(2000 * m * m * 10)
-  const essence = Math.round(10 * m * 4)
-  const tokens = m >= 1 ? 10 : m >= 0.5 ? 3 : 0
+  // v2.3 测评 M5：奖励与获取成本匹配（100% 需 222 条，含 3 件遗物）
+  const gold = [2500, 12000, 30000, 80000][MILESTONES.indexOf(m)]
+  const essence = [10, 25, 45, 80][MILESTONES.indexOf(m)]
+  const tokens = [0, 3, 6, 15][MILESTONES.indexOf(m)]
   return { m, need, gold, essence, tokens, value: gold + essence * 15 + tokens * 200 }
 })
 console.log(['里程碑'.padEnd(8), '条目'.padStart(6), '金'.padStart(7), '精华'.padStart(5), '徽记'.padStart(5), '价值'.padStart(7)].join(' | '))
@@ -123,7 +124,10 @@ const taskHours = (taskId, tier, st) => {
   if (taskId === 'craft') return t / st.smeltRounds + (t * st.orePerSmelt) / st.mineRounds
   if (taskId === 'gold') return t / (st.goldPerRound * st.mineRounds)
   if (taskId === 'enhance') return t / st.enhancePerHour
-  return 0
+  // v2.3 测评 M4：远征受**日历门槛**（每 run 需一次上线重派）而非动作流限制；
+  // 其耗时以「日历小时」计，与动作流并行（故不叠加进动作预算，单独用日历轴校验）
+  if (taskId === 'expedition') return (t / Math.min(st.expRoutes, st.loginsPerDay * 3)) * 24
+  return 0 // 重铸：命令即时，成本是金币
 }
 console.log('')
 console.log('═'.repeat(78))
@@ -133,7 +137,7 @@ console.log(['任务'.padEnd(11), '档位'.padEnd(7), '中期h'.padStart(7), '�
 const TASK_KEYS = Object.keys(SEASON_TARGETS)
 for (const id of TASK_KEYS) {
   for (const tier of ['bronze', 'silver', 'gold']) {
-    const note = id === 'enhance' ? '纯在线(离线不结算)' : id === 'expedition' ? '槽位限制,不占动作流' : id === 'reforge' ? '命令即时,成本为金币' : ''
+    const note = id === 'enhance' ? '纯在线(离线不结算)' : id === 'expedition' ? '日历门槛(不占动作流)' : id === 'reforge' ? '命令即时,成本为金币' : ''
     console.log([id.padEnd(11), tier.padEnd(7), f(taskHours(id, tier, STAGE.mid), 1).padStart(7), f(taskHours(id, tier, STAGE.end), 1).padStart(7), note.padStart(22)].join(' | '))
   }
 }
@@ -180,6 +184,10 @@ for (const off of OFFLINE_FACTORS) {
 }
 console.log('')
 console.log('（cell = 中期 T3 最不利组合耗时；终局值见 JSON。okSilent 列 = 是否 ≤60% 预算，即"不挤占其他玩法"）')
+// 日历轴（M4）：远征模板受上线节奏限制，要求「最不利抽取 + 每日 1 次上线」也能在窗口内完成金档
+const expGoldDays = SEASON_TARGETS.expedition.gold / Math.min(2, 1 * 3)
+console.log(`
+日历轴（远征模板）：金档 ${SEASON_TARGETS.expedition.gold} 次 ÷ (中期 2 路线 × 每日 1 次) = ${f(expGoldDays, 1)} 天（窗口 ${SEASON_DAYS} 天）→ ${expGoldDays <= SEASON_DAYS ? '✅ 可达' : '⚠ 超出窗口，需下调目标'}`)
 
 // ── F 通胀与徽记注入 ──────────────────────────────────────────
 const tokenPerDay = 7.5

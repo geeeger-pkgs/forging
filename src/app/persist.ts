@@ -155,6 +155,7 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
     meta: {
       ...s.meta,
       codexMilestones: (s.meta as unknown as { codexMilestones?: string }).codexMilestones ?? '',
+      seasonUnlockedOnce: (s.meta as unknown as { seasonUnlockedOnce?: boolean }).seasonUnlockedOnce ?? false,
     },
   }),
 }
@@ -185,6 +186,9 @@ function ensureFields(s: GameState): GameState {
   if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
   if (!out.season) out = { ...out, season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] } }
   if (typeof out.meta.codexMilestones !== 'string') out = { ...out, meta: { ...out.meta, codexMilestones: '' } }
+  if (typeof out.meta.seasonUnlockedOnce !== 'boolean') {
+    out = { ...out, meta: { ...out.meta, seasonUnlockedOnce: false } }
+  }
   // v2.2：老档若无任何伙伴，补发初始伙伴（否则远征永久不可用）
   const starter = CONTENT.expeditions.starter
   if (Object.keys(out.companions).length === 0 && CONTENT.companions.companions.some((c) => c.id === starter)) {

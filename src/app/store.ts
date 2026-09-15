@@ -238,8 +238,10 @@ export function boot(): void {
   const now = Date.now()
   // ① 离线结算（不计入今日任务；临时增益不参与）
   const summary = settleOffline(state, now)
-  // ② 赛季/任务轮换 + 基线快照（赛季先结算旧季再轮换）
-  checkSeason(state)
+  // ② 赛季/任务轮换 + 基线快照（vp2.3 测评 M1：离线结算的赛季/图鉴奖励必须有反馈）
+  const bootEvents: GameEvent[] = []
+  bootEvents.push(...checkSeason(state))
+  bootEvents.push(...checkCodexMilestones(state))
   refreshSeason(state, now)
   refreshTasks(state, now)
   checkTasks(state)
@@ -252,6 +254,8 @@ export function boot(): void {
   if (summary) {
     for (const n of summary.notes) pushToast(n, 'info')
   }
+  // 图鉴里程碑在离线结算里也可能刚达成（M1）
+  handleEvents(bootEvents)
   saveNow()
 }
 

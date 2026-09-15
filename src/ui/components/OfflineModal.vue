@@ -26,6 +26,16 @@ function close(): void {
         <div v-for="(r, i) in s.rounds" :key="i" class="row">{{ refLabel(r.ref) }} × {{ r.count }}</div>
       </section>
 
+      <section v-if="s.seasonLevels.length || s.codexMilestones.length">
+        <h4>赛季与图鉴</h4>
+        <div v-if="s.seasonLevels.length" class="row">
+          🗓 赛季声望等级 → {{ Math.max(...s.seasonLevels) }} 级（奖励已发放）
+        </div>
+        <div v-if="s.codexMilestones.length" class="row">
+          📖 图鉴里程碑 {{ s.codexMilestones.map((p) => Math.round(p * 100) + '%').join('、') }}（奖励已发放）
+        </div>
+      </section>
+
       <section v-if="s.expeditions.length">
         <h4>远征</h4>
         <div v-for="(e, i) in s.expeditions" :key="i" class="row">

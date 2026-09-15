@@ -39,6 +39,24 @@ function missingOf(cat: CodexCategory): string[] {
   return CONTENT.ores.filter((o) => !found.has(o.id)).map((o) => o.name)
 }
 
+/** 获取提示（v2.3 测评 UI-2：未收集项不能只给名字） */
+function hintOf(cat: CodexCategory): string {
+  switch (cat.id) {
+    case 'items':
+      return '提示：矿石来自采矿、锭来自熔炼、装备来自锻造（档位越高越难）'
+    case 'recipes':
+      return '提示：制作一次即登记（低档配方容易补，高档需要对应技能等级）'
+    case 'affixes':
+      return '提示：造装随机获得；重铸可反复刷新（按部位池抽取）'
+    case 'companions':
+      return '提示：消耗远征徽记招募（近郊路线保底产出）'
+    case 'relics':
+      return '提示：废弃矿道/古代遗迹/深渊前哨 的稀有掉落（需对应路线解锁）'
+    default:
+      return '提示：在对应矿脉开采一次即登记'
+  }
+}
+
 function pctText(x: number): string {
   return `${(x * 100).toFixed(1)}%`
 }
@@ -84,6 +102,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
           <div v-if="open === c.id" class="missing small">
             <template v-if="missingOf(c).length === 0"><span class="good">已收集完整 ✅</span></template>
             <template v-else>
+              <div class="dim">{{ hintOf(c) }}</div>
               <span class="dim">未收集（{{ missingOf(c).length }}）：</span>
               <span class="dim">{{ missingOf(c).slice(0, 40).join('、') }}{{ missingOf(c).length > 40 ? ' …' : '' }}</span>
             </template>
@@ -109,17 +128,17 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         赛季
         <span class="dim">
           <template v-if="unlocked">第 {{ season.index }} 赛季 · 剩余 {{ fmtLeft(msLeft) }}</template>
-          <template v-else>总等级 {{ CONTENT.season.unlockTotalLevel }} 解锁（当前 {{ '' }}未达成）</template>
+          <template v-else>总等级 {{ CONTENT.season.unlockTotalLevel }} 解锁后开启</template>
         </span>
       </h3>
       <template v-if="unlocked">
         <div class="level">
           <b>声望 {{ season.renown }} / {{ season.maxRenown }}</b>
-          <span class="dim small">等级 {{ season.level }} / {{ season.maxLevel }}（下一级需 {{ renownTarget }}）</span>
+          <span class="dim small">等级 {{ season.level }} / {{ season.maxLevel }}<template v-if="season.level < season.maxLevel">（下一级需 {{ renownTarget }}）</template><template v-else>（已满级）</template></span>
         </div>
         <div class="bar"><i :style="{ width: season.pct * 100 + '%' }" /></div>
         <p class="dim small">
-          每 14 天轮换：3 条任务从 6 条模板中按赛季确定性抽取；每档**只计最高达成**（不叠加）；
+          每 {{ CONTENT.season.days }} 天轮换：3 条任务从 {{ CONTENT.season.templates.length }} 条模板中按赛季确定性抽取；每档只计最高达成（不叠加）；
           达到等级即时发放奖励。挖掘/熔炼/锻造/金币/远征离线照常推进，标记「需在线」的任务离线不增长。
         </p>
         <div class="tasks">

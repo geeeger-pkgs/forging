@@ -38,13 +38,23 @@ export function pickSeasonTasks(index: number): SeasonSlot[] {
   const pool = DEF.templates
   const n = pool.length
   const picked: SeasonSlot[] = []
-  // 以赛季序号做固定步长的循环取样：三条互不重复且可复现
-  const step = 1 + (((index % n) + n) % n)
-  let cursor = ((index % n) + n) % n
-  for (let i = 0; i < 3 && i < n; i++) {
-    picked.push({ defId: pool[cursor].id, base: 0 })
-    cursor = (cursor + step) % n
-    while (picked.some((p) => p.defId === pool[cursor].id) && picked.length < n) cursor = (cursor + 1) % n
+  // v2.3 测评 M3：原先只用 `index % n` 做步长 → 组合以 n 季为周期硬循环（去重仅 5 种）。
+  // 改为对赛季序号做 32 位混合（xorshift）后逐条取样：组合充分展开，且仍完全可复现。
+  let h = (index + 0x9e3779b9) >>> 0
+  const next = (): number => {
+    h ^= h << 13
+    h >>>= 0
+    h ^= h >>> 17
+    h ^= h << 5
+    h >>>= 0
+    return h % n
+  }
+  let guard = 0
+  while (picked.length < Math.min(3, n) && guard < 200) {
+    guard++
+    const id = pool[next()].id
+    if (picked.some((p) => p.defId === id)) continue
+    picked.push({ defId: id, base: 0 })
   }
   return picked
 }
@@ -53,9 +63,15 @@ export function templateById(id: string) {
   return DEF.templates.find((t) => t.id === id)
 }
 
-/** 赛季是否已解锁（总等级门槛） */
+/**
+ * 赛季是否已解锁：总等级达门槛 **或** 曾经达成过（粘性）。
+ * v2.3 测评 M2：传承会把技能重置到起点（总等级 ≈44 < 60），不粘性则终局玩家一传承赛季就消失。
+ */
 export function seasonUnlocked(state: GameState): boolean {
-  return totalLevelOf(state) >= DEF.unlockTotalLevel
+  if (state.meta.seasonUnlockedOnce) return true
+  if (totalLevelOf(state) < DEF.unlockTotalLevel) return false
+  state.meta.seasonUnlockedOnce = true // 首次达标即写死（传承不清）
+  return true
 }
 
 function counterValue(state: GameState, counter: TaskCounter): number {

@@ -136,13 +136,14 @@ function applyRewards(
 
   if (ref.kind === 'mine') {
     state.stats.totalMines += 1
+    // v2.3 测评 B1：矿场登记与结算模式无关 —— 离线窗口采矿同样计入图鉴
+    recordOre(state, ref.siteId)
     const { min, max, itemId } = yieldRangeOf(ref.siteId)
     if (mode === 'online') {
       const base = randInt(rng, min, max)
       const qty = Math.round(base * (1 + agg.quantity))
       grantItem(state, itemId, qty, events)
-      recordOre(state, ref.siteId)
-    events.push(...tutorialProgress(state, 'mineItem', qty, { itemId }))
+      events.push(...tutorialProgress(state, 'mineItem', qty, { itemId }))
     } else {
       const expected = ((min + max) / 2) * (1 + agg.quantity) * (1 + eff)
       grantExpected(state, itemId, expected, events)

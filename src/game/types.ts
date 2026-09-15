@@ -687,6 +687,8 @@ export interface GameState {
     expeditions: ExpeditionState
     /** v2.3：图鉴里程碑已发奖档位（pct 列表，逗号分隔；幂等） */
     codexMilestones: string
+    /** v2.3：赛季是否曾经解锁（粘性：传承掉回门槛下仍保持解锁，测评 M2） */
+    seasonUnlockedOnce: boolean
   }
   stats: {
     totalCrafts: number
@@ -788,6 +790,9 @@ export type GameEvent =
 export interface OfflineSummary {
   /** v2.2：远征结算摘要 */
   expeditions: { routeName: string; hours: number; success: boolean; gold: number; expected: boolean }[]
+  /** v2.3：离线期间达到的赛季等级 / 图鉴里程碑（pct 0~1） */
+  seasonLevels: number[]
+  codexMilestones: number[]
   elapsedMs: number
   countedMs: number
   rounds: { ref: ActionRef; count: number }[]
