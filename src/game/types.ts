@@ -23,8 +23,9 @@ export type ItemCategory =
   | 'tool'
   | 'weapon'
   | 'armor'
+  | 'jewelry'
 
-/** 装备槽位（设计 §8，共 8 槽） */
+/** 装备槽位（设计 §8；v1.3 起扩展至 10 槽：+ 项链/戒指） */
 export type SlotId =
   | 'pick'
   | 'crucible'
@@ -34,6 +35,8 @@ export type SlotId =
   | 'body'
   | 'legs'
   | 'feet'
+  | 'necklace'
+  | 'ring'
 
 // ---------- 内容表（data/*.json 类型） ----------
 
@@ -48,6 +51,8 @@ export interface ItemStats {
   wisdom: number
   /** 稀有掉落 */
   rareFind: number
+  /** 强化成功率（v1.3 饰品专属；0.01 = +1%） */
+  successRate: number
 }
 
 export interface ItemDef {
@@ -168,6 +173,7 @@ export type AchievementType =
   | 'totalLevel'
   | 'totalValue'
   | 'itemCount'
+  | 'slotsFilled'
 
 export interface AchievementReward {
   gold?: number
@@ -205,6 +211,7 @@ export type TaskCounter =
   | 'totalEnhances'
   | 'totalGoldEarned'
   | 'totalCratesOpened'
+  | 'totalJewelryForged'
 
 export interface TaskTemplate {
   id: string
@@ -351,6 +358,11 @@ export interface GameState {
     /** 累计获得金币（单调递增，仅正数入账） */
     totalGoldEarned: number
     totalCratesOpened: number
+    /** v1.3：任务完成计数（每日 / 周常分开） */
+    totalTasksDone: number
+    totalWeekliesDone: number
+    /** v1.3：累计锻造饰品件数 */
+    totalJewelryForged: number
   }
 }
 

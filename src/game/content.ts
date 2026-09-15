@@ -17,8 +17,19 @@ import tasksJson from '../../data/tasks.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
-const SLOT_IDS: readonly SlotId[] = ['pick', 'crucible', 'hammer', 'mainHand', 'head', 'body', 'legs', 'feet']
-const EQUIP_CATEGORIES = new Set(['tool', 'weapon', 'armor'])
+const SLOT_IDS: readonly SlotId[] = [
+  'pick',
+  'crucible',
+  'hammer',
+  'mainHand',
+  'head',
+  'body',
+  'legs',
+  'feet',
+  'necklace',
+  'ring',
+]
+const EQUIP_CATEGORIES = new Set(['tool', 'weapon', 'armor', 'jewelry'])
 const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalMines',
   'totalSmelts',
@@ -27,6 +38,7 @@ const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalEnhances',
   'totalGoldEarned',
   'totalCratesOpened',
+  'totalJewelryForged',
 ]
 
 function validate(t: ContentTables): string[] {

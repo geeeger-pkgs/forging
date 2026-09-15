@@ -5,7 +5,7 @@ import type { GameState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 
 export function saveGame(state: GameState): void {
   try {
@@ -52,6 +52,16 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
         weekKey: '',
         weekly: null,
       },
+    },
+  }),
+  3: (s) => ({
+    ...s,
+    version: 4,
+    stats: {
+      ...s.stats,
+      totalTasksDone: s.stats.totalTasksDone ?? 0,
+      totalWeekliesDone: s.stats.totalWeekliesDone ?? 0,
+      totalJewelryForged: s.stats.totalJewelryForged ?? 0,
     },
   }),
 }

@@ -128,7 +128,7 @@ export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
     baseTimeMs: baseTimeOf(ref),
     xp: step.xpBase,
     xpSuccessDoubled: true,
-    enhanceRate: step.successRate,
+    enhanceRate: Math.min(1, step.successRate + agg.enhanceRate),
     inputs,
     outputs: [],
     drops: [],

@@ -1662,5 +1662,341 @@
         "rate": 0.071
       }
     ]
+  },
+  {
+    "id": "forge_necklace_copper",
+    "name": "铜项链",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 8000,
+    "xp": 16,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 16
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "necklace_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_necklace_iron",
+    "name": "铁项链",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 9000,
+    "xp": 36,
+    "inputs": [
+      {
+        "itemId": "necklace_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 24
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "necklace_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_necklace_silver",
+    "name": "银项链",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 81,
+    "inputs": [
+      {
+        "itemId": "necklace_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 36
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "necklace_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_necklace_gold",
+    "name": "金项链",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 182.25,
+    "inputs": [
+      {
+        "itemId": "necklace_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 54
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "necklace_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_necklace_mithril",
+    "name": "秘银项链",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 12000,
+    "xp": 410.06,
+    "inputs": [
+      {
+        "itemId": "necklace_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 81
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "necklace_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_ring_copper",
+    "name": "铜戒指",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 1,
+    "unlockLevel": 1,
+    "baseTimeMs": 8000,
+    "xp": 10,
+    "inputs": [
+      {
+        "itemId": "ingot_copper",
+        "qty": 10
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ring_copper",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.017
+      }
+    ]
+  },
+  {
+    "id": "forge_ring_iron",
+    "name": "铁戒指",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 2,
+    "unlockLevel": 10,
+    "baseTimeMs": 9000,
+    "xp": 22.5,
+    "inputs": [
+      {
+        "itemId": "ring_copper",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_iron",
+        "qty": 15
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ring_iron",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.024
+      }
+    ]
+  },
+  {
+    "id": "forge_ring_silver",
+    "name": "银戒指",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 3,
+    "unlockLevel": 20,
+    "baseTimeMs": 10000,
+    "xp": 50.63,
+    "inputs": [
+      {
+        "itemId": "ring_iron",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_silver",
+        "qty": 23
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ring_silver",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.037
+      }
+    ]
+  },
+  {
+    "id": "forge_ring_gold",
+    "name": "金戒指",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 4,
+    "unlockLevel": 35,
+    "baseTimeMs": 11000,
+    "xp": 113.91,
+    "inputs": [
+      {
+        "itemId": "ring_silver",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_gold",
+        "qty": 35
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ring_gold",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.053
+      }
+    ]
+  },
+  {
+    "id": "forge_ring_mithril",
+    "name": "秘银戒指",
+    "skill": "forging",
+    "category": "jewelry",
+    "tier": 5,
+    "unlockLevel": 50,
+    "baseTimeMs": 12000,
+    "xp": 256.29,
+    "inputs": [
+      {
+        "itemId": "ring_gold",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_mithril",
+        "qty": 53
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ring_mithril",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.071
+      }
+    ]
   }
 ]

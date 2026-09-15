@@ -3,7 +3,7 @@ import { achievementProgress, checkAchievements } from '../src/game/achievements
 import { mulberry32 } from '../src/game/rng'
 import { simulate } from '../src/game/settle'
 import { addInstance, newGame } from '../src/game/state'
-import type { ActionRef, GameState } from '../src/game/types'
+import type { ActionRef, GameState, SlotId } from '../src/game/types'
 
 function startCurrent(s: GameState, ref: ActionRef, count: number | null): void {
   s.actions.current = { ref, remaining: count, startedAt: 0, durationMs: 0, procMisses: 0 }
@@ -63,7 +63,33 @@ describe('成就系统', () => {
   it('成就进度统计', () => {
     const s = newGame('T', 0)
     const p = achievementProgress(s)
-    expect(p.total).toBeGreaterThanOrEqual(25)
+    expect(p.total).toBeGreaterThanOrEqual(38)
     expect(p.unlocked).toBe(0)
+  })
+
+  it('槽位成就（v1.3）：填满 8 槽解锁「八面玲珑」，10 槽解锁「十全十美」', () => {
+    const s = newGame('T', 0)
+    const order: SlotId[] = ['pick', 'crucible', 'hammer', 'mainHand', 'head', 'body', 'legs', 'feet']
+    const items = [
+      'pick_copper',
+      'crucible_copper',
+      'hammer_copper',
+      'sword_copper',
+      'helmet_copper',
+      'chest_copper',
+      'legs_copper',
+      'boots_copper',
+    ]
+    items.forEach((itemId, i) => {
+      s.slots[order[i]] = addInstance(s, itemId)
+    })
+    checkAchievements(s)
+    expect(s.flags.achievements.unlocked).toContain('slots_8')
+    expect(s.flags.achievements.unlocked).not.toContain('slots_10')
+
+    s.slots.necklace = addInstance(s, 'necklace_copper')
+    s.slots.ring = addInstance(s, 'ring_copper')
+    checkAchievements(s)
+    expect(s.flags.achievements.unlocked).toContain('slots_10')
   })
 })

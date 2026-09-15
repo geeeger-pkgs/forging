@@ -9,11 +9,20 @@ import {
 
 describe('内容表', () => {
   it('载入并通过校验（模块导入即校验）', () => {
-    expect(Object.keys(CONTENT.items).length).toBe(58)
-    expect(CONTENT.recipes.length).toBe(50)
+    expect(Object.keys(CONTENT.items).length).toBe(68)
+    expect(CONTENT.recipes.length).toBe(60)
     expect(CONTENT.enhance.length).toBe(10)
     expect(CONTENT.tutorial.length).toBe(8)
     expect(CONTENT.ores.length).toBe(6)
+  })
+
+  it('饰品（v1.3）：项链强化成功率 / 戒指效率 / 配方生成', () => {
+    expect(CONTENT.items['necklace_mithril'].stats?.successRate).toBeCloseTo(0.03)
+    expect(CONTENT.items['necklace_mithril'].stats?.rareFind).toBeCloseTo(0.04)
+    expect(CONTENT.items['ring_gold'].stats?.efficiency).toBeCloseTo(0.05)
+    expect(RECIPES_BY_ID.get('forge_necklace_copper')?.inputs).toEqual([{ itemId: 'ingot_copper', qty: 16 }])
+    const n3 = RECIPES_BY_ID.get('forge_necklace_silver')!
+    expect(n3.inputs.map((i) => i.itemId)).toEqual(['necklace_iron', 'ingot_silver', 'coal'])
   })
 
   it('关键引用存在', () => {

@@ -176,6 +176,7 @@ function applyRewards(
   state.stats.totalCrafts += 1
   if (recipe.skill === 'smelting') state.stats.totalSmelts += 1
   else if (recipe.skill === 'forging') state.stats.totalForges += 1
+  if (recipe.category === 'jewelry') state.stats.totalJewelryForged += 1
   events.push(...tutorialCheckTotalLevel(state))
   return true
 }
@@ -216,7 +217,10 @@ function performEnhance(
   }
   for (const c of cost) removeMaterial(state, c.itemId, c.qty)
 
-  const success = rng.next() < step.successRate
+  // v1.3：强化成功率 = 档位基础 + 饰品加成（项链；上限 100%）
+  const agg = aggregateEquipment(state)
+  const rate = Math.min(1, step.successRate + agg.enhanceRate)
+  const success = rng.next() < rate
   const from = inst.enhanceLevel
   let to = from
   if (success) to = from + 1
@@ -233,7 +237,6 @@ function performEnhance(
     act.ref = { kind: 'enhance', instanceId: ref.instanceId, targetLevel: inst.enhanceLevel + 1 }
   }
 
-  const agg = aggregateEquipment(state)
   grantXp(state, 'enhancing', step.xpBase * (success ? 2 : 1) * (1 + agg.wisdom), events)
   if (success) events.push(...tutorialProgress(state, 'enhanceInstance', 1))
   events.push({ type: 'actionCompleted', ref, rounds: 1 })

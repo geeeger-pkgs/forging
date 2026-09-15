@@ -151,6 +151,10 @@ export function checkTasks(state: GameState): GameEvent[] {
 function collectRewards(state: GameState, slot: TaskSlot, events: GameEvent[]): void {
   const def = defOf(slot)
   const title = def ? def.title : slot.defId
+  // 计数器：任务完成数（每日/周常分开）
+  const isWeekly = CONTENT.tasks.weekly.some((w) => w.id === slot.defId)
+  if (isWeekly) state.stats.totalWeekliesDone += 1
+  else state.stats.totalTasksDone += 1
   if (slot.gold > 0) {
     addGold(state, slot.gold)
     events.push({ type: 'goldGained', amount: slot.gold })

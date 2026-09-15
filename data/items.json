@@ -715,5 +715,139 @@
     "enhanceable": true,
     "value": 2563,
     "stackable": false
+  },
+  "necklace_copper": {
+    "id": "necklace_copper",
+    "name": "铜项链",
+    "tier": 1,
+    "category": "jewelry",
+    "slot": "necklace",
+    "stats": {
+      "successRate": 0.01
+    },
+    "enhanceable": true,
+    "value": 40,
+    "stackable": false
+  },
+  "necklace_iron": {
+    "id": "necklace_iron",
+    "name": "铁项链",
+    "tier": 2,
+    "category": "jewelry",
+    "slot": "necklace",
+    "stats": {
+      "successRate": 0.015
+    },
+    "enhanceable": true,
+    "value": 240,
+    "stackable": false
+  },
+  "necklace_silver": {
+    "id": "necklace_silver",
+    "name": "银项链",
+    "tier": 3,
+    "category": "jewelry",
+    "slot": "necklace",
+    "stats": {
+      "successRate": 0.02
+    },
+    "enhanceable": true,
+    "value": 810,
+    "stackable": false
+  },
+  "necklace_gold": {
+    "id": "necklace_gold",
+    "name": "金项链",
+    "tier": 4,
+    "category": "jewelry",
+    "slot": "necklace",
+    "stats": {
+      "successRate": 0.025,
+      "rareFind": 0.02
+    },
+    "enhanceable": true,
+    "value": 2160,
+    "stackable": false
+  },
+  "necklace_mithril": {
+    "id": "necklace_mithril",
+    "name": "秘银项链",
+    "tier": 5,
+    "category": "jewelry",
+    "slot": "necklace",
+    "stats": {
+      "successRate": 0.03,
+      "rareFind": 0.04
+    },
+    "enhanceable": true,
+    "value": 5063,
+    "stackable": false
+  },
+  "ring_copper": {
+    "id": "ring_copper",
+    "name": "铜戒指",
+    "tier": 1,
+    "category": "jewelry",
+    "slot": "ring",
+    "stats": {
+      "efficiency": 0.02
+    },
+    "enhanceable": true,
+    "value": 25,
+    "stackable": false
+  },
+  "ring_iron": {
+    "id": "ring_iron",
+    "name": "铁戒指",
+    "tier": 2,
+    "category": "jewelry",
+    "slot": "ring",
+    "stats": {
+      "efficiency": 0.03
+    },
+    "enhanceable": true,
+    "value": 150,
+    "stackable": false
+  },
+  "ring_silver": {
+    "id": "ring_silver",
+    "name": "银戒指",
+    "tier": 3,
+    "category": "jewelry",
+    "slot": "ring",
+    "stats": {
+      "efficiency": 0.04
+    },
+    "enhanceable": true,
+    "value": 518,
+    "stackable": false
+  },
+  "ring_gold": {
+    "id": "ring_gold",
+    "name": "金戒指",
+    "tier": 4,
+    "category": "jewelry",
+    "slot": "ring",
+    "stats": {
+      "efficiency": 0.05,
+      "quantity": 0.03
+    },
+    "enhanceable": true,
+    "value": 1400,
+    "stackable": false
+  },
+  "ring_mithril": {
+    "id": "ring_mithril",
+    "name": "秘银戒指",
+    "tier": 5,
+    "category": "jewelry",
+    "slot": "ring",
+    "stats": {
+      "efficiency": 0.06,
+      "quantity": 0.06
+    },
+    "enhanceable": true,
+    "value": 3313,
+    "stackable": false
   }
 }

@@ -34,6 +34,9 @@ export function newGame(name: string, now: number): GameState {
       totalForges: 0,
       totalGoldEarned: 0,
       totalCratesOpened: 0,
+      totalTasksDone: 0,
+      totalWeekliesDone: 0,
+      totalJewelryForged: 0,
     },
   }
 }

@@ -12,6 +12,8 @@ export type ItemShape =
   | 'chest'
   | 'legs'
   | 'boots'
+  | 'necklace'
+  | 'ring'
   | 'ore'
   | 'ingot'
   | 'coal'
@@ -29,6 +31,8 @@ const SHAPE_BY_PREFIX: [string, ItemShape][] = [
   ['chest', 'chest'],
   ['legs', 'legs'],
   ['boots', 'boots'],
+  ['necklace', 'necklace'],
+  ['ring', 'ring'],
   ['ore_', 'ore'],
   ['ingot_', 'ingot'],
 ]
@@ -78,6 +82,10 @@ export function svgFor(shape: ItemShape, c: string): string {
       return `<rect x="7.5" y="3" width="3.6" height="18" rx="1.4" fill="${c}"/><rect x="12.9" y="3" width="3.6" height="18" rx="1.4" fill="${c}"/>`
     case 'boots':
       return `<path d="M8 3h4v11l4.5 3v3H8z" fill="${c}"/><rect x="8" y="17.5" width="8.5" height="2.5" rx="1" fill="#000" opacity="0.3"/>`
+    case 'necklace':
+      return `<path d="M4.5 5c0 7 3.4 10 7.5 10s7.5-3 7.5-10" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17" r="2.8" fill="${c}"/>`
+    case 'ring':
+      return `<circle cx="12" cy="14.5" r="5.5" fill="none" stroke="${c}" stroke-width="2.6"/><path d="M12 3.5l2.4 4H9.6z" fill="${c}"/>`
     case 'ore':
       return `<path d="M5 18l2-8 5-4 6 3 2 9z" fill="${c}"/><path d="M9 10l3 2 4-1" stroke="#000" stroke-width="1" opacity="0.25"/>`
     case 'ingot':

@@ -45,21 +45,24 @@ addItem({ id: 'crate', name: '工匠小箱', category: 'crate', enhanceable: fal
 
 // 装备 9 类 × 5 档（设计 §4 属性表）
 const CATS = [
-  { key: 'pick',      name: '镐',   slot: 'pick',     category: 'tool',   stat: 'speed',      vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'crucible',  name: '坩埚', slot: 'crucible', category: 'tool',   stat: 'speed',      vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'hammer',    name: '锤',   slot: 'hammer',   category: 'tool',   stat: 'speed',      vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'sword',     name: '剑',   slot: 'mainHand', category: 'weapon', stat: 'efficiency', vals: [0.02, 0.03, 0.04, 0.06, 0.08] },
-  { key: 'warhammer', name: '战锤', slot: 'mainHand', category: 'weapon', stat: 'speed',      vals: [0.02, 0.03, 0.04, 0.05, 0.06] },
-  { key: 'helmet',    name: '头盔', slot: 'head',     category: 'armor',  stat: 'wisdom',     vals: [0.03, 0.04, 0.05, 0.06, 0.08] },
-  { key: 'chest',     name: '胸甲', slot: 'body',     category: 'armor',  stat: 'quantity',   vals: [0.05, 0.08, 0.11, 0.14, 0.18] },
-  { key: 'legs',      name: '腿甲', slot: 'legs',     category: 'armor',  stat: 'rareFind',   vals: [0.05, 0.08, 0.12, 0.16, 0.20] },
-  { key: 'boots',     name: '靴甲', slot: 'feet',     category: 'armor',  stat: 'efficiency', vals: [0.01, 0.02, 0.03, 0.04, 0.05] },
+  { key: 'pick',      name: '镐',   slot: 'pick',     category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
+  { key: 'crucible',  name: '坩埚', slot: 'crucible', category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
+  { key: 'hammer',    name: '锤',   slot: 'hammer',   category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
+  { key: 'sword',     name: '剑',   slot: 'mainHand', category: 'weapon',  stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.06, 0.08] },
+  { key: 'warhammer', name: '战锤', slot: 'mainHand', category: 'weapon',  stat: 'speed',       vals: [0.02, 0.03, 0.04, 0.05, 0.06] },
+  { key: 'helmet',    name: '头盔', slot: 'head',     category: 'armor',   stat: 'wisdom',      vals: [0.03, 0.04, 0.05, 0.06, 0.08] },
+  { key: 'chest',     name: '胸甲', slot: 'body',     category: 'armor',   stat: 'quantity',    vals: [0.05, 0.08, 0.11, 0.14, 0.18] },
+  { key: 'legs',      name: '腿甲', slot: 'legs',     category: 'armor',   stat: 'rareFind',    vals: [0.05, 0.08, 0.12, 0.16, 0.20] },
+  { key: 'boots',     name: '靴甲', slot: 'feet',     category: 'armor',   stat: 'efficiency',  vals: [0.01, 0.02, 0.03, 0.04, 0.05] },
+  // v1.3 饰品：项链（强化成功率，模拟定档 +1%~+3%）/ 戒指（效率）
+  { key: 'necklace',  name: '项链', slot: 'necklace', category: 'jewelry', stat: 'successRate', vals: [0.01, 0.015, 0.02, 0.025, 0.03] },
+  { key: 'ring',      name: '戒指', slot: 'ring',     category: 'jewelry', stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.05, 0.06] },
 ]
 
 // 锻造材料表：T1 手录（设计 §5.2），T2 起按规则生成
 // 规则：新锭 = ceil(前档 × 1.5)；XP = 前档 × 2.25；T3+ 加煤 ×1；时间 = (复杂件 ? 8 : 6) + (档位 − 1)
-const T1_INGOTS = { pick: 12, crucible: 10, hammer: 12, sword: 18, warhammer: 14, helmet: 10, chest: 16, legs: 14, boots: 8 }
-const COMPLEX = new Set(['sword', 'warhammer', 'chest'])
+const T1_INGOTS = { pick: 12, crucible: 10, hammer: 12, sword: 18, warhammer: 14, helmet: 10, chest: 16, legs: 14, boots: 8, necklace: 16, ring: 10 }
+const COMPLEX = new Set(['sword', 'warhammer', 'chest', 'necklace', 'ring'])
 
 const ingotsByTier = {}
 for (const cat of CATS) {
@@ -107,6 +110,8 @@ const SECONDARY = {
   chest: { stat: 'wisdom', vals: [0.03, 0.06] },
   legs: { stat: 'wisdom', vals: [0.03, 0.06] },
   boots: { stat: 'rareFind', vals: [0.03, 0.06] },
+  necklace: { stat: 'rareFind', vals: [0.02, 0.04] },
+  ring: { stat: 'quantity', vals: [0.03, 0.06] },
 }
 for (const cat of CATS) {
   for (const t of TIERS) {
@@ -159,5 +164,5 @@ writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n'
 writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
 
 const itemCount = Object.keys(items).length
-console.log(`[gen-content] items: ${itemCount}（材料 13 + 装备 ${itemCount - 13}），recipes: ${recipes.length}（熔炼 5 + 锻造 45）`)
+console.log(`[gen-content] items: ${itemCount}（材料 13 + 装备 ${itemCount - 13}），recipes: ${recipes.length}（熔炼 5 + 锻造 ${recipes.length - 5}）`)
 console.log('[gen-content] 输出: data/items.json, data/recipes.json')

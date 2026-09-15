@@ -137,6 +137,28 @@ describe('在线结算', () => {
     expect(events.some((e) => e.type === 'blocked')).toBe(false) // 未触发“已达上限”报错
   })
 
+  it('饰品加成（v1.3）：+10 档（36%）掷点 0.37 失败；佩戴项链（+3% → 39%）成功', () => {
+    // 无项链：0.37 > 0.36 → 失败
+    const a = newGame('T', 0)
+    const ia = addInstance(a, 'pick_copper', 9)
+    a.materials['ingot_copper'] = 100
+    a.materials['essence'] = 100
+    startCurrent(a, { kind: 'enhance', instanceId: ia, targetLevel: 10 }, 1)
+    const evA = simulate(a, 6_000, { mode: 'online', rng: { next: () => 0.37 } })
+    expect(evA.find((e) => e.type === 'enhanceResult')).toMatchObject({ success: false })
+
+    // 佩戴秘银项链（+3%）：0.37 < 0.39 → 成功
+    const b = newGame('T', 0)
+    const ib = addInstance(b, 'pick_copper', 9)
+    const necklace = addInstance(b, 'necklace_mithril')
+    b.slots.necklace = necklace
+    b.materials['ingot_copper'] = 100
+    b.materials['essence'] = 100
+    startCurrent(b, { kind: 'enhance', instanceId: ib, targetLevel: 10 }, 1)
+    const evB = simulate(b, 6_000, { mode: 'online', rng: { next: () => 0.37 } })
+    expect(evB.find((e) => e.type === 'enhanceResult')).toMatchObject({ success: true, to: 10 })
+  })
+
   it('教程步骤 1 达成 + 升级事件 + 领取奖励', () => {
     const s = newGame('T', 0)
     startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, 10)

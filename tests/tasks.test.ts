@@ -71,9 +71,12 @@ describe('任务系统', () => {
     const events = checkTasks(s)
     expect(events.some((e) => e.type === 'taskCompleted')).toBe(true)
     expect(slot.done).toBe(true)
+    expect(s.stats.totalTasksDone).toBe(1)
+    expect(s.stats.totalWeekliesDone).toBe(0)
     const goldAfter = s.gold
     checkTasks(s) // 幂等
     expect(s.gold).toBe(goldAfter)
+    expect(s.stats.totalTasksDone).toBe(1)
   })
 
   it('重掷：免费 → 付费 100 金 → 次数耗尽', () => {

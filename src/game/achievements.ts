@@ -47,6 +47,11 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       return totalValue(state) >= def.target
     case 'itemCount':
       return def.itemId !== undefined && materialCount(state, def.itemId) >= def.target
+    case 'slotsFilled': {
+      let filled = 0
+      for (const v of Object.values(state.slots)) if (v !== undefined) filled++
+      return filled >= def.target
+    }
   }
 }
 

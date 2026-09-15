@@ -4,6 +4,8 @@
 //   - 工具（镐/坩埚/锤）速度只作用于对应技能
 //   - 战锤等「全技能速度」作用于所有技能
 //   - 强化附加：工具 ×(1 + 2.9%×n)；非工具主属性 ×(1 + 5%×n)
+//   - v1.3：饰品（项链=强化成功率 / 戒指=效率）
+//   - v1.2 套装：≥5 件同档 +4% 全速；8 件同档再 +4% 效率
 // ============================================================
 import { itemDef } from './content'
 import { skillOf } from './refs'
@@ -18,6 +20,8 @@ export const SLOT_IDS: readonly SlotId[] = [
   'body',
   'legs',
   'feet',
+  'necklace',
+  'ring',
 ]
 
 const ENH_TOOL = 0.029
@@ -39,6 +43,8 @@ export interface AggregatedStats {
   quantity: number
   wisdom: number
   rareFind: number
+  /** 强化成功率加成（v1.3 饰品） */
+  enhanceRate: number
   /** 套装（v1.2）：件数最多的同档位（≥3 时展示） */
   setTier: number | null
   setCount: number
@@ -52,6 +58,7 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     quantity: 0,
     wisdom: 0,
     rareFind: 0,
+    enhanceRate: 0,
     setTier: null,
     setCount: 0,
   }
@@ -75,10 +82,11 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     if (s.quantity) agg.quantity += s.quantity * enhMult
     if (s.wisdom) agg.wisdom += s.wisdom * enhMult
     if (s.rareFind) agg.rareFind += s.rareFind * enhMult
+    if (s.successRate) agg.enhanceRate += s.successRate * enhMult
   }
 
   // 套装加成（v1.2 重设计）：件数最多的同档装备
-  //   ≥3 件：展示进度；≥5 件：+4% 全技能速度；8 件（全套）：再 +4% 效率
+  //   ≥3 件：展示进度；≥5 件：+4% 全技能速度；8 件（含饰品最多 10 件）：再 +4% 效率
   let bestTier: number | null = null
   let bestCount = 0
   for (const [tier, count] of tierCount) {

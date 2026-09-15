@@ -4,7 +4,7 @@ import { cmd, inspectItem, store } from '../../app/store'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById } from '../../game/state'
 import { SLOT_IDS, aggregateEquipment } from '../../game/stats'
-import type { SlotId } from '../../game/types'
+import type { ItemDef, SlotId } from '../../game/types'
 import ItemIcon from './ItemIcon.vue'
 
 const SLOT_LABEL: Record<SlotId, string> = {
@@ -16,6 +16,8 @@ const SLOT_LABEL: Record<SlotId, string> = {
   body: '身体',
   legs: '腿部',
   feet: '脚部',
+  necklace: '项链',
+  ring: '戒指',
 }
 
 const TIER_CN: Record<number, string> = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银' }
@@ -58,7 +60,7 @@ const setText = computed(() => {
   return parts.join(' ')
 })
 
-/** 物品详情（用途查询） */
+/** 物品详情（属性 + 用途查询） */
 const inspected = computed(() => {
   const id = store.ui.inspectItemId
   if (!id) return null
@@ -70,6 +72,20 @@ const inspected = computed(() => {
     .map((r) => r.name)
   return { def, usedIn }
 })
+
+function statsText(def: ItemDef): string {
+  const s = def.stats
+  if (!s) return ''
+  const parts: string[] = []
+  const pct = (x: number): string => `+${(x * 100).toFixed(1)}%`
+  if (s.speed) parts.push(`速度 ${pct(s.speed)}`)
+  if (s.efficiency) parts.push(`效率 ${pct(s.efficiency)}`)
+  if (s.quantity) parts.push(`产量 ${pct(s.quantity)}`)
+  if (s.wisdom) parts.push(`经验 ${pct(s.wisdom)}`)
+  if (s.rareFind) parts.push(`稀有 ${pct(s.rareFind)}`)
+  if (s.successRate) parts.push(`强化成功率 ${pct(s.successRate)}`)
+  return parts.join(' · ')
+}
 
 function pct(x: number): string {
   return x > 0 ? `+${(x * 100).toFixed(1)}%` : '—'
@@ -123,7 +139,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
         效率 {{ pct(agg.efficiency) }} · 产量 {{ pct(agg.quantity) }} · 经验 {{ pct(agg.wisdom) }} · 稀有 {{ pct(agg.rareFind) }}<br />
         挖速 {{ pct(agg.toolSpeed.mining + agg.allSpeed) }} · 熔速 {{ pct(agg.toolSpeed.smelting + agg.allSpeed) }} · 锻速
         {{ pct(agg.toolSpeed.forging + agg.allSpeed) }}<br />
-        套装 {{ setText }}
+        强化成功率 {{ pct(agg.enhanceRate) }} · 套装 {{ setText }}
       </div>
     </section>
 
@@ -163,6 +179,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
         <span class="spacer" />
         <button class="btn sm" @click="inspectItem(null)">✕</button>
       </div>
+      <div v-if="statsText(inspected.def)" class="stat-line">{{ statsText(inspected.def) }}</div>
       <div class="dim">
         价值 {{ inspected.def.value }} 金<template v-if="inspected.def.tier"> · T{{ inspected.def.tier }}</template>
         · {{ inspected.def.category }}
@@ -260,6 +277,10 @@ h4 {
 .dim {
   color: var(--c-text-dim);
   font-size: 12px;
+}
+.stat-line {
+  font-size: 12px;
+  color: var(--c-accent-2);
 }
 .inspect {
   border: 1px solid var(--c-accent-2);

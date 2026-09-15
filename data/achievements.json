@@ -8,6 +8,7 @@
   { "id": "enh_1", "name": "淬火初试", "desc": "完成首次强化", "type": "stat", "stat": "totalEnhances", "target": 1, "rewards": [{ "gold": 20 }] },
   { "id": "enh_50", "name": "千锤百炼", "desc": "累计强化 50 次", "type": "stat", "stat": "totalEnhances", "target": 50, "rewards": [{ "gold": 200 }] },
   { "id": "enh_200", "name": "铁匠之魂", "desc": "累计强化 200 次", "type": "stat", "stat": "totalEnhances", "target": 200, "rewards": [{ "itemId": "essence", "qty": 10 }] },
+  { "id": "enh_500", "name": "百炼成钢", "desc": "累计强化 500 次", "type": "stat", "stat": "totalEnhances", "target": 500, "rewards": [{ "itemId": "essence", "qty": 15 }] },
   { "id": "plus5", "name": "精益求精", "desc": "任意装备强化到 +5", "type": "enhanceLevel", "target": 5, "rewards": [{ "gold": 300 }] },
   { "id": "plus10", "name": "命运的宠儿", "desc": "任意装备强化到 +10", "type": "enhanceLevel", "target": 10, "rewards": [{ "itemId": "essence", "qty": 20 }] },
   { "id": "mining_10", "name": "挖掘学徒", "desc": "挖掘达到 Lv10", "type": "skillLevel", "skill": "mining", "target": 10, "rewards": [{ "gold": 50 }] },
@@ -27,5 +28,15 @@
   { "id": "value_100000", "name": "矿业巨子", "desc": "总价值达到 100,000", "type": "totalValue", "target": 100000, "rewards": [{ "itemId": "essence", "qty": 20 }] },
   { "id": "item_mithril_1", "name": "秘银之光", "desc": "拥有 1 块秘银锭", "type": "itemCount", "itemId": "ingot_mithril", "target": 1, "rewards": [{ "gold": 100 }] },
   { "id": "item_essence_10", "name": "精华收藏家", "desc": "同时拥有 10 个精华", "type": "itemCount", "itemId": "essence", "target": 10, "rewards": [{ "gold": 100 }] },
-  { "id": "item_crate_1", "name": "意外之喜", "desc": "获得 1 个工匠小箱", "type": "itemCount", "itemId": "crate", "target": 1, "rewards": [{ "gold": 50 }] }
+  { "id": "item_crate_1", "name": "意外之喜", "desc": "获得 1 个工匠小箱", "type": "itemCount", "itemId": "crate", "target": 1, "rewards": [{ "gold": 50 }] },
+  { "id": "slots_8", "name": "八面玲珑", "desc": "同时装备 8 个槽位", "type": "slotsFilled", "target": 8, "rewards": [{ "gold": 150 }] },
+  { "id": "slots_10", "name": "十全十美", "desc": "同时装备全部 10 个槽位（含饰品）", "type": "slotsFilled", "target": 10, "rewards": [{ "itemId": "essence", "qty": 10 }] },
+  { "id": "jewelry_first", "name": "珠光宝气", "desc": "锻造任意一件饰品", "type": "stat", "stat": "totalJewelryForged", "target": 1, "rewards": [{ "gold": 60 }] },
+  { "id": "task_first", "name": "任务启程", "desc": "完成第 1 个任务", "type": "stat", "stat": "totalTasksDone", "target": 1, "rewards": [{ "gold": 30 }] },
+  { "id": "task_20", "name": "任务达人", "desc": "累计完成 20 个每日任务", "type": "stat", "stat": "totalTasksDone", "target": 20, "rewards": [{ "gold": 200 }] },
+  { "id": "weekly_first", "name": "周常达成", "desc": "完成 1 个周常任务", "type": "stat", "stat": "totalWeekliesDone", "target": 1, "rewards": [{ "gold": 150 }] },
+  { "id": "crate_10", "name": "开箱上瘾", "desc": "累计开启 10 个工匠小箱", "type": "stat", "stat": "totalCratesOpened", "target": 10, "rewards": [{ "gold": 150 }] },
+  { "id": "crate_50", "name": "开箱大师", "desc": "累计开启 50 个工匠小箱", "type": "stat", "stat": "totalCratesOpened", "target": 50, "rewards": [{ "itemId": "essence", "qty": 10 }] },
+  { "id": "gold_earn_10000", "name": "掘金者", "desc": "累计获得 10,000 金币", "type": "stat", "stat": "totalGoldEarned", "target": 10000, "rewards": [{ "gold": 300 }] },
+  { "id": "gold_earn_100000", "name": "金库管理员", "desc": "累计获得 100,000 金币", "type": "stat", "stat": "totalGoldEarned", "target": 100000, "rewards": [{ "itemId": "essence", "qty": 20 }] }
 ]

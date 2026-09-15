@@ -93,6 +93,18 @@ describe('动作时长与速度', () => {
     // 套装 0.04 + 铁剑效率 0.03 + 铁靴效率 0.02
     expect(agg8.efficiency).toBeCloseTo(0.09)
   })
+
+  it('饰品（v1.3）：项链提供强化成功率（非工具强化放大 ×1.5）；戒指提供效率', () => {
+    const s = newGame('T', 0)
+    equip(s, 'necklace_copper')
+    expect(aggregateEquipment(s).enhanceRate).toBeCloseTo(0.01)
+
+    equip(s, 'necklace_mithril', 10) // 替换：3% × 1.5 = 4.5%
+    expect(aggregateEquipment(s).enhanceRate).toBeCloseTo(0.045)
+
+    equip(s, 'ring_iron')
+    expect(aggregateEquipment(s).efficiency).toBeCloseTo(0.03)
+  })
 })
 
 describe('经验与消耗', () => {
