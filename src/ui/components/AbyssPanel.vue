@@ -47,8 +47,8 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
   <div class="abyss">
     <section class="card">
       <h3>
-        深渊回廊
-        <span class="dim">最高层 {{ view.bestFloor }} · 结晶 {{ view.crystals }} · 已通关主题「{{ view.nextTheme }}」</span>
+        战力检验
+        <span class="dim">最高层 {{ view.bestFloor }} · 结晶 {{ view.crystals }} · 下一层主题「{{ view.nextTheme }}」</span>
       </h3>
       <p class="dim">
         即时判定的层数挑战：不占用动作流、不消耗材料，只用战力检验配装。战力为六项属性的加权和（公式见下）。
@@ -99,7 +99,8 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
           :title="view.bestFloor < 1 ? '尚未通关任何层' : view.stamina < 1 ? '体力不足' : ''"
           @click="cmd({ type: 'sweepAbyss' })"
         >
-          扫荡（+{{ bestSweepCrystal }} 结晶）
+          <template v-if="view.bestFloor >= 1">扫荡（+{{ bestSweepCrystal }} 结晶）</template>
+          <template v-else>扫荡（需先通关）</template>
         </button>
       </div>
       <p v-if="view.gap > 0" class="bad small">⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。</p>
