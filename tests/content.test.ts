@@ -9,11 +9,27 @@ import {
 
 describe('内容表', () => {
   it('载入并通过校验（模块导入即校验）', () => {
-    expect(Object.keys(CONTENT.items).length).toBe(80)
-    expect(CONTENT.recipes.length).toBe(72)
+    expect(Object.keys(CONTENT.items).length).toBe(102)
+    expect(CONTENT.recipes.length).toBe(92)
     expect(CONTENT.enhance.length).toBe(10)
     expect(CONTENT.tutorial.length).toBe(8)
-    expect(CONTENT.ores.length).toBe(6)
+    expect(CONTENT.ores.length).toBe(8)
+  })
+
+  it('深层矿脉（v1.6）：T6/T7 装备、配方链与限定（饰品保持 5 档）', () => {
+    expect(CONTENT.items['pick_starlite'].stats?.speed).toBeCloseTo(1.2)
+    expect(CONTENT.items['pick_starlite'].stats?.efficiency).toBeCloseTo(0.06)
+    expect(CONTENT.items['pick_void'].stats?.speed).toBeCloseTo(1.35)
+    expect(CONTENT.ores.find((o) => o.id === 'void_seam')?.unlockLevel).toBe(80)
+
+    const p7 = RECIPES_BY_ID.get('forge_pick_void')!
+    expect(p7.inputs.map((i) => i.itemId)).toEqual(['pick_starlite', 'ingot_void', 'coal'])
+    expect(p7.inputs.find((i) => i.itemId === 'coal')?.qty).toBe(2)
+    expect(p7.unlockLevel).toBe(80)
+    expect(p7.inputs.find((i) => i.itemId === 'ingot_void')?.qty).toBe(140)
+
+    expect(CONTENT.items['necklace_void']).toBeUndefined()
+    expect(RECIPES_BY_ID.get('smelt_void')?.xp).toBe(65)
   })
 
   it('符文（v1.4）：12 个定义 / 配方存在 / 效果合法', () => {

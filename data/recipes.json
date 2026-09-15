@@ -152,6 +152,70 @@
     ]
   },
   {
+    "id": "smelt_starlite",
+    "name": "熔炼星尘锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 17000,
+    "xp": 45,
+    "inputs": [
+      {
+        "itemId": "ore_starlite",
+        "qty": 4
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "smelt_void",
+    "name": "熔炼虚空锭",
+    "skill": "smelting",
+    "category": "material",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 22000,
+    "xp": 65,
+    "inputs": [
+      {
+        "itemId": "ore_void",
+        "qty": 5
+      },
+      {
+        "itemId": "coal",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "ingot_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
+      }
+    ]
+  },
+  {
     "id": "forge_pick_copper",
     "name": "铜镐",
     "skill": "forging",
@@ -316,6 +380,78 @@
       {
         "itemId": "essence",
         "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_starlite",
+    "name": "星尘镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 691.98,
+    "inputs": [
+      {
+        "itemId": "pick_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 93
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_pick_void",
+    "name": "虚空镐",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1556.96,
+    "inputs": [
+      {
+        "itemId": "pick_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 140
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "pick_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
       }
     ]
   },
@@ -488,6 +624,78 @@
     ]
   },
   {
+    "id": "forge_crucible_starlite",
+    "name": "星尘坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 576.65,
+    "inputs": [
+      {
+        "itemId": "crucible_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 80
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_crucible_void",
+    "name": "虚空坩埚",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1297.46,
+    "inputs": [
+      {
+        "itemId": "crucible_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 120
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "crucible_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
+      }
+    ]
+  },
+  {
     "id": "forge_hammer_copper",
     "name": "铜锤",
     "skill": "forging",
@@ -652,6 +860,78 @@
       {
         "itemId": "essence",
         "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_starlite",
+    "name": "星尘锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 691.98,
+    "inputs": [
+      {
+        "itemId": "hammer_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 93
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_hammer_void",
+    "name": "虚空锤",
+    "skill": "forging",
+    "category": "tool",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1556.96,
+    "inputs": [
+      {
+        "itemId": "hammer_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 140
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "hammer_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
       }
     ]
   },
@@ -824,6 +1104,78 @@
     ]
   },
   {
+    "id": "forge_sword_starlite",
+    "name": "星尘剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 13000,
+    "xp": 1037.97,
+    "inputs": [
+      {
+        "itemId": "sword_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 140
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_sword_void",
+    "name": "虚空剑",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 14000,
+    "xp": 2335.43,
+    "inputs": [
+      {
+        "itemId": "sword_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 210
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "sword_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
+      }
+    ]
+  },
+  {
     "id": "forge_warhammer_copper",
     "name": "铜战锤",
     "skill": "forging",
@@ -988,6 +1340,78 @@
       {
         "itemId": "essence",
         "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_starlite",
+    "name": "星尘战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 13000,
+    "xp": 807.31,
+    "inputs": [
+      {
+        "itemId": "warhammer_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 108
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_warhammer_void",
+    "name": "虚空战锤",
+    "skill": "forging",
+    "category": "weapon",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 14000,
+    "xp": 1816.45,
+    "inputs": [
+      {
+        "itemId": "warhammer_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 162
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "warhammer_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
       }
     ]
   },
@@ -1160,6 +1584,78 @@
     ]
   },
   {
+    "id": "forge_helmet_starlite",
+    "name": "星尘头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 576.65,
+    "inputs": [
+      {
+        "itemId": "helmet_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 80
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_helmet_void",
+    "name": "虚空头盔",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1297.46,
+    "inputs": [
+      {
+        "itemId": "helmet_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 120
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "helmet_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
+      }
+    ]
+  },
+  {
     "id": "forge_chest_copper",
     "name": "铜胸甲",
     "skill": "forging",
@@ -1324,6 +1820,78 @@
       {
         "itemId": "essence",
         "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_starlite",
+    "name": "星尘胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 13000,
+    "xp": 922.64,
+    "inputs": [
+      {
+        "itemId": "chest_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 122
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_chest_void",
+    "name": "虚空胸甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 14000,
+    "xp": 2075.94,
+    "inputs": [
+      {
+        "itemId": "chest_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 183
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "chest_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
       }
     ]
   },
@@ -1496,6 +2064,78 @@
     ]
   },
   {
+    "id": "forge_legs_starlite",
+    "name": "星尘腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 807.31,
+    "inputs": [
+      {
+        "itemId": "legs_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 108
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_legs_void",
+    "name": "虚空腿甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1816.45,
+    "inputs": [
+      {
+        "itemId": "legs_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 162
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "legs_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
+      }
+    ]
+  },
+  {
     "id": "forge_boots_copper",
     "name": "铜靴甲",
     "skill": "forging",
@@ -1660,6 +2300,78 @@
       {
         "itemId": "essence",
         "rate": 0.071
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_starlite",
+    "name": "星尘靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 11000,
+    "xp": 461.32,
+    "inputs": [
+      {
+        "itemId": "boots_mithril",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_starlite",
+        "qty": 62
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_starlite",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.095
+      }
+    ]
+  },
+  {
+    "id": "forge_boots_void",
+    "name": "虚空靴甲",
+    "skill": "forging",
+    "category": "armor",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 12000,
+    "xp": 1037.97,
+    "inputs": [
+      {
+        "itemId": "boots_starlite",
+        "qty": 1
+      },
+      {
+        "itemId": "ingot_void",
+        "qty": 93
+      },
+      {
+        "itemId": "coal",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "boots_void",
+        "qty": 1
+      }
+    ],
+    "rareDrops": [
+      {
+        "itemId": "essence",
+        "rate": 0.11
       }
     ]
   },

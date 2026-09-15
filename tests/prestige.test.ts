@@ -25,8 +25,8 @@ describe('传承系统（v1.5）', () => {
     const s = newGame('T', 0)
     setSkillLevel(s, 30)
     expect(prestigePointsFor(s)).toBe(12)
-    s.skills.mining = xpForLevel(50) // 满级 → +1（总 140 → 14 + 1）
-    expect(prestigePointsFor(s)).toBe(15)
+    s.skills.mining = xpForLevel(100) // 满级（上限 100）→ +1（总 190 → 19 + 1）
+    expect(prestigePointsFor(s)).toBe(20)
   })
 
   it('传承：重置技能/动作/队列；保留材料/金币/装备/成就/队列位/增益', () => {

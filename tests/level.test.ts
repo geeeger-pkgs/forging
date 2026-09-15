@@ -29,12 +29,23 @@ describe('经验曲线（源级闭式口径）', () => {
     expect(levelInfo(30).level).toBe(2)
     expect(levelInfo(1193).level).toBe(10)
     expect(levelInfo(1192).level).toBe(9)
-    expect(levelInfo(1e9).level).toBe(50)
+    expect(levelInfo(1e9).level).toBe(100)
     expect(levelInfo(1e9).xpNeed).toBe(Number.POSITIVE_INFINITY)
   })
 
   it('新角色总等级 = 4（四技能各 1 级）', () => {
     const s = newGame('Tester', 0)
     expect(totalLevel(s.skills)).toBe(4)
+  })
+
+  it('v1.6 扩展锚点（Lv51→100，方案 D：1.03 / 1.02）', () => {
+    expect(cumulative(65)).toBe(1716346)
+    expect(cumulative(80)).toBe(3478915)
+    expect(cumulative(100)).toBe(6944983)
+    expect(levelInfo(1716346).level).toBe(65)
+    expect(levelInfo(3478915).level).toBe(80)
+    expect(levelInfo(6944983).level).toBe(100)
+    // Lv50 锚点不受扩展影响
+    expect(cumulative(50)).toBe(583137)
   })
 })

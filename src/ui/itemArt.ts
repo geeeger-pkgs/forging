@@ -53,6 +53,8 @@ const TIER_COLORS: Record<number, string> = {
   3: '#cfd6e4',
   4: '#e8c05a',
   5: '#7fd4c1',
+  6: '#7f9bff',
+  7: '#c26ef0',
 }
 
 export function colorOf(itemId: string, tier?: number): string {

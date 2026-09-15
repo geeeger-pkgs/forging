@@ -91,5 +91,37 @@
     "yieldMin": 2,
     "yieldMax": 4,
     "rareDrops": []
+  },
+  {
+    "id": "starlite_seam",
+    "name": "星尘矿脉",
+    "skill": "mining",
+    "tier": 6,
+    "unlockLevel": 65,
+    "baseTimeMs": 20000,
+    "xp": 40,
+    "outputItemId": "ore_starlite",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.095 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
+  },
+  {
+    "id": "void_seam",
+    "name": "虚空矿脉",
+    "skill": "mining",
+    "tier": 7,
+    "unlockLevel": 80,
+    "baseTimeMs": 24000,
+    "xp": 55,
+    "outputItemId": "ore_void",
+    "yieldMin": 1,
+    "yieldMax": 3,
+    "rareDrops": [
+      { "itemId": "essence", "rate": 0.11 },
+      { "itemId": "crate", "rate": 0.0005 }
+    ]
   }
 ]

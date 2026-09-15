@@ -89,6 +89,42 @@
     "value": 125,
     "stackable": true
   },
+  "ore_starlite": {
+    "id": "ore_starlite",
+    "name": "星尘矿石",
+    "tier": 6,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 72,
+    "stackable": true
+  },
+  "ingot_starlite": {
+    "id": "ingot_starlite",
+    "name": "星尘锭",
+    "tier": 6,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 180,
+    "stackable": true
+  },
+  "ore_void": {
+    "id": "ore_void",
+    "name": "虚空矿石",
+    "tier": 7,
+    "category": "ore",
+    "enhanceable": false,
+    "value": 98,
+    "stackable": true
+  },
+  "ingot_void": {
+    "id": "ingot_void",
+    "name": "虚空锭",
+    "tier": 7,
+    "category": "ingot",
+    "enhanceable": false,
+    "value": 245,
+    "stackable": true
+  },
   "coal": {
     "id": "coal",
     "name": "煤",
@@ -180,6 +216,34 @@
     "value": 3875,
     "stackable": false
   },
+  "pick_starlite": {
+    "id": "pick_starlite",
+    "name": "星尘镐",
+    "tier": 6,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 1.2,
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 8370,
+    "stackable": false
+  },
+  "pick_void": {
+    "id": "pick_void",
+    "name": "虚空镐",
+    "tier": 7,
+    "category": "tool",
+    "slot": "pick",
+    "stats": {
+      "speed": 1.35,
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 17150,
+    "stackable": false
+  },
   "crucible_copper": {
     "id": "crucible_copper",
     "name": "铜坩埚",
@@ -245,6 +309,34 @@
     },
     "enhanceable": true,
     "value": 3313,
+    "stackable": false
+  },
+  "crucible_starlite": {
+    "id": "crucible_starlite",
+    "name": "星尘坩埚",
+    "tier": 6,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 1.2,
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 7200,
+    "stackable": false
+  },
+  "crucible_void": {
+    "id": "crucible_void",
+    "name": "虚空坩埚",
+    "tier": 7,
+    "category": "tool",
+    "slot": "crucible",
+    "stats": {
+      "speed": 1.35,
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 14700,
     "stackable": false
   },
   "hammer_copper": {
@@ -314,6 +406,34 @@
     "value": 3875,
     "stackable": false
   },
+  "hammer_starlite": {
+    "id": "hammer_starlite",
+    "name": "星尘锤",
+    "tier": 6,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 1.2,
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 8370,
+    "stackable": false
+  },
+  "hammer_void": {
+    "id": "hammer_void",
+    "name": "虚空锤",
+    "tier": 7,
+    "category": "tool",
+    "slot": "hammer",
+    "stats": {
+      "speed": 1.35,
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 17150,
+    "stackable": false
+  },
   "sword_copper": {
     "id": "sword_copper",
     "name": "铜剑",
@@ -379,6 +499,34 @@
     },
     "enhanceable": true,
     "value": 5813,
+    "stackable": false
+  },
+  "sword_starlite": {
+    "id": "sword_starlite",
+    "name": "星尘剑",
+    "tier": 6,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.1,
+      "quantity": 0.09
+    },
+    "enhanceable": true,
+    "value": 12600,
+    "stackable": false
+  },
+  "sword_void": {
+    "id": "sword_void",
+    "name": "虚空剑",
+    "tier": 7,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "efficiency": 0.12,
+      "quantity": 0.12
+    },
+    "enhanceable": true,
+    "value": 25725,
     "stackable": false
   },
   "warhammer_copper": {
@@ -448,6 +596,34 @@
     "value": 4500,
     "stackable": false
   },
+  "warhammer_starlite": {
+    "id": "warhammer_starlite",
+    "name": "星尘战锤",
+    "tier": 6,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.07,
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 9720,
+    "stackable": false
+  },
+  "warhammer_void": {
+    "id": "warhammer_void",
+    "name": "虚空战锤",
+    "tier": 7,
+    "category": "weapon",
+    "slot": "mainHand",
+    "stats": {
+      "speed": 0.08,
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 19845,
+    "stackable": false
+  },
   "helmet_copper": {
     "id": "helmet_copper",
     "name": "铜头盔",
@@ -513,6 +689,34 @@
     },
     "enhanceable": true,
     "value": 3313,
+    "stackable": false
+  },
+  "helmet_starlite": {
+    "id": "helmet_starlite",
+    "name": "星尘头盔",
+    "tier": 6,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.1,
+      "efficiency": 0.06
+    },
+    "enhanceable": true,
+    "value": 7200,
+    "stackable": false
+  },
+  "helmet_void": {
+    "id": "helmet_void",
+    "name": "虚空头盔",
+    "tier": 7,
+    "category": "armor",
+    "slot": "head",
+    "stats": {
+      "wisdom": 0.12,
+      "efficiency": 0.08
+    },
+    "enhanceable": true,
+    "value": 14700,
     "stackable": false
   },
   "chest_copper": {
@@ -582,6 +786,34 @@
     "value": 5063,
     "stackable": false
   },
+  "chest_starlite": {
+    "id": "chest_starlite",
+    "name": "星尘胸甲",
+    "tier": 6,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.22,
+      "wisdom": 0.09
+    },
+    "enhanceable": true,
+    "value": 10980,
+    "stackable": false
+  },
+  "chest_void": {
+    "id": "chest_void",
+    "name": "虚空胸甲",
+    "tier": 7,
+    "category": "armor",
+    "slot": "body",
+    "stats": {
+      "quantity": 0.26,
+      "wisdom": 0.12
+    },
+    "enhanceable": true,
+    "value": 22418,
+    "stackable": false
+  },
   "legs_copper": {
     "id": "legs_copper",
     "name": "铜腿甲",
@@ -649,6 +881,34 @@
     "value": 4500,
     "stackable": false
   },
+  "legs_starlite": {
+    "id": "legs_starlite",
+    "name": "星尘腿甲",
+    "tier": 6,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.25,
+      "wisdom": 0.09
+    },
+    "enhanceable": true,
+    "value": 9720,
+    "stackable": false
+  },
+  "legs_void": {
+    "id": "legs_void",
+    "name": "虚空腿甲",
+    "tier": 7,
+    "category": "armor",
+    "slot": "legs",
+    "stats": {
+      "rareFind": 0.3,
+      "wisdom": 0.12
+    },
+    "enhanceable": true,
+    "value": 19845,
+    "stackable": false
+  },
   "boots_copper": {
     "id": "boots_copper",
     "name": "铜靴甲",
@@ -714,6 +974,34 @@
     },
     "enhanceable": true,
     "value": 2563,
+    "stackable": false
+  },
+  "boots_starlite": {
+    "id": "boots_starlite",
+    "name": "星尘靴甲",
+    "tier": 6,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.06,
+      "rareFind": 0.09
+    },
+    "enhanceable": true,
+    "value": 5580,
+    "stackable": false
+  },
+  "boots_void": {
+    "id": "boots_void",
+    "name": "虚空靴甲",
+    "tier": 7,
+    "category": "armor",
+    "slot": "feet",
+    "stats": {
+      "efficiency": 0.07,
+      "rareFind": 0.12
+    },
+    "enhanceable": true,
+    "value": 11393,
     "stackable": false
   },
   "necklace_copper": {

@@ -1,7 +1,7 @@
 // ============================================================
 // Forging · 内容生成器（确定性）
-// 生成：data/items.json、data/recipes.json
-// 规则来源：docs/01-game-design-v0.2.md §3~§5、§13
+// 生成：data/items.json、data/recipes.json、data/runes.json
+// v1.6：档位扩展至 T7（铜/铁/银/金/秘银/星尘/虚空）；饰品保持 5 档
 // 运行：node scripts/gen-content.mjs
 // ============================================================
 import { writeFileSync, mkdirSync } from 'node:fs'
@@ -12,12 +12,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const dataDir = join(root, 'data')
 mkdirSync(dataDir, { recursive: true })
 
-const TIERS = [1, 2, 3, 4, 5]
-const SUFFIX = { 1: 'copper', 2: 'iron', 3: 'silver', 4: 'gold', 5: 'mithril' }
-const TIER_CN = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银' }
+const TIERS = [1, 2, 3, 4, 5, 6, 7]
+const SUFFIX = { 1: 'copper', 2: 'iron', 3: 'silver', 4: 'gold', 5: 'mithril', 6: 'starlite', 7: 'void' }
+const TIER_CN = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银', 6: '星尘', 7: '虚空' }
 const ingotPrice = (t) => 5 * t * t
-const ESSENCE_RATE = { 1: 0.017, 2: 0.024, 3: 0.037, 4: 0.053, 5: 0.071 }
-const UNLOCK = { 1: 1, 2: 10, 3: 20, 4: 35, 5: 50 }
+const ESSENCE_RATE = { 1: 0.017, 2: 0.024, 3: 0.037, 4: 0.053, 5: 0.071, 6: 0.095, 7: 0.11 }
+const UNLOCK = { 1: 1, 2: 10, 3: 20, 4: 35, 5: 50, 6: 65, 7: 80 }
 
 // ---------------- items ----------------
 const items = {}
@@ -26,9 +26,9 @@ const addItem = (def) => {
   items[def.id] = def
 }
 
-// 材料：矿石 / 锭
-const ORE_NAME = { 1: '铜矿石', 2: '铁矿石', 3: '银矿石', 4: '金矿石', 5: '秘银矿石' }
-const INGOT_NAME = { 1: '铜锭', 2: '铁锭', 3: '银锭', 4: '金锭', 5: '秘银锭' }
+// 材料：矿石 / 锭（7 档）
+const ORE_NAME = { 1: '铜矿石', 2: '铁矿石', 3: '银矿石', 4: '金矿石', 5: '秘银矿石', 6: '星尘矿石', 7: '虚空矿石' }
+const INGOT_NAME = { 1: '铜锭', 2: '铁锭', 3: '银锭', 4: '金锭', 5: '秘银锭', 6: '星尘锭', 7: '虚空锭' }
 for (const t of TIERS) {
   addItem({
     id: `ore_${SUFFIX[t]}`, name: ORE_NAME[t], tier: t, category: 'ore',
@@ -43,42 +43,43 @@ addItem({ id: 'coal', name: '煤', category: 'coal', enhanceable: false, value: 
 addItem({ id: 'essence', name: '精华', category: 'essence', enhanceable: false, value: 15, stackable: true })
 addItem({ id: 'crate', name: '工匠小箱', category: 'crate', enhanceable: false, value: 25, stackable: true })
 
-// 装备 9 类 × 5 档（设计 §4 属性表）
+// 装备 9 类（T1~T7）+ 饰品 2 类（T1~T5）
 const CATS = [
-  { key: 'pick',      name: '镐',   slot: 'pick',     category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'crucible',  name: '坩埚', slot: 'crucible', category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'hammer',    name: '锤',   slot: 'hammer',   category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05] },
-  { key: 'sword',     name: '剑',   slot: 'mainHand', category: 'weapon',  stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.06, 0.08] },
-  { key: 'warhammer', name: '战锤', slot: 'mainHand', category: 'weapon',  stat: 'speed',       vals: [0.02, 0.03, 0.04, 0.05, 0.06] },
-  { key: 'helmet',    name: '头盔', slot: 'head',     category: 'armor',   stat: 'wisdom',      vals: [0.03, 0.04, 0.05, 0.06, 0.08] },
-  { key: 'chest',     name: '胸甲', slot: 'body',     category: 'armor',   stat: 'quantity',    vals: [0.05, 0.08, 0.11, 0.14, 0.18] },
-  { key: 'legs',      name: '腿甲', slot: 'legs',     category: 'armor',   stat: 'rareFind',    vals: [0.05, 0.08, 0.12, 0.16, 0.20] },
-  { key: 'boots',     name: '靴甲', slot: 'feet',     category: 'armor',   stat: 'efficiency',  vals: [0.01, 0.02, 0.03, 0.04, 0.05] },
-  // v1.3 饰品：项链（强化成功率，模拟定档 +1%~+3%）/ 戒指（效率）
-  { key: 'necklace',  name: '项链', slot: 'necklace', category: 'jewelry', stat: 'successRate', vals: [0.01, 0.015, 0.02, 0.025, 0.03] },
-  { key: 'ring',      name: '戒指', slot: 'ring',     category: 'jewelry', stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.05, 0.06] },
+  { key: 'pick',      name: '镐',   slot: 'pick',     category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05, 1.20, 1.35], maxTier: 7 },
+  { key: 'crucible',  name: '坩埚', slot: 'crucible', category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05, 1.20, 1.35], maxTier: 7 },
+  { key: 'hammer',    name: '锤',   slot: 'hammer',   category: 'tool',    stat: 'speed',       vals: [0.15, 0.30, 0.50, 0.75, 1.05, 1.20, 1.35], maxTier: 7 },
+  { key: 'sword',     name: '剑',   slot: 'mainHand', category: 'weapon',  stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.06, 0.08, 0.10, 0.12], maxTier: 7 },
+  { key: 'warhammer', name: '战锤', slot: 'mainHand', category: 'weapon',  stat: 'speed',       vals: [0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08], maxTier: 7 },
+  { key: 'helmet',    name: '头盔', slot: 'head',     category: 'armor',   stat: 'wisdom',      vals: [0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12], maxTier: 7 },
+  { key: 'chest',     name: '胸甲', slot: 'body',     category: 'armor',   stat: 'quantity',    vals: [0.05, 0.08, 0.11, 0.14, 0.18, 0.22, 0.26], maxTier: 7 },
+  { key: 'legs',      name: '腿甲', slot: 'legs',     category: 'armor',   stat: 'rareFind',    vals: [0.05, 0.08, 0.12, 0.16, 0.20, 0.25, 0.30], maxTier: 7 },
+  { key: 'boots',     name: '靴甲', slot: 'feet',     category: 'armor',   stat: 'efficiency',  vals: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07], maxTier: 7 },
+  { key: 'necklace',  name: '项链', slot: 'necklace', category: 'jewelry', stat: 'successRate', vals: [0.01, 0.015, 0.02, 0.025, 0.03], maxTier: 5 },
+  { key: 'ring',      name: '戒指', slot: 'ring',     category: 'jewelry', stat: 'efficiency',  vals: [0.02, 0.03, 0.04, 0.05, 0.06], maxTier: 5 },
 ]
 
-// 锻造材料表：T1 手录（设计 §5.2），T2 起按规则生成
-// 规则：新锭 = ceil(前档 × 1.5)；XP = 前档 × 2.25；T3+ 加煤 ×1；时间 = (复杂件 ? 8 : 6) + (档位 − 1)
+// 锻造材料表：T1 手录，T2 起按规则生成
+// 规则：新锭 = ceil(前档 × 1.5)；XP = 前档 × 2.25；T3+ 加煤 ×1（T6+ ×2）；时间 = (复杂件 ? 8 : 6) + (档位 − 1)
 const T1_INGOTS = { pick: 12, crucible: 10, hammer: 12, sword: 18, warhammer: 14, helmet: 10, chest: 16, legs: 14, boots: 8, necklace: 16, ring: 10 }
 const COMPLEX = new Set(['sword', 'warhammer', 'chest', 'necklace', 'ring'])
 
 const ingotsByTier = {}
 for (const cat of CATS) {
   ingotsByTier[cat.key] = { 1: T1_INGOTS[cat.key] }
-  for (const t of [2, 3, 4, 5]) ingotsByTier[cat.key][t] = Math.ceil(ingotsByTier[cat.key][t - 1] * 1.5)
+  for (let t = 2; t <= cat.maxTier; t++) ingotsByTier[cat.key][t] = Math.ceil(ingotsByTier[cat.key][t - 1] * 1.5)
 }
 
 const recipes = []
 
-// 熔炼配方（设计 §5.1）
+// 熔炼配方
 const SMELT = [
   { t: 1, ore: 2, coal: 0, timeSec: 6,  xp: 5 },
   { t: 2, ore: 2, coal: 0, timeSec: 7,  xp: 7.5 },
   { t: 3, ore: 3, coal: 1, timeSec: 9,  xp: 12.5 },
   { t: 4, ore: 3, coal: 1, timeSec: 11, xp: 20 },
   { t: 5, ore: 4, coal: 1, timeSec: 14, xp: 30 },
+  { t: 6, ore: 4, coal: 1, timeSec: 17, xp: 45 },
+  { t: 7, ore: 5, coal: 1, timeSec: 22, xp: 65 },
 ]
 for (const s of SMELT) {
   const inputs = [{ itemId: `ore_${SUFFIX[s.t]}`, qty: s.ore }]
@@ -98,23 +99,22 @@ for (const s of SMELT) {
   })
 }
 
-// 锻造配方（设计 §5.2）
-// v1.1：T4/T5 装备附加第二属性（增强高阶打造动机）
+// 锻造配方（含饰品；T4+ 副属性）
 const SECONDARY = {
-  pick: { stat: 'efficiency', vals: [0.02, 0.04] },
-  crucible: { stat: 'efficiency', vals: [0.02, 0.04] },
-  hammer: { stat: 'efficiency', vals: [0.02, 0.04] },
-  sword: { stat: 'quantity', vals: [0.03, 0.06] },
-  warhammer: { stat: 'efficiency', vals: [0.02, 0.04] },
-  helmet: { stat: 'efficiency', vals: [0.02, 0.04] },
-  chest: { stat: 'wisdom', vals: [0.03, 0.06] },
-  legs: { stat: 'wisdom', vals: [0.03, 0.06] },
-  boots: { stat: 'rareFind', vals: [0.03, 0.06] },
+  pick: { stat: 'efficiency', vals: [0.02, 0.04, 0.06, 0.08] },
+  crucible: { stat: 'efficiency', vals: [0.02, 0.04, 0.06, 0.08] },
+  hammer: { stat: 'efficiency', vals: [0.02, 0.04, 0.06, 0.08] },
+  sword: { stat: 'quantity', vals: [0.03, 0.06, 0.09, 0.12] },
+  warhammer: { stat: 'efficiency', vals: [0.02, 0.04, 0.06, 0.08] },
+  helmet: { stat: 'efficiency', vals: [0.02, 0.04, 0.06, 0.08] },
+  chest: { stat: 'wisdom', vals: [0.03, 0.06, 0.09, 0.12] },
+  legs: { stat: 'wisdom', vals: [0.03, 0.06, 0.09, 0.12] },
+  boots: { stat: 'rareFind', vals: [0.03, 0.06, 0.09, 0.12] },
   necklace: { stat: 'rareFind', vals: [0.02, 0.04] },
   ring: { stat: 'quantity', vals: [0.03, 0.06] },
 }
 for (const cat of CATS) {
-  for (const t of TIERS) {
+  for (let t = 1; t <= cat.maxTier; t++) {
     const id = `${cat.key}_${SUFFIX[t]}`
     const ingots = ingotsByTier[cat.key][t]
     const value = Math.round(ingots * ingotPrice(t) * 0.5)
@@ -138,7 +138,7 @@ for (const cat of CATS) {
     const inputs = []
     if (t > 1) inputs.push({ itemId: `${cat.key}_${SUFFIX[t - 1]}`, qty: 1 })
     inputs.push({ itemId: `ingot_${SUFFIX[t]}`, qty: ingots })
-    if (t >= 3) inputs.push({ itemId: 'coal', qty: 1 })
+    if (t >= 3) inputs.push({ itemId: 'coal', qty: t >= 6 ? 2 : 1 })
 
     const xp = Math.round(T1_INGOTS[cat.key] * Math.pow(2.25, t - 1) * 100) / 100
     const timeSec = (COMPLEX.has(cat.key) ? 8 : 6) + (t - 1)
@@ -159,7 +159,7 @@ for (const cat of CATS) {
   }
 }
 
-// ---------------- 符文（v1.4）：物品 + 配方 + runes.json 定义 ----------------
+// ---------------- 符文（v1.4） ----------------
 const RUNE_EFFECTS = [
   { key: 'speed', name: '疾风', vals: [0.15, 0.25, 0.4] },
   { key: 'efficiency', name: '丰饶', vals: [0.1, 0.15, 0.25] },
@@ -208,5 +208,5 @@ writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + 
 writeFileSync(join(dataDir, 'runes.json'), JSON.stringify(runes, null, 2) + '\n')
 
 const itemCount = Object.keys(items).length
-console.log(`[gen-content] items: ${itemCount}（材料 13 + 装备 ${itemCount - 13 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}（熔炼 5 + 锻造 ${recipes.length - 5}）`)
+console.log(`[gen-content] items: ${itemCount}（材料 17 + 装备 ${itemCount - 17 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}`)
 console.log('[gen-content] 输出: data/items.json, data/recipes.json, data/runes.json')

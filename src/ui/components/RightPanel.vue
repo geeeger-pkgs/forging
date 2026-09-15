@@ -20,7 +20,7 @@ const SLOT_LABEL: Record<SlotId, string> = {
   ring: '戒指',
 }
 
-const TIER_CN: Record<number, string> = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银' }
+const TIER_CN: Record<number, string> = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银', 6: '星尘', 7: '虚空' }
 
 const slots = computed(() =>
   SLOT_IDS.map((id) => {
