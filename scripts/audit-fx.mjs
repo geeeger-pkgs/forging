@@ -70,9 +70,11 @@ const E4checks = [
   ['loopBudgetMs', b.loopBudgetMs, (v) => v > 0 && v <= 5],
   ['maxConcurrentVoices', b.maxConcurrentVoices, (v) => v >= 1 && v <= 16],
 ]
+// 测评 Minor-1：pass 必须是**算出来的**，不能硬编码 true（否则机器消费者读 pass 会误判）
+const e4FailsBefore = fails.length
 for (const [k, v, test] of E4checks) ok(test(v), `预算常量越界: ${k} = ${v}`)
 ok(b.maxBurstParticles <= b.maxParticles, '单次爆发粒子上限超过总量上限')
-const E4 = { budget: b, checks: E4checks.map(([k, v]) => `${k}=${v}`), pass: true }
+const E4 = { budget: b, checks: E4checks.map(([k, v]) => `${k}=${v}`), pass: fails.length === e4FailsBefore }
 
 // ── E5 零资源：public/ 与 dist/ 无新增音频/图片 ──────────────
 const AUDIO_IMG = /\.(mp3|wav|ogg|m4a|aac|flac|webm|png|jpg|jpeg|gif|webp|svg|ico)$/i
@@ -101,12 +103,28 @@ const E5 = { media, scope: ['public', 'dist'], pass: media.length === 0 }
 
 // ── E6 设置默认值 ───────────────────────────────────────────
 const d = fx.defaults
+const e6FailsBefore = fails.length
 ok(typeof d.sound === 'boolean', '默认 sound 非法')
 ok(d.volume >= 0 && d.volume <= 100, `默认 volume 越界: ${d.volume}`)
 ok(d.fx === 'auto', `默认档应为 auto（跟随系统偏好），实为 ${d.fx}`)
 ok(d.fx !== 'auto' || !fx.fxLevels.includes('auto'), 'auto 不应出现在 fxLevels（它是玩家档位，不是生效档位）')
 ok(['full', 'reduced', 'off'].every((l) => fx.fxLevels.includes(l)), 'fxLevels 缺档位')
-const E6 = { defaults: d, fxLevels: fx.fxLevels, pass: true }
+const E6 = { defaults: d, fxLevels: fx.fxLevels, pass: fails.length === e6FailsBefore }
+
+// ── E7（v2.5 测评 B2 新增）内容管线同源：data/fx.json 必须是生成器的产物 ──
+// 手改 data/fx.json 会让"设计修正"在下次 npm run gen 时被静默回滚（且 E6 立刻失败）。
+let genCheck = { ran: false, pass: false, out: '' }
+try {
+  const { execFileSync } = await import('node:child_process')
+  genCheck.out = execFileSync('node', ['scripts/gen-content.mjs', '--check'], { cwd: root, encoding: 'utf8' })
+  genCheck.ran = true
+  genCheck.pass = genCheck.out.includes('--check 通过')
+} catch (e) {
+  genCheck.ran = true
+  genCheck.pass = false
+  genCheck.out = String(e.stdout ?? e.message)
+}
+ok(genCheck.pass, 'data/*.json 与生成器不同源（跑 npm run gen 会回滚设计修正）—— 见 docs/smoke-v2.5.md §2 B2')
 
 // ── E2 补充（静态可查部分）：事件数 ──────────────────────────
 // 完整穷举由 tests/fx.test.ts 承担（脚本读不到 TS 类型）；这里记录当前事件总数
@@ -128,6 +146,7 @@ console.log(`     未定义（错误）     : ${E3.unknown.length ? E3.unknown.j
 console.log(`E4 预算常量          : ${E4.checks.join(' / ')}`)
 console.log(`E5 零资源            : public/ + dist/ 音频与图片命中 ${E5.media.length} 个（白名单：sw/manifest/icon/robots/llms）`)
 console.log(`E6 设置默认值        : sound=${d.sound} volume=${d.volume} fx=${d.fx}（档位 ${fx.fxLevels.join('/')}）`)
+console.log(`E7 内容管线同源      : ${genCheck.pass ? 'data/*.json = 生成器产物 ✓' : '不同源 ✗（先 npm run gen）'}`)
 console.log('─'.repeat(78))
 console.log(fails.length === 0 ? '审计结论：全部通过 ✓' : `审计结论：${fails.length} 项失败 ✗`)
 for (const f of fails) console.log(`  ✗ ${f}`)
@@ -140,6 +159,7 @@ const out = {
   E4: { budget: E4.budget, pass: E4.pass },
   E5: { media: E5.media, pass: E5.pass },
   E6: { defaults: E6.defaults, fxLevels: E6.fxLevels, pass: E6.pass },
+  E7: { generatorCheck: genCheck.pass, pass: genCheck.pass },
   fails,
 }
 writeFileSync(join(root, 'docs', 'audit-fx-output.json'), JSON.stringify(out, null, 2) + '\n')

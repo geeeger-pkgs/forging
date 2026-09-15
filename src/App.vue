@@ -2,6 +2,7 @@
 import { computed, watchEffect } from 'vue'
 import { resolveFxLevel, store } from './app/store'
 import ActionDialog from './ui/components/ActionDialog.vue'
+import FxLayer from './ui/components/FxLayer.vue'
 import ItemDetailModal from './ui/components/ItemDetailModal.vue'
 import MainPanel from './ui/components/MainPanel.vue'
 import NavBar from './ui/components/NavBar.vue'
@@ -26,6 +27,9 @@ watchEffect(() => {
       <MainPanel />
       <RightPanel />
     </div>
+    <!-- v2.5：全局表现层（粒子/飘字/光环）。常驻 → 任何页面都能看到即时反馈，
+         且不会因组件卸载在总线上积压后"迟到重放"（测评 B1） -->
+    <FxLayer />
     <ActionDialog />
     <ItemDetailModal />
     <OfflineModal v-if="store.summary" />

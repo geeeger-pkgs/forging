@@ -10,6 +10,7 @@ import typesSrc from '../src/game/types.ts?raw'
 import auditOutput from '../docs/audit-fx-output.json'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  CUE_COOLDOWN_MS,
   __resetAudioForTest,
   audioStatus,
   cueList,
@@ -20,8 +21,17 @@ import {
   unlockAudio,
 } from '../src/ui/audio'
 import { resolveFx, resolveFxLevel, type FxContext } from '../src/ui/fx-map'
-import { __resetFxProbe, fxSnapshot, noteCue, recordDraw, requestBurst, setLiveCounts } from '../src/ui/fx-probe'
-import { __resetSceneBus, emitScene, subscribeScene } from '../src/app/scene-bus'
+import {
+  __resetFxProbe,
+  fxSnapshot,
+  noteCue,
+  recordBuild,
+  recordDraw,
+  requestBurst,
+  setLiveCounts,
+} from '../src/ui/fx-probe'
+import { readFileSync } from 'node:fs'
+import { __resetSceneBus, emitScene, sceneDropped, subscribeScene } from '../src/app/scene-bus'
 import { applyCommand } from '../src/game/commands'
 import { CONTENT } from '../src/game/content'
 import { newGame } from '../src/game/state'
@@ -192,21 +202,30 @@ interface FakeCtx {
 
 function makeFakeCtx(opts: { failResume?: boolean } = {}) {
   const created = { count: 0 }
+  /** AudioParam 假实现（含 v2.5 声部池用到的 cancelScheduledValues） */
+  const param = (v = 0) => ({
+    value: v,
+    setValueAtTime: () => undefined,
+    linearRampToValueAtTime: () => undefined,
+    exponentialRampToValueAtTime: () => undefined,
+    cancelScheduledValues: () => undefined,
+  })
   const gain = (): unknown => {
     created.count += 1
-    return {
-      gain: {
-        value: 0,
-        setValueAtTime: () => undefined,
-        linearRampToValueAtTime: () => undefined,
-        exponentialRampToValueAtTime: () => undefined,
-      },
-      connect: () => undefined,
-    }
+    return { gain: param(), connect: () => undefined }
   }
   const src = (): unknown => {
     created.count += 1
-    return { connect: () => undefined, start: () => undefined, stop: () => undefined, buffer: null, loop: false, frequency: { value: 0 } }
+    return {
+      connect: () => undefined,
+      start: () => undefined,
+      stop: () => undefined,
+      buffer: null,
+      loop: false,
+      frequency: param(),
+      detune: param(),
+      type: 'sine',
+    }
   }
   const Ctor = function FakeAudioContext(this: FakeCtx) {
     this.state = 'suspended'
@@ -229,7 +248,7 @@ function makeFakeCtx(opts: { failResume?: boolean } = {}) {
     this.createBufferSource = src
     this.createBiquadFilter = () => {
       created.count += 1
-      return { type: 'lowpass', frequency: { value: 0 }, connect: () => undefined }
+      return { type: 'lowpass', frequency: param(), connect: () => undefined }
     }
   }
   return { Ctor, created }
@@ -237,29 +256,64 @@ function makeFakeCtx(opts: { failResume?: boolean } = {}) {
 
 // ---------------- F4 并发上限 ----------------
 
+/** 一整套互不相同的 cue（并发测试要用不同 cue，否则会先撞上同 cue 冷却） */
+const ALL_CUES = CONTENT.fx.cues.map((c) => c.id)
+
 describe('F4 并发上限（设计 §2.2 爆音防护）', () => {
-  it('连发 20 次：实际发声数 ≤ maxConcurrentVoices，其余返回 false', async () => {
+  it('同一时刻最多 maxConcurrentVoices 条在响，其余返回 false', async () => {
     const { Ctor } = makeFakeCtx()
     setAudioContextFactory(Ctor as unknown as new () => AudioContext)
     expect(unlockAudio()).toBe(true)
     await Promise.resolve()
     let ok = 0
-    for (let i = 0; i < 20; i++) if (playCue('levelUp')) ok += 1
+    for (const id of ALL_CUES) if (playCue(id)) ok += 1
     expect(ok).toBe(CONTENT.fx.budget.maxConcurrentVoices)
-    expect(ok).toBeLessThan(20)
+    expect(ok).toBeLessThan(ALL_CUES.length)
     expect(audioStatus().active).toBe(CONTENT.fx.budget.maxConcurrentVoices)
   })
 
-  it('建图在微任务里完成：同步返回不建节点，flush 后才建（保住主循环预算）', async () => {
+  it('同一条 cue 有冷却（挂机时不会变成持续敲击，测评 M1）', async () => {
+    vi.useFakeTimers()
+    const { Ctor } = makeFakeCtx()
+    setAudioContextFactory(Ctor as unknown as new () => AudioContext)
+    unlockAudio()
+    await Promise.resolve()
+    expect(playCue('actionComplete')).toBe(true)
+    expect(playCue('actionComplete')).toBe(false) // 冷却窗口内
+    vi.advanceTimersByTime(CUE_COOLDOWN_MS + 5)
+    expect(playCue('actionComplete')).toBe(true) // 冷却过后可再响
+  })
+
+  it('页面不可见（后台标签页）→ 不发声（测评 M1）', async () => {
+    const { Ctor } = makeFakeCtx()
+    setAudioContextFactory(Ctor as unknown as new () => AudioContext)
+    unlockAudio()
+    await Promise.resolve()
+    const g = globalThis as unknown as { document?: { hidden: boolean } }
+    const saved = g.document
+    g.document = { hidden: true }
+    try {
+      expect(playCue('levelUp')).toBe(false)
+      g.document = { hidden: false }
+      expect(playCue('levelUp')).toBe(true)
+    } finally {
+      if (saved === undefined) delete g.document
+      else g.document = saved
+    }
+  })
+
+  it('播放路径零节点分配：声部池在解锁时建好，playCue 不再 createXxx（测评 M2）', async () => {
     const { Ctor, created } = makeFakeCtx()
     setAudioContextFactory(Ctor as unknown as new () => AudioContext)
     unlockAudio()
     await Promise.resolve()
-    const afterUnlock = created.count // 解锁时已预热噪声缓冲（1 次）
-    expect(playCue('levelUp')).toBe(true)
-    expect(created.count).toBe(afterUnlock) // 同步阶段零建图
-    await Promise.resolve() // 让 queueMicrotask 跑完
-    expect(created.count).toBeGreaterThan(afterUnlock)
+    // 解锁时建：噪声缓冲 1 + 声部池（maxConcurrentVoices 个振荡器 + 增益）
+    const afterUnlock = created.count
+    expect(afterUnlock).toBeGreaterThanOrEqual(CONTENT.fx.budget.maxConcurrentVoices * 2)
+    for (const id of ALL_CUES.slice(0, 4)) playCue(id)
+    await Promise.resolve()
+    // 非噪声 cue 走常驻声部：建图数为 0
+    expect(created.count).toBe(afterUnlock)
   })
 
   it('计时器到期后释放额度（时长+20ms）', async () => {
@@ -268,11 +322,13 @@ describe('F4 并发上限（设计 §2.2 爆音防护）', () => {
     setAudioContextFactory(Ctor as unknown as new () => AudioContext)
     unlockAudio()
     await Promise.resolve()
-    for (let i = 0; i < CONTENT.fx.budget.maxConcurrentVoices; i++) playCue('actionStart')
-    expect(playCue('actionStart')).toBe(false)
-    vi.advanceTimersByTime(CONTENT.fx.cues.find((c) => c.id === 'actionStart')!.durationMs + 30)
+    const voices = CONTENT.fx.budget.maxConcurrentVoices
+    for (let i = 0; i < voices; i++) playCue(ALL_CUES[i])
+    expect(playCue(ALL_CUES[voices])).toBe(false) // 额度已满
+    const longest = Math.max(...CONTENT.fx.cues.map((c) => c.durationMs)) + 30
+    vi.advanceTimersByTime(longest)
     expect(audioStatus().active).toBe(0)
-    expect(playCue('actionStart')).toBe(true)
+    expect(playCue(ALL_CUES[voices])).toBe(true)
   })
 })
 
@@ -579,6 +635,15 @@ describe('探针与场景总线（烟测读数的单元保障）', () => {
     const snap = fxSnapshot()
     expect(snap.draw).toEqual({ p50: 0, p95: 0, max: 0, samples: 0, budget: CONTENT.fx.budget.frameBudgetMs })
     expect(snap.tick.p95).toBe(0)
+    expect(snap.audio).toEqual({ p50: 0, p95: 0, max: 0, samples: 0 })
+  })
+
+  it('音效调度耗时单独计量（tick 只记同步段，测评 M2）', () => {
+    recordBuild(0.42)
+    const snap = fxSnapshot()
+    expect(snap.audio.samples).toBe(1)
+    expect(snap.audio.p50).toBeCloseTo(0.42, 5)
+    expect(snap.tick.samples).toBe(0) // 互不污染
   })
 
   it('requestBurst 受 maxBurstsPerSecond 限制', () => {
@@ -620,26 +685,55 @@ describe('探针与场景总线（烟测读数的单元保障）', () => {
     expect(snap.draw.samples).toBe(0)
   })
 
-  it('场景总线：未订阅时短队列缓存，订阅后补放', () => {
+  // 测评 B1：表现是即时反馈 —— 无订阅者时**丢弃**而不是缓存补放
+  it('场景总线：无订阅者时丢弃（不做迟到重放）', () => {
     emitScene({ kind: 'burst', burst: 'gold' })
     emitScene({ kind: 'popup', text: '+5 铜矿', popupKind: 'item' })
+    expect(sceneDropped()).toBe(2)
     const got: string[] = []
     const off = subscribeScene((c) => got.push(c.kind))
-    expect(got).toEqual(['burst', 'popup'])
+    expect(got).toEqual([]) // 订阅时不会补放任何过期指令
     emitScene({ kind: 'ring', ring: true })
-    expect(got).toEqual(['burst', 'popup', 'ring'])
+    expect(got).toEqual(['ring'])
     off()
     emitScene({ kind: 'ring', ring: true })
-    expect(got).toEqual(['burst', 'popup', 'ring'])
+    expect(got).toEqual(['ring'])
+    expect(sceneDropped()).toBe(3) // 退订后再发也被计入丢弃
+  })
+})
+
+// ---------------- 静态落点守护（测评 Minor-3：UI/CSS 修复无测试雷达） ----------------
+
+describe('静态落点守护（CSS 降级 / 无障碍 / 单一真值）', () => {
+  const theme = readFileSync('src/ui/styles/theme.css', 'utf8')
+  const toasts = readFileSync('src/ui/components/Toasts.vue', 'utf8')
+  const fxLayer = readFileSync('src/ui/components/FxLayer.vue', 'utf8')
+  const scene = readFileSync('src/ui/components/SceneCanvas.vue', 'utf8')
+  const app = readFileSync('src/App.vue', 'utf8')
+
+  it('theme.css 真的按 data-fx 关过渡/动画（否则用户档位关不掉 CSS 动效）', () => {
+    expect(theme).toContain("html[data-fx='reduced']")
+    expect(theme).toContain("html[data-fx='off']")
+    expect(theme).toContain('@media (prefers-reduced-motion: reduce)')
   })
 
-  it('场景总线：队列上限 8（离线开场不积压）', () => {
-    for (let i = 0; i < 20; i++) emitScene({ kind: 'ring', ring: true })
-    let n = 0
-    subscribeScene(() => {
-      n += 1
-    })
-    expect(n).toBe(8)
+  it('Toasts 有 aria-live 与类别图标（不靠颜色单通道）', () => {
+    expect(toasts).toContain('aria-live="polite"')
+    expect(toasts).toContain('ICON[t.kind]')
+  })
+
+  it('粒子上限只有一个来源：表现层读 CONTENT.fx.budget（无硬编码 260）', () => {
+    expect(fxLayer).toContain('CONTENT.fx.budget')
+    expect(scene).toContain('CONTENT.fx.budget')
+    expect(/\b260\b/.test(fxLayer)).toBe(false)
+    expect(/\b260\b/.test(scene)).toBe(false)
+  })
+
+  it('全局表现层常驻挂载（跨视图可见，测评 B1）', () => {
+    expect(app).toContain('<FxLayer />')
+    // 场景本体不再订阅总线（表现由 FxLayer 独占），避免"谁画"双真值
+    expect(scene).not.toContain('subscribeScene')
+    expect(fxLayer).toContain('subscribeScene')
   })
 })
 
@@ -663,12 +757,22 @@ describe('F9 关键事件均有 toast 出口（信息不依赖动效）', () => 
     }
   })
 
-  it('动效档位不影响 toast（off 档仍推 toast）', () => {
-    // dispatchFx 只在 level!=='off' 时播表现；toast 分支在其外层循环，与档位无关
-    expect(storeSrc.includes("if (level !== 'off')")).toBe(true)
-    const toastLoopIdx = storeSrc.indexOf('function handleEvents')
-    const fxIdx = storeSrc.indexOf("if (level !== 'off')")
-    expect(fxIdx).toBeGreaterThan(-1)
-    expect(toastLoopIdx).toBeGreaterThan(fxIdx)
+  it('关档只关视觉、不关音效（音效由 sound/volume 独立控制，测评 M3）', () => {
+    // 结构不变量：dispatchFx 里 playCue 必须出现在 "if (level === 'off') continue" **之前**，
+    // 否则关掉特效会顺带静音（并让「特效=关闭 + 音效=开」这一档不可达）
+    const cueIdx = storeSrc.indexOf('playCue(plan.cue)')
+    const gateIdx = storeSrc.indexOf("if (level === 'off') continue")
+    expect(cueIdx).toBeGreaterThan(-1)
+    expect(gateIdx).toBeGreaterThan(-1)
+    expect(cueIdx).toBeLessThan(gateIdx)
+  })
+
+  it('off 档仍推 toast：toast 分支与动效档位无关', () => {
+    const handleIdx = storeSrc.indexOf('function handleEvents')
+    const fxGateIdx = storeSrc.indexOf("if (level === 'off') continue")
+    expect(handleIdx).toBeGreaterThan(-1)
+    // handleEvents 在 dispatchFx 之后独立遍历事件推 toast（与档位无关）
+    expect(storeSrc.slice(handleIdx, handleIdx + 400)).toContain('dispatchFx(events)')
+    expect(fxGateIdx).toBeLessThan(handleIdx)
   })
 })

@@ -78,5 +78,9 @@
     ],
     "pass": true
   },
+  "E7": {
+    "generatorCheck": true,
+    "pass": true
+  },
   "fails": []
 }

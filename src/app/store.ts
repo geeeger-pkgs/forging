@@ -8,9 +8,9 @@ import { checkAchievements } from '../game/achievements'
 import { sweepAutoRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
 import { audioStatus, installGestureUnlock, playCue, setAudioEnabled, setAudioVolume } from '../ui/audio'
-import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus } from '../ui/fx-probe'
+import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus, attachSceneDropped } from '../ui/fx-probe'
 import { resolveFx, resolveFxLevel } from '../ui/fx-map'
-import { emitScene } from './scene-bus'
+import { emitScene, sceneDropped } from './scene-bus'
 import { regenStamina } from '../game/abyss'
 import { checkCodexMilestones } from '../game/codex'
 import { checkSeason, refreshSeason } from '../game/season'
@@ -138,25 +138,28 @@ function dispatchFx(events: GameEvent[]): void {
   // 与 0.5ms 的预算无法比较（实机烟测 R3 的第一版读数就是这么假的）
   const t0 = performance.now()
   const level = resolveFxLevel(store.state.meta.settings?.fx)
-  if (level !== 'off') {
-    for (const e of events) {
-      const plan = resolveFx(e, {
-        itemName: (id) => CONTENT.items[id]?.name ?? id,
-        isRare: (id) => RARE_CATEGORIES.has(CONTENT.items[id]?.category ?? ''),
-        skillName: (id) => skillName(id as SkillId),
-      })
-      if (!plan) continue
-      if (plan.cue) {
-        playCue(plan.cue)
-        noteCue(plan.cue)
-      }
-      if (plan.burst && level === 'full' && requestBurst()) emitScene({ kind: 'burst', burst: plan.burst })
-      if (plan.ring) emitScene({ kind: 'ring' })
-      if (plan.popup) emitScene({ kind: 'popup', text: plan.popup.text, popupKind: plan.popup.kind })
+  for (const e of events) {
+    const plan = resolveFx(e, {
+      itemName: (id) => CONTENT.items[id]?.name ?? id,
+      isRare: (id) => RARE_CATEGORIES.has(CONTENT.items[id]?.category ?? ''),
+      skillName: (id) => skillName(id as SkillId),
+    })
+    if (!plan) continue
+    // 音效只受 sound/volume 控制，**不受动效档位影响**（测评 M3：两者是独立开关，
+    // 否则「特效=关闭 + 音效=开」这一档不可达，试听按钮还会响，语义自相矛盾）
+    if (plan.cue) {
+      if (playCue(plan.cue)) noteCue(plan.cue)
     }
+    // 视觉表现受档位控制：off 全关；reduced 只关粒子爆发（保留飘字与光环，信息不丢）
+    if (level === 'off') continue
+    if (plan.burst && level === 'full' && requestBurst()) emitScene({ kind: 'burst', burst: plan.burst })
+    if (plan.ring) emitScene({ kind: 'ring' })
+    if (plan.popup) emitScene({ kind: 'popup', text: plan.popup.text, popupKind: plan.popup.kind })
   }
+  // 测评 M2：tick 只记**同步段**（映射 + 入队 + 取声部），音效调度在微任务里单独计量
+  // （探针的 audio 统计）。两者相加才是表现层的真实逐批开销，烟测报告同时给出。
   recordTick(performance.now() - t0)
-  // 存活粒子/飘字数由 SceneCanvas 每帧上报（真实值）；这里不再写 0，
+  // 存活粒子/飘字数由 FxLayer 每帧上报（真实值）；这里不再写 0，
   // 否则会把"当前值"覆盖成假数据（v2.5 烟测发现的空读数问题）
 }
 
@@ -349,8 +352,12 @@ export function boot(): void {
   const s0 = state.meta.settings ?? { ...CONTENT.fx.defaults }
   setAudioEnabled(s0.sound)
   setAudioVolume(s0.volume)
-  installFxProbe()
-  attachAudioStatus(audioStatus)
+  // 探针只在开发构建挂载（测评 M4：生产包不应暴露调试句柄）
+  if (import.meta.env.DEV) {
+    installFxProbe()
+    attachAudioStatus(audioStatus)
+    attachSceneDropped(sceneDropped)
+  }
   installGestureUnlock()
   store.summary = summary
   if (summary) {

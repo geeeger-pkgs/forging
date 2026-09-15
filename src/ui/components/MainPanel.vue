@@ -90,6 +90,10 @@ function pick(card: ActionCard): void {
   <main class="main">
     <h2>{{ title }}</h2>
 
+    <!-- v2.5 §2.4：视图切换 120ms 淡入（此前文档写了但没实现，测评 M5）。
+         [data-fx='off'/'reduced'] 与 prefers-reduced-motion 下由 theme.css 统一取消动画。 -->
+    <Transition name="panel" mode="out-in">
+    <div :key="view" class="panel">
     <SceneCanvas v-if="showScene" />
 
     <template v-if="view === 'mining'">
@@ -152,6 +156,8 @@ function pick(card: ActionCard): void {
     <template v-else>
       <SettingsPanel />
     </template>
+    </div>
+    </Transition>
   </main>
 </template>
 
@@ -165,6 +171,13 @@ function pick(card: ActionCard): void {
 h2 {
   margin: 0 0 12px;
   font-size: 18px;
+}
+/* 只淡入不位移：窄屏下位移会引起重排/横向抖动的观感问题 */
+.panel-enter-active {
+  transition: opacity 0.12s ease-out;
+}
+.panel-enter-from {
+  opacity: 0;
 }
 .tabs {
   display: flex;

@@ -131,11 +131,11 @@ html[data-fx='off'] * {
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
 }
-html[data-fx='off'] .toast,
-html[data-fx='off'] .popup,
-html[data-fx='off'] .ring {
+html[data-fx='off'] .toast {
   animation: none !important;
 }
+/* 注：飘字与光环画在 FxLayer 的画布上，不是 DOM 元素 —— 这里不需要（也不应）为它们写选择器。
+   测评 Minor-9 已删除此前无对应 DOM 的 `.popup` / `.ring` 规则。 */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

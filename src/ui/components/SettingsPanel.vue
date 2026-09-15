@@ -5,7 +5,7 @@ import { clearSave, importSaveFile, saveGame } from '../../app/persist'
 import { checkLoadout } from '../../game/commands'
 import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
-import { audioStatus, playCue, unlockAudio } from '../../ui/audio'
+import { audioStatus, cueList, playCue, unlockAudio } from '../../ui/audio'
 import type { FxLevel } from '../../game/types'
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -14,6 +14,8 @@ const loadoutName = ref('')
 const appVersion = __APP_VERSION__
 /** 音频引擎状态（未就绪时给玩家一句解释，而不是静默无声） */
 const audioTick = ref(0)
+/** 滑杆的即时显示值：`@change`（松手才提交）时输入框自身仍要跟手 */
+const shownVolume = ref<number | null>(null)
 
 const settings = computed(() => store.state.meta.settings ?? { ...CONTENT.fx.defaults })
 
@@ -43,6 +45,7 @@ function toggleSound(e: Event): void {
 
 function setVolume(e: Event): void {
   const v = Number((e.target as HTMLInputElement).value)
+  shownVolume.value = v
   cmd({ type: 'setSettings', patch: { volume: v } })
 }
 
@@ -51,10 +54,20 @@ function setFx(e: Event): void {
   cmd({ type: 'setSettings', patch: { fx: v } })
 }
 
-/** 试听：同时触发一次真实手势解锁，避免"点了没声"的困惑 */
+/**
+ * 试听：依次播放全部 cue（每点一次换一条，按钮文案给出当前名称），
+ * 同时触发一次真实手势解锁，避免"点了没声"的困惑。
+ * 用 cueList() 而非硬编码 —— 这条链以前只有测试在用（测评 Minor-9）。
+ */
+let previewIdx = 0
+const previewName = ref('')
 function preview(): void {
   unlockAudio()
-  playCue('levelUp')
+  const list = cueList()
+  const cue = list[previewIdx % list.length]
+  previewIdx += 1
+  playCue(cue.id)
+  previewName.value = cue.name
   refreshAudio()
 }
 
@@ -194,8 +207,8 @@ function onClear(): void {
     <section class="card">
       <h3>视听与手感</h3>
       <p class="dim">
-        音效为程序化合成（零外部资源，不增加加载体积）；所有动效都可在「特效」档位一键关闭，
-        不影响任何数值与信息（关键提示始终以文字给出）。
+        音效为程序化合成（零外部资源，不增加加载体积）。音效与特效是**两个独立开关**：
+        「特效」只影响画面动效，音效仍由上方开关与音量控制。
       </p>
       <div class="opt-row">
         <label class="opt">
@@ -208,6 +221,7 @@ function onClear(): void {
         <label class="opt" for="vol">
           <span>音量</span>
         </label>
+        <!-- @change（松手才提交）：拖一次滑杆不应触发 N 次存档写入（测评 Minor-7） -->
         <input
           id="vol"
           class="slider"
@@ -215,12 +229,15 @@ function onClear(): void {
           min="0"
           max="100"
           step="5"
-          :value="settings.volume"
+          :value="shownVolume ?? settings.volume"
           :disabled="!settings.sound"
-          @input="setVolume"
+          @input="shownVolume = Number(($event.target as HTMLInputElement).value)"
+          @change="setVolume"
         />
-        <span class="dim">{{ settings.volume }}</span>
-        <button class="btn sm" :disabled="!settings.sound" @click="preview">试听</button>
+        <span class="dim">{{ shownVolume ?? settings.volume }}</span>
+        <button class="btn sm" :disabled="!settings.sound" @click="preview">
+          试听{{ previewName ? ` · ${previewName}` : '' }}
+        </button>
       </div>
       <div class="opt-row">
         <label class="opt" for="fxl">
@@ -229,13 +246,17 @@ function onClear(): void {
         <select id="fxl" class="select" :value="settings.fx" @change="setFx">
           <option value="auto">自动（跟随系统减少动效：{{ autoResolved === 'reduced' ? '简化' : '完整' }}）</option>
           <option value="full">完整（全部粒子与飘字）</option>
-          <option value="reduced">简化（关闭粒子爆发与光环）</option>
-          <option value="off">关闭（无任何动效与音效表现）</option>
+          <option value="reduced">简化（关闭粒子爆发与光环，保留飘字）</option>
+          <option value="off">关闭（无粒子与飘字；场景动画与音效不受影响）</option>
         </select>
       </div>
       <p class="dim">
-        说明：「关闭」档仍会保留顶部提示条与飘字以外的全部文字信息；系统开启「减少动态效果」时，
-        「自动」档会退化为「简化」。
+        说明：「关闭」只关闭**覆盖层**的粒子与飘字，顶部提示条、面板文字与场景动画照常（关键信息始终以文字给出，不会因关动效而丢失）；
+        系统开启「减少动态效果」时，「自动」档会退化为「简化」。
+      </p>
+      <p class="dim">
+        已知平台限制：iOS 处于**静音档**时 WebAudio 不发声（系统行为，无法绕过）；浏览器要求首次点击/按键后音效才会启用；
+        页面切到后台时自动静音，回到前台恢复。
       </p>
     </section>
 

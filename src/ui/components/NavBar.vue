@@ -24,6 +24,12 @@ function claim(): void {
   const t = tutorial.value
   if (t) cmd({ type: 'claimTutorial', step: t.step.step })
 }
+
+/** 快捷静音（测评 M1）：音效要有一个"随手按掉"的入口，而不是非进设置页不可 */
+const soundOn = computed(() => store.state.meta.settings?.sound ?? true)
+function toggleMute(): void {
+  cmd({ type: 'setSettings', patch: { sound: !soundOn.value } })
+}
 </script>
 
 <template>
@@ -76,6 +82,16 @@ function claim(): void {
         <span class="body"><span class="name">设置</span></span>
       </button>
     </div>
+
+    <button
+      class="item mute"
+      :title="soundOn ? '关闭音效（设置页可调音量与特效档位）' : '开启音效'"
+      :aria-pressed="!soundOn"
+      @click="toggleMute"
+    >
+      <span class="icon">{{ soundOn ? '🔊' : '🔇' }}</span>
+      <span class="body"><span class="name">{{ soundOn ? '音效开' : '已静音' }}</span></span>
+    </button>
 
     <div v-if="tutorial" class="tutorial">
       <div class="t-title">📘 教程 · {{ tutorial.step.title }}</div>

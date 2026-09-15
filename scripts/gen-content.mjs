@@ -4,7 +4,7 @@
 // v1.6：档位扩展至 T7（铜/铁/银/金/秘银/星尘/虚空）；饰品保持 5 档
 // 运行：node scripts/gen-content.mjs
 // ============================================================
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, readFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -396,7 +396,11 @@ const fx = {
   cues: [
     { id: 'actionStart', name: '开始动作', wave: 'triangle', freqs: [220], durationMs: 60, gain: 0.5 },
     { id: 'actionComplete', name: '动作完成', wave: 'triangle', freqs: [330], durationMs: 80, gain: 0.45 },
-    { id: 'queueAdvance', name: '队列接力', wave: 'triangle', freqs: [294], durationMs: 70, gain: 0.4 },
+    // 注意：**不要恢复 'queueAdvance'**。队列接力没有事件来源（GameEvent 无对应成员），
+    // 会让 audit E3「cue 名一致性」永远报未引用；v2.5 设计评审已删除该 cue。
+    // 历史教训：v2.5 开发期曾手改 data/fx.json（删 cue、改默认档），
+    // 而生成器没同步 → 任何人跑 `npm run gen` 就会回滚这些修正（测评 B2）。
+    // 因此：**fx 的任何改动都必须改这里，再跑 npm run gen**。
     { id: 'levelUp', name: '技能升级', wave: 'sine', freqs: [440, 554, 659], durationMs: 320, gain: 0.5 },
     { id: 'prestige', name: '传承', wave: 'sine', freqs: [392, 523, 659, 784], durationMs: 700, gain: 0.55 },
     { id: 'seasonLevel', name: '赛季升级', wave: 'sine', freqs: [523, 659], durationMs: 260, gain: 0.45 },
@@ -422,23 +426,61 @@ const fx = {
     loopBudgetMs: 0.5,      // 主循环（250ms tick）额外耗时预算（音效触发 + 事件入队）
     maxConcurrentVoices: 8, // WebAudio 同时发声上限
   },
-  /** 设置默认值（写入 meta.settings） */
-  defaults: { sound: true, volume: 60, fx: 'full' },
-  /** 动效档位（off 时完全不绘制表现层） */
+  /**
+   * 设置默认值（写入 meta.settings）。
+   * fx 默认 **'auto'**（跟随系统「减少动态效果」偏好），不是 'full'：
+   * 默认全动效会让前庭敏感玩家一进游戏就被强动效包围，无障碍上不可接受。
+   */
+  defaults: { sound: true, volume: 60, fx: 'auto' },
+  /** 实际生效档位（'auto' 是玩家档位，由壳层 resolveFxLevel 解析成这三档之一） */
   fxLevels: ['full', 'reduced', 'off'],
 }
 
 // ---------------- 输出 ----------------
-writeFileSync(join(dataDir, 'companions.json'), JSON.stringify(companionsDef, null, 2) + '\n')
-writeFileSync(join(dataDir, 'expeditions.json'), JSON.stringify(expeditions, null, 2) + '\n')
-writeFileSync(join(dataDir, 'season.json'), JSON.stringify(season, null, 2) + '\n')
-writeFileSync(join(dataDir, 'abyss.json'), JSON.stringify(abyss, null, 2) + '\n')
-writeFileSync(join(dataDir, 'fx.json'), JSON.stringify(fx, null, 2) + '\n')
 void TIER_SUFFIX
-writeFileSync(join(dataDir, 'items.json'), JSON.stringify(items, null, 2) + '\n')
-writeFileSync(join(dataDir, 'recipes.json'), JSON.stringify(recipes, null, 2) + '\n')
-writeFileSync(join(dataDir, 'runes.json'), JSON.stringify(runes, null, 2) + '\n')
-writeFileSync(join(dataDir, 'affixes.json'), JSON.stringify(affixDefs, null, 2) + '\n')
+const OUT = {
+  'companions.json': companionsDef,
+  'expeditions.json': expeditions,
+  'season.json': season,
+  'abyss.json': abyss,
+  'fx.json': fx,
+  'items.json': items,
+  'recipes.json': recipes,
+  'runes.json': runes,
+  'affixes.json': affixDefs,
+}
+
+/**
+ * `--check`：只比对不写盘（供 `npm run gen:check` 与 tests/toolchain.test.ts 使用）。
+ * 目的：保证 data/*.json 与生成器**同源** —— 曾经出现过"手改 data/fx.json 而生成器没同步"，
+ * 结果跑一次 `npm run gen` 就回滚了设计修正（v2.5 测评 Blocker B2）。
+ */
+if (process.argv.includes('--check')) {
+  const drift = []
+  for (const [name, value] of Object.entries(OUT)) {
+    const want = JSON.stringify(value, null, 2) + '\n'
+    let have = null
+    try {
+      have = readFileSync(join(dataDir, name), 'utf8')
+    } catch {
+      drift.push(`${name}（缺失）`)
+      continue
+    }
+    const norm = (t) => t.replace(/\r\n/g, '\n')
+    if (norm(have) !== want) drift.push(name)
+  }
+  if (drift.length === 0) {
+    console.log(`[gen-content] --check 通过：${Object.keys(OUT).length} 个 data 文件与生成器同源`)
+  } else {
+    console.error(`[gen-content] --check 失败：${drift.join(', ')} 与生成器不一致`)
+    console.error('  修正：改 scripts/gen-content.mjs（不要手改 data/*.json），然后 npm run gen')
+    process.exitCode = 1
+  }
+} else {
+  for (const [name, value] of Object.entries(OUT)) {
+    writeFileSync(join(dataDir, name), JSON.stringify(value, null, 2) + '\n')
+  }
+}
 
 const itemCount = Object.keys(items).length
 console.log(`[gen-content] items: ${itemCount}（材料 18 + 装备 ${itemCount - 18 - runes.length} + 符文 ${runes.length}），recipes: ${recipes.length}`)

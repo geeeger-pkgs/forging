@@ -1,15 +1,21 @@
 // ============================================================
 // Forging · Canvas 场景层（程序化动画；纯装饰，不参与游戏逻辑）
 // 随当前动作切换：挖矿 / 熔炼 / 锻造 / 强化 / 空闲
+//
+// v2.5 测评 B1 后的分工：
+//   本组件 = **场景本体**（技能页专属：镐摆动、炉火、铁砧、常驻浮尘、动作完成爆发）
+//   全局表现（粒子/飘字/光环）→ FxLayer.vue（常驻覆盖层，跨视图可见）
+//   → 因此本组件不再订阅总线：总线上的表现不会因为"当前不在技能页"而丢失或迟到重放
 // ============================================================
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { store } from '../../app/store'
-import { subscribeScene } from '../../app/scene-bus'
-import { recordDraw, setLiveCounts } from '../fx-probe'
+import { recordDraw } from '../fx-probe'
 // 档位解析只保留**一份实现**（纯模块）：组件曾自带一份拷贝，属于双真值，v2.5 自检时删除
 import { resolveFxLevel } from '../fx-map'
 import { CONTENT } from '../../game/content'
+import { requestBurst } from '../fx-probe'
+import { emitScene } from '../../app/scene-bus'
 import { skillOf } from '../../game/refs'
 import type { SkillId } from '../../game/types'
 
@@ -20,48 +26,6 @@ let raf = 0
 /** v2.5：预算与上限一律取自内容表（单一来源；评审 M5 修掉 MAX_P 双真值） */
 const BUDGET = CONTENT.fx.budget
 const MAX_P = BUDGET.maxParticles
-
-/** v2.5：飘字与光环（表现层；off/reduced 档由 store 侧决定是否入队） */
-interface Popup {
-  text: string
-  kind: 'item' | 'xp' | 'gold'
-  x: number
-  y: number
-  life: number
-  max: number
-}
-interface Ring {
-  x: number
-  y: number
-  life: number
-  max: number
-}
-const popups: Popup[] = []
-const rings: Ring[] = []
-const POPUP_COLORS: Record<Popup['kind'], string> = { item: '#7fd4c1', xp: '#4f7cff', gold: '#f5a623' }
-
-/**
- * 飘字入队。
- * 同帧多条会同时出现（采掘 + 经验 + 金币），因此按"已有条数"做纵向错行，
- * 否则两三条会叠成一团糊字（v2.5 实机截图自检发现）。
- */
-function pushPopup(text: string, kind: Popup['kind']): void {
-  if (popups.length >= BUDGET.maxPopups) popups.shift()
-  const slot = popups.length
-  popups.push({
-    text,
-    kind,
-    x: W * 0.5 + (Math.random() - 0.5) * 60,
-    y: H * 0.55 - slot * 17,
-    life: 0,
-    max: 90,
-  })
-}
-
-function pushRing(): void {
-  if (rings.length >= 3) rings.shift()
-  rings.push({ x: W * 0.5, y: H * 0.5, life: 0, max: 48 })
-}
 
 interface P {
   x: number
@@ -75,37 +39,11 @@ interface P {
   gravity: number
 }
 
-const particles: P[] = []
-
-const BURST_COLORS = {
-  spark: ['#f5a623', '#ffd77a', '#e2544a'],
-  ore: ['#c98a5b', '#8a5a3a', '#d9b08c'],
-  dust: ['#8a93ad', '#6e7690', '#aab3c8'],
-  // v2.5 新增：强化成功 / 失败 / 庇护 / 深渊
-  gold: ['#ffd77a', '#f5a623', '#fff3c4'],
-  gray: ['#6e7690', '#8a93ad', '#454d63'],
-  blue: ['#4f7cff', '#8fb0ff', '#cfe0ff'],
-  abyss: ['#c26ef0', '#7f9bff', '#e0b3ff'],
-} as const
-
-function burst(x: number, y: number, kind: keyof typeof BURST_COLORS, count: number): void {
-  const colors = BURST_COLORS[kind]
-  for (let i = 0; i < count && particles.length < MAX_P; i++) {
-    const a = Math.random() * Math.PI * 2
-    const sp = 0.5 + Math.random() * 2.4
-    particles.push({
-      x,
-      y,
-      vx: Math.cos(a) * sp,
-      vy: Math.sin(a) * sp - 1.4,
-      life: 0,
-      max: 40 + Math.random() * 40,
-      size: 1 + Math.random() * 2.4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      gravity: kind === 'spark' ? 0.045 : 0.09,
-    })
-  }
-}
+/**
+ * 本组件只保留**常驻浮尘**（场景氛围的一部分，属于场景本体）。
+ * 交互爆发/飘字/光环全部走全局表现层 FxLayer（跨视图可见，测评 B1）。
+ */
+const dust: P[] = []
 
 let lastKey = ''
 let lastProgress = 0
@@ -126,13 +64,16 @@ function frame(): void {
   // 档位（每帧读一次：设置改动即刻生效）
   const fxLevel = resolveFxLevel(store.state.meta.settings?.fx)
 
-  // 完成 / 切动作 → 粒子爆发（仅 full 档；reduced/off 关闭交互爆发，设计 §2.3）
-  // 自检修正：此处原先未判档位，off 档仍会冒粒子（烟测 R4 实测 peakParticles 16 ≠ 0）
+  // 完成 / 切动作 → 交互爆发（投向全局表现层；仅 full 档，且与事件爆发共享频率上限）
+  // 修正记录：①原先未判档位，off 档仍会冒粒子（烟测 R4）；②原先不经 requestBurst，
+  // 频率上限只约束了事件侧（测评 Minor-10）
   if (fxLevel === 'full' && (key !== lastKey || progress < lastProgress - 0.02) && lastKey !== '' && lastKey !== 'idle') {
-    if (skill === 'mining') burst(W * 0.62, H * 0.52, 'ore', 16)
-    else if (skill === 'smelting') burst(W * 0.42, H * 0.42, 'spark', 18)
-    else if (skill === 'forging') burst(W * 0.5, H * 0.5, 'spark', 22)
-    else if (skill === 'enhancing') burst(W * 0.5, H * 0.45, 'spark', 24)
+    if (requestBurst()) {
+      if (skill === 'mining') emitScene({ kind: 'burst', burst: 'ore' })
+      else if (skill === 'smelting') emitScene({ kind: 'burst', burst: 'spark' })
+      else if (skill === 'forging') emitScene({ kind: 'burst', burst: 'spark' })
+      else if (skill === 'enhancing') emitScene({ kind: 'burst', burst: 'spark' })
+    }
   }
   lastKey = key
   lastProgress = progress
@@ -152,8 +93,8 @@ function frame(): void {
   ctx.stroke()
 
   // 环境浮尘（仅 full 档；reduced/off 关闭）
-  if (fxLevel === 'full' && Math.random() < 0.07 && particles.length < MAX_P) {
-    particles.push({
+  if (fxLevel === 'full' && Math.random() < 0.07 && dust.length < MAX_P) {
+    dust.push({
       x: Math.random() * W,
       y: H - 20,
       vx: -0.2 + Math.random() * 0.4,
@@ -173,16 +114,16 @@ function frame(): void {
   else if (skill === 'enhancing') drawEnhance(ctx, progress, t)
   else drawIdle(ctx, t)
 
-  // 粒子
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]
+  // 常驻浮尘（场景氛围）
+  for (let i = dust.length - 1; i >= 0; i--) {
+    const p = dust[i]
     p.life++
     p.x += p.vx
     p.y += p.vy
     p.vy += p.gravity
     const lifeT = 1 - p.life / p.max
     if (lifeT <= 0 || p.y > H + 10) {
-      particles.splice(i, 1)
+      dust.splice(i, 1)
       continue
     }
     ctx.globalAlpha = Math.max(0, lifeT)
@@ -199,46 +140,8 @@ function frame(): void {
     ctx.fillRect(0, H - 3, W * progress, 3)
   }
 
-  // v2.5 飘字
-  for (let i = popups.length - 1; i >= 0; i--) {
-    const p = popups[i]
-    p.life += 1
-    p.y -= 0.55
-    if (p.life >= p.max) {
-      popups.splice(i, 1)
-      continue
-    }
-    const a = 1 - p.life / p.max
-    ctx.globalAlpha = Math.max(0, a)
-    ctx.fillStyle = POPUP_COLORS[p.kind]
-    ctx.font = '600 12px ui-sans-serif, system-ui'
-    ctx.textAlign = 'center'
-    ctx.fillText(p.text, p.x, p.y)
-  }
-  ctx.globalAlpha = 1
-  ctx.textAlign = 'start'
-
-  // v2.5 光环（升级/成就/深渊）
-  for (let i = rings.length - 1; i >= 0; i--) {
-    const r = rings[i]
-    r.life += 1
-    if (r.life >= r.max) {
-      rings.splice(i, 1)
-      continue
-    }
-    const k = r.life / r.max
-    ctx.globalAlpha = Math.max(0, 0.5 * (1 - k))
-    ctx.strokeStyle = '#f5a623'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(r.x, r.y, 6 + k * 42, 0, Math.PI * 2)
-    ctx.stroke()
-  }
-  ctx.globalAlpha = 1
-
   recordDraw(performance.now() - t0)
-  // 真实存活数上报（含峰值）：烟测 R4 判定"降级档到底有没有画东西"的唯一依据
-  setLiveCounts(particles.length, popups.length)
+  // 存活粒子/飘字由 FxLayer 上报（本组件只有场景氛围浮尘，不计入交互表现读数）
 }
 
 function drawMining(ctx: CanvasRenderingContext2D, progress: number): void {
@@ -347,18 +250,12 @@ function drawIdle(ctx: CanvasRenderingContext2D, t: number): void {
 
 }
 
-let unsub: (() => void) | null = null
+// 场景本体：只画动作动画与浮尘。**不订阅总线**（表现由常驻的 FxLayer 承担，测评 B1）
 onMounted(() => {
   raf = requestAnimationFrame(frame)
-  unsub = subscribeScene((cmd) => {
-    if (cmd.kind === 'burst') burst(W * 0.5, H * 0.5, cmd.burst ?? 'spark', Math.min(24, BUDGET.maxBurstParticles))
-    else if (cmd.kind === 'ring') pushRing()
-    else if (cmd.kind === 'popup' && cmd.text) pushPopup(cmd.text, cmd.popupKind ?? 'item')
-  })
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
-  if (unsub) unsub()
 })
 </script>
 

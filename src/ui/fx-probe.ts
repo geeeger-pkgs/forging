@@ -11,6 +11,8 @@ import { CONTENT } from '../game/content'
 const WINDOW = 180
 const drawSamples: number[] = []
 const tickSamples: number[] = []
+/** 音效调度耗时（playCue 微任务内部，v2.5 测评 M2）：与 tick 分开记，两者相加才是表现层真实开销 */
+const buildSamples: number[] = []
 
 const counters = {
   bursts: 0,
@@ -41,10 +43,16 @@ export function recordDraw(ms: number): void {
   push(drawSamples, ms)
 }
 
-/** 主循环中表现层开销（ms） */
+/** 主循环中表现层开销（ms，仅同步段：映射 + 入队） */
 export function recordTick(ms: number): void {
   if (!visible()) return
   push(tickSamples, ms)
+}
+
+/** 单条音效的调度耗时（ms，微任务内） */
+export function recordBuild(ms: number): void {
+  if (!visible()) return
+  push(buildSamples, ms)
 }
 
 export function noteCue(id: string): void {
@@ -86,6 +94,7 @@ function stat(arr: number[]): { p50: number; p95: number; max: number; samples: 
 export function fxSnapshot(): {
   draw: { p50: number; p95: number; max: number; samples: number; budget: number }
   tick: { p50: number; p95: number; max: number; samples: number; budget: number }
+  audio: { p50: number; p95: number; max: number; samples: number }
   particles: number
   popups: number
   peakParticles: number
@@ -93,11 +102,14 @@ export function fxSnapshot(): {
   bursts: number
   cues: number
   lastCue: string | null
+  /** 被总线丢弃的表现指令数（B1 不变量：常驻表现层下应恒为 0） */
+  sceneDropped: number
   visible: boolean
 } {
   return {
     draw: { ...stat(drawSamples), budget: CONTENT.fx.budget.frameBudgetMs },
     tick: { ...stat(tickSamples), budget: CONTENT.fx.budget.loopBudgetMs },
+    audio: stat(buildSamples),
     particles: counters.particles,
     popups: counters.popups,
     peakParticles: counters.peakParticles,
@@ -105,8 +117,18 @@ export function fxSnapshot(): {
     bursts: counters.bursts,
     cues: counters.cues,
     lastCue: counters.lastCue,
+    sceneDropped: droppedGetter(),
     visible: visible(),
   }
+}
+
+/**
+ * 总线丢弃计数读取器（由 store 注入 scene-bus 的 sceneDropped）。
+ * 探针不 import 总线：保持"探针只被注入、不反向依赖"的形状。
+ */
+let droppedGetter: () => number = () => 0
+export function attachSceneDropped(fn: () => number): void {
+  droppedGetter = fn
 }
 
 /** DEV 下挂 window.__fx（烟测读数落点） */
@@ -136,6 +158,7 @@ export function attachAudioStatus(fn: () => unknown): void {
 export function __resetFxProbe(): void {
   drawSamples.length = 0
   tickSamples.length = 0
+  buildSamples.length = 0
   counters.bursts = 0
   counters.burstsThisSecond = 0
   counters.popups = 0

@@ -359,8 +359,20 @@ export function validateContent(t: ContentTables): string[] {
     if (!['sine', 'square', 'triangle', 'sawtooth', 'noise'].includes(cue.wave)) errs.push(`音效波形非法: ${cue.id}`)
   }
   if (fxd.cues.length < 16) errs.push('音效数量不足 16 条')
-  for (const k of ['maxParticles', 'maxBurstParticles', 'maxPopups', 'maxConcurrentVoices'] as const) {
+  // 测评 Minor-4：原先只查 4 个键，漏了 maxBurstsPerSecond（频率上限缺失时不会报错）
+  for (const k of [
+    'maxParticles',
+    'maxBurstParticles',
+    'maxBurstsPerSecond',
+    'maxPopups',
+    'maxConcurrentVoices',
+  ] as const) {
     if (!(fxd.budget[k] >= 1)) errs.push(`表现预算非法: ${k}`)
+  }
+  if (!(fxd.budget.maxPopups <= fxd.budget.maxParticles)) errs.push('飘字上限不应超过粒子上限')
+  if (!Array.isArray(fxd.fxLevels) || fxd.fxLevels.length !== 3) errs.push('动效档位应为 3 档（full/reduced/off）')
+  if (!(fxd.fxLevels.includes('full') && fxd.fxLevels.includes('reduced') && fxd.fxLevels.includes('off'))) {
+    errs.push('动效档位缺少 full/reduced/off')
   }
   if (!(fxd.budget.frameBudgetMs > 0 && fxd.budget.loopBudgetMs > 0)) errs.push('表现层时间预算非法')
   if (fxd.defaults.fx !== 'auto' && !fxd.fxLevels.includes(fxd.defaults.fx)) errs.push('默认动效档不在档位列表内')

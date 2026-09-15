@@ -16,12 +16,18 @@
 |---|---|---|---|---|
 | R1 | 自动播放门槛 | 加载后 `ready=false, ctxState=null` → 首次点击后 `ready=true, ctxState=running` | 严格 | ✅ |
 | R2 | 表现层帧内耗时（draw） | p50 0.10ms / p95 0.20ms / max 0.30ms（180 样本，仅可见时采样） | ≤ 1.5ms | ✅ |
-| R3 | 主循环表现开销（tick） | p50 0.20ms / p95 0.30ms / max 0.30ms（6 样本） | ≤ 0.5ms | ✅ |
-| R4a | `fx=off` | `data-fx=off`；peak 粒子 **0**、peak 飘字 **0**、cue **0**、burst **0**；画布仍在绘制（场景本体） | 严格 | ✅ |
+| R3 | 主循环表现开销（tick + audio） | **同步段** p50 0.20 / p95 0.30 / max 0.30ms ＋ **音效调度** p50 0.00 / p95 0.10 / max 0.10ms → **合计 p95 0.40ms** | ≤ 0.5ms | ✅ |
+| R4a | `fx=off` | `data-fx=off`；peak 粒子 **0**、peak 飘字 **0**、burst **0**；画布仍在绘制（场景本体）；音效不受影响（解耦后） | 严格 | ✅ |
 | R4b | `fx=reduced` | `data-fx=reduced`；peak 粒子 **0**、peak 飘字 **3**、cue **5**（信息不丢） | 严格 | ✅ |
-| R5 | 设置持久化 | `{sound:false,volume:40,fx:full}` → 重载后状态、`localStorage`、`data-fx` 三者一致 | 严格 | ✅ |
+| R5 | 设置持久化 | `{sound:false,volume:40,fx:full}` → 重载后状态、`localStorage`、`data-fx` 三者一致；引擎 `enabled=false` | 严格 | ✅ |
+| R6 | **跨视图可见（测评 B1 复核）** | 在**商店页**挂机：`peakParticles=260 / peakPopups=6 / bursts=3 / sceneDropped=0`，页面只有 1 个画布（＝全局表现层） | 严格 | ✅ |
 
 补充实测（full 档）：`peakParticles=52 / peakPopups=2 / bursts=2 / cues=2`，一轮动作完成时确实出现粒子爆发与飘字（见截图）。
+
+> **R3 口径说明（测评 M2）**：测评指出原口径只包住 `dispatchFx` 的同步段，而音效建图在微任务里发生（读数偏乐观）。
+> 处置后改为**两部分分别计量**：`tick`（同步：映射 + 入队 + 取声部）与 `audio`（playCue 微任务内的参数调度），
+> 二者相加才是表现层的逐批开销。同时用**声部池**把分配成本挪到解锁时（池化后每批 audio 仅 0~0.1ms）。
+> 判定用两者之和（p95 0.40ms ≤ 0.5ms 预算）。
 
 ### 截图证据
 
@@ -31,6 +37,20 @@
 | `docs/smoke-v2.5-settings.png` | 设置页「视听与手感」：音效开关（已就绪）/ 音量滑杆 60 / 特效四档 / 关于显示 v2.5 |
 
 ## 2. 发现的缺陷与修复（全部当版修复并回归）
+
+> **补充（测评后）**：D1~D7 是烟测自查发现的；随后**资深玩家测评**（`docs/review-v2.5.md`，6.0/10 不通过）
+> 又抓出 **B1/B2 两条 Blocker 与 M1~M5**，处置见 `docs/design-v2.5.md` §9。
+> 本报告的 D8~D14 是那轮处置带来的实现变更（含一处**本报告此前的声明不实**，已更正）。
+
+| # | 缺陷 | 证据 | 修复 |
+|---|---|---|---|
+| **D8** | `docs/smoke-v2.5.md` §4 曾写"探针只在 DEV 构建挂载"——实际 `installFxProbe()` 无 DEV 守卫，`dist` 里能 grep 到 `window.__fx` | 测评 M4（`grep __fx dist/assets/*.js` 命中） | 守卫补齐（`import.meta.env.DEV`），本报告声明同步更正 |
+| **D9** | 表现指令在画布未挂载时排队，切回技能页"迟到重放"；深渊通关表现在深渊页完全不可见 | 测评 B1 | 新增常驻全局表现层 `FxLayer.vue`；总线无订阅者即丢弃（`sceneDropped()`） |
+| **D10** | `data/fx.json` 与生成器不同源（跑 `npm run gen` 会回滚 `auto` 默认档、复活无来源 cue） | 测评 B2（临时目录重跑 + diff） | 修生成器 + `--check` 模式 + audit **E7** + toolchain 回归用例 |
+| **D11** | 音效后台照响、无冷却、无快捷静音 | 测评 M1 | `document.hidden` 短路 + 120ms per-cue 冷却 + 导航栏快捷静音 |
+| **D12** | `tickMs` 口径不含建图成本（读数偏乐观） | 测评 M2 | `recordTick` 移到批次末尾微任务（含建图），探针输出 p50/p95/max |
+| **D13** | `off` 档连带静音音效、试听仍响、文案自相矛盾 | 测评 M3 | 音效与特效解耦；文案改写；off 档清空存量并停绘覆盖层 |
+| **D14** | `§2.4` 面板淡入未实现；飘字槽位溢出画布；滑杆写放大；频率上限只覆盖事件侧 | 测评 M5 / Minor-6/7/10 | 实现 120ms 淡入；槽位夹到 4；滑杆改 `@change`；场景爆发走 `requestBurst()` |
 
 | # | 缺陷 | 证据 | 修复 |
 |---|---|---|---|
@@ -64,5 +84,6 @@ npm run dev                 # 端口 5174（5173 被占用时自动顺延）
 
 - **iOS 静音档无声**：平台行为（WebAudio 受静音开关影响），不做绕过；设置页已如实说明。
 - 后台标签页 rAF 暂停 → draw/tick 采样自动停止（设计如此：仅可见时采样），因此**不采信**帧间隔类指标。
-- 探针只在 DEV 构建挂载 `window.__fx`；生产构建不暴露。
+- 探针只在 DEV 构建挂载 `window.__fx`（**此声明在首轮烟测时并不成立**，测评 M4 抓出并在处置中修复：
+  `installFxProbe/attachAudioStatus` 现在包在 `import.meta.env.DEV` 内；`grep __fx dist/assets/*.js` 应为空）。
 - 音效在移动端首次手势前**完全静默**（不排队、不补播），与设计 §2.1 一致。
