@@ -11,9 +11,9 @@ import type { FxLevel, FxSetting, GameEvent } from '../game/types'
 /**
  * 爆发色系。
  * - 事件侧（resolveFx）只产出 `spark|gold|gray|blue|abyss`；
- * - `ore|dust` 由**场景本体**发起（动作完成/切动作时按技能选色），不属于事件映射。
+ * - `ore` 由**场景本体**发起（动作完成时按技能选色），不属于事件映射。
  */
-export type BurstKind = 'spark' | 'gold' | 'gray' | 'blue' | 'abyss' | 'ore' | 'dust'
+export type BurstKind = 'spark' | 'gold' | 'gray' | 'blue' | 'abyss' | 'ore'
 
 /**
  * 动效档位解析（设计 §2.5）：auto 跟随系统「减少动态效果」偏好，用户显式档位优先。

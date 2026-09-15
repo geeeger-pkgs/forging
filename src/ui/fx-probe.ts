@@ -102,7 +102,8 @@ export function fxSnapshot(): {
   bursts: number
   cues: number
   lastCue: string | null
-  /** 被总线丢弃的表现指令数（B1 不变量：常驻表现层下应恒为 0） */
+  /** 被总线丢弃的表现指令数。不变量：**表现层挂载后**恒为 0
+   *  （boot 期——首帧渲染之前——的丢弃是预期的：那些表现补放出来只会变成"迟到重放"） */
   sceneDropped: number
   visible: boolean
 } {

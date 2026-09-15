@@ -56,7 +56,6 @@ const rings: Ring[] = []
 const BURST_COLORS = {
   spark: ['#f5a623', '#ffd77a', '#e2544a'],
   ore: ['#c98a5b', '#8a5a3a', '#d9b08c'],
-  dust: ['#8a93ad', '#6e7690', '#aab3c8'],
   gold: ['#ffd77a', '#f5a623', '#fff3c4'],
   gray: ['#6e7690', '#8a93ad', '#454d63'],
   blue: ['#4f7cff', '#8fb0ff', '#cfe0ff'],

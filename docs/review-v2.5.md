@@ -94,3 +94,42 @@ node scripts/gen-content.mjs  →  diff（提交版 vs 重生成）
 3. M1~M5 与高优先 Minor（1/3/4/6/7/10）建议同版处置。
 
 > **当版放行意见**：Blocker 未清零前不放行。两条 Blocker 的修复量都很小（合计 ≤80 行），处置后本版可回到 8.0 量级。
+
+---
+
+# 附：复审（处置后核验）
+
+> 复审人：资深玩家测评代理（独立于处置者）｜日期：2026-09-15
+> 对象：`1fe145a`（处置提交）｜方法：`git diff 74308ce..1fe145a` 逐条核验 + 独立复跑 + **临时目录重跑生成器**（不污染工作区）
+
+## 结论
+
+**Blocker 清零（B1/B2 均落地，代码 + 复跑双证）→ 通过。总评 8.1 / 10。**
+
+| 项 | 判定 | 关键证据 |
+|---|---|---|
+| B1 迟到重放 / 深渊不可见 | **已处置** | `scene-bus.ts:32-38` 无订阅者 `dropped+=1` 即返回（全仓已无 `pending` 队列）；`App.vue:32` 常驻 `<FxLayer />`；`FxLayer.vue` 挂载即订阅 + `pointer-events:none`；`SceneCanvas.vue` 已不订阅；全仓发射点 2 处 / 订阅点 1 处，无第二条缓冲路径；实机复核：**商店页** peakParticles 260 / peakPopups 6 / bursts 3 / `sceneDropped` **0** |
+| B2 生成器不同源 | **已处置** | 临时目录重跑 `gen-content.mjs`：**18/18 文件零漂移**（含 `fx.json`）；`--check` + `npm run gen:check` + audit **E7** + toolchain 用例四重守护 |
+| M1 不打扰策略 | 已处置 | `audio.ts` `document.hidden` 短路 + `CUE_COOLDOWN_MS=120`；`NavBar.vue` 快捷静音（`aria-pressed`） |
+| M2 tick 口径 | **部分 / 记录不实 → 本轮已改** | 核心诉求达成（`tick` 同步段 + `audio` 调度分列相加，实测 p95 0.30+0.10 = 0.40ms ≤ 0.5ms）；但 §9/§2.3/§2.6 曾写"移入微任务含建图"，与实现相悖 → **本轮把三处文档改为与实现一致** |
+| M3 off 语义解耦 | 已处置 | `store.ts` 中 `playCue` 在 `if (level === 'off')` 之前（结构不变量用例守护）；设置页文案改写 |
+| M4 生产暴露探针 | 已处置 | `import.meta.env.DEV` 守卫；`grep __fx dist/assets/*.js` = **0** |
+| M5 淡入/指向/iOS 说明 | 已处置 | `MainPanel` Transition + 仅淡入；#11 指向 `ProgressBar`(+`TopBar`)；设置页补 iOS 与后台静音说明 |
+| Minor 1/3/4/6/7/9/10/11 | 已处置（8/11） | 见复审逐条表 |
+| Minor 2（断言强度）/ 5（总线限幅） | **本轮补做** | F7 改为"先置 full 再送非法值"的有区分度用例 + 新增"命令层忽略 vs 存档层回落"对照用例；F9 改在 `handleEvents` 函数体内查；F10 新增 `audit:fx:check`（提交 JSON == 脚本本次输出）；F4 扩展覆盖噪声类 cue 的零分配；`setAudioEnabled(false)` 立即把总线增益打到 0（切断在播声） |
+
+## 复审发现的 10 项（本轮全部处置或记录）
+
+1. §9/§2.3/§2.6 的 M2 描述与实现相悖 → **已改**（两段分别计量、相加判定）。
+2. roadmap 与 §6 的测试数/体积失真（305/93.3KB、298/93.2KB）→ **已改**（309 / 94.75KB）。
+3. §2.6 #12 `BurstKind` 落点写错（在 `ui/fx-map.ts`）、#15 "E1~E7" 与 §3.1 表不一致 → **已改**（§3.1 补 E7 行）。
+4. smoke 摘要仍写 R1~R5 → **已改**（R1~R6）。
+5. `dust` 是死绑定（定义了但无发射点）→ **已删**（`BurstKind` 只保留 `ore`）。
+6. 噪声路径未池化 → **已改**（每条声部预建低通，噪声只新建 BufferSource）+ F4 覆盖噪声 cue。
+7. 静音不切断在播声（最长 0.7s 余音）→ **已改**（`setAudioEnabled(false)` 立即置总线增益 0）。
+8. `__resetAudioForTest` 不清声部池 → **已改**。
+9. `FxPlan.burst` 类型未收窄（约定保证不产 `ore`/`dust`）→ 保留（约定 + E3 静态扫描已足够，记为观察项）。
+10. `matchMedia` 每帧调用（auto 档）→ 保留（µs 级；R2 的 draw 读数已包含该开销），记为观察项。
+
+> 复审还指出一处**启动边界**：`main.ts` 先 `boot()`/`startLoop()` 再 `mount`，因此 boot 期（离线结算触发的里程碑环等）的表现会被计入 `sceneDropped`。
+> 这是**有意为之**：boot 期的表现发生在首帧之前，补放它们反而是"迟到重放"。已在 `sceneDropped` 的语义注释中记录（不变量应表述为"**挂载后**恒为 0"）。

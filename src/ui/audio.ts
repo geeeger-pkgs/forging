@@ -62,6 +62,8 @@ export function setAudioContextFactory(f: CtxFactory | null): void {
 interface Voice {
   osc: OscillatorNode
   gain: GainNode
+  /** 噪声专用低通（预建复用：BufferSource 每次新建，滤波器不必，测评复审 #6） */
+  lp: BiquadFilterNode
   /** 占用标记：不能靠 gain.value 判断（包络终点是 0.0001，不是 0） */
   busy: boolean
 }
@@ -75,11 +77,14 @@ function ensureVoices(): void {
     for (let i = 0; i < BUDGET.maxConcurrentVoices; i++) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
+      const lp = ctx.createBiquadFilter()
+      lp.type = 'lowpass'
       gain.gain.value = 0
       osc.connect(gain)
+      lp.connect(gain) // 噪声路径：src → lp → gain
       gain.connect(master)
       osc.start() // 常驻运行、增益为 0 → 静音待命
-      voices.push({ osc, gain, busy: false })
+      voices.push({ osc, gain, lp, busy: false })
     }
   } catch (e) {
     state.lastError = String(e)
@@ -167,6 +172,15 @@ export function installGestureUnlock(target: GestureTarget = document): void {
 
 export function setAudioEnabled(on: boolean): void {
   state.enabled = on
+  // 立即切断**已在播放**的声音（否则快捷静音后还有最长 0.7s 余音，测评复审 #7）
+  if (state.master) {
+    try {
+      state.master.gain.cancelScheduledValues(state.ctx ? state.ctx.currentTime : 0)
+      state.master.gain.value = on ? state.volume : 0
+    } catch {
+      state.master.gain.value = on ? state.volume : 0
+    }
+  }
 }
 
 export function setAudioVolume(v0to100: number): void {
@@ -206,8 +220,9 @@ function noise(ctx: AudioContext): AudioBuffer {
 }
 
 /**
- * 播放一条音效。返回是否真的发声（未就绪/被禁用/超并发 → false）。
- * 音色：wave=sine|square|triangle|sawtooth 走振荡器；noise 走白噪声 + 低通。
+ * 播放一条音效。返回是否真的发声（未就绪/被禁用/后台/冷却中/无空闲声部 → false）。
+ * 音色：wave=sine|square|triangle|sawtooth 走**常驻声部池**；noise 走白噪声 + 低通（每次新建 BufferSource）。
+ * opts.gain / opts.detune 为**引擎能力**（音量缩放与音高微调），当前调用方未使用，保留给后续版本。
  */
 export function playCue(id: string, opts: { gain?: number; detune?: number } = {}): boolean {
   // 判定同步完成（返回值 = "这条会不会响"），**建图异步**：
@@ -258,11 +273,8 @@ export function playCue(id: string, opts: { gain?: number; detune?: number } = {
         // 噪声没有常驻声部（BufferSource 不可重启）：每次新建，但仍走同一增益门控
         const src = ctx.createBufferSource()
         src.buffer = noise(ctx)
-        const lp = ctx.createBiquadFilter()
-        lp.type = 'lowpass'
-        lp.frequency.value = cue.freqs[0] * 2
-        src.connect(lp)
-        lp.connect(voice.gain)
+        voice.lp.frequency.value = cue.freqs[0] * 2
+        src.connect(voice.lp)
         g.linearRampToValueAtTime(gainScale, now + 0.02)
         g.exponentialRampToValueAtTime(0.0001, now + dur)
         src.start(now)
@@ -305,5 +317,6 @@ export function __resetAudioForTest(): void {
   state.lastPlayed.clear()
   state.lastError = null
   noiseBuf = null
+  voices = []
   installed = false
 }

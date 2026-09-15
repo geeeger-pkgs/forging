@@ -210,9 +210,12 @@ function makeFakeCtx(opts: { failResume?: boolean } = {}) {
     exponentialRampToValueAtTime: () => undefined,
     cancelScheduledValues: () => undefined,
   })
+  const gainParams: { value: number }[] = []
   const gain = (): unknown => {
     created.count += 1
-    return { gain: param(), connect: () => undefined }
+    const g = param()
+    gainParams.push(g)
+    return { gain: g, connect: () => undefined }
   }
   const src = (): unknown => {
     created.count += 1
@@ -251,7 +254,7 @@ function makeFakeCtx(opts: { failResume?: boolean } = {}) {
       return { type: 'lowpass', frequency: param(), connect: () => undefined }
     }
   }
-  return { Ctor, created }
+  return { Ctor, created, gainParams }
 }
 
 // ---------------- F4 并发上限 ----------------
@@ -312,8 +315,33 @@ describe('F4 并发上限（设计 §2.2 爆音防护）', () => {
     expect(afterUnlock).toBeGreaterThanOrEqual(CONTENT.fx.budget.maxConcurrentVoices * 2)
     for (const id of ALL_CUES.slice(0, 4)) playCue(id)
     await Promise.resolve()
-    // 非噪声 cue 走常驻声部：建图数为 0
+    // 振荡器类 cue 走常驻声部：建图为 0
     expect(created.count).toBe(afterUnlock)
+
+    // 噪声类 cue（enhanceFail / crateOpen）同样复用池内低通，只新建 BufferSource
+    vi.useFakeTimers()
+    const noiseCues = CONTENT.fx.cues.filter((c) => c.wave === 'noise').map((c) => c.id)
+    expect(noiseCues.length).toBeGreaterThan(0)
+    vi.advanceTimersByTime(CUE_COOLDOWN_MS + 5)
+    const beforeNoise = created.count
+    for (const id of noiseCues) playCue(id)
+    await Promise.resolve()
+    expect(created.count - beforeNoise).toBe(noiseCues.length) // 每条仅 1 个 BufferSource，无滤波器新建
+  })
+
+  it('静音立即把总线增益打到 0（不等包络自然结束，测评复审 #7）', async () => {
+    const { Ctor, gainParams } = makeFakeCtx()
+    setAudioContextFactory(Ctor as unknown as new () => AudioContext)
+    unlockAudio()
+    await Promise.resolve()
+    const master = gainParams[0] // 第一个 GainNode = 总线
+    expect(master.value).toBeCloseTo(0.6, 5)
+    setAudioEnabled(false)
+    expect(master.value).toBe(0) // 立即静音（在播的 cue 也一起断）
+    setAudioEnabled(true)
+    expect(master.value).toBeCloseTo(0.6, 5) // 恢复时回到当前音量
+    setAudioVolume(30)
+    expect(master.value).toBeCloseTo(0.3, 5)
   })
 
   it('计时器到期后释放额度（时长+20ms）', async () => {
@@ -436,8 +464,23 @@ describe('F7 设置命令与档位解析', () => {
     applyCommand(s, { type: 'setSettings', patch: { volume: -5 } }, 0)
     expect(s.meta.settings?.volume).toBe(0)
 
+    // 有区分度地验证"命令层忽略非法档位"：先置成 full，再送非法值，必须**保持 full**
+    // （旧用例在新档默认就是 auto 的情况下无区分度，测评 Minor-2）
+    applyCommand(s, { type: 'setSettings', patch: { fx: 'full' } }, 0)
+    expect(s.meta.settings?.fx).toBe('full')
     applyCommand(s, { type: 'setSettings', patch: { fx: 'nonsense' as never } }, 0)
-    expect(s.meta.settings?.fx).toBe('auto')
+    expect(s.meta.settings?.fx).toBe('full')
+  })
+
+  it('命令层"忽略非法值"与存档层"回落默认"是两条规则（各司其职，勿混）', () => {
+    // 命令层：界面传来越界值 → 夹紧/忽略（不打断玩家操作）
+    const s = newGame('测试', 0)
+    applyCommand(s, { type: 'setSettings', patch: { fx: 'off' } }, 0)
+    applyCommand(s, { type: 'setSettings', patch: { fx: 'bogus' as never } }, 0)
+    expect(s.meta.settings?.fx).toBe('off')
+    // 存档层：手改/跨版本导入的非法值 → 回落默认 auto（保证载入后一定合法）
+    expect(sanitizeSettings({ fx: 'bogus' }).fx).toBe('auto')
+    expect(sanitizeSettings({ fx: 'bogus', volume: 60, sound: true }).fx).toBe('auto')
   })
 
   it('四档都能写入（auto/full/reduced/off）', () => {
@@ -752,8 +795,13 @@ describe('F9 关键事件均有 toast 出口（信息不依赖动效）', () => 
       'blocked',
       'prestigeDone',
     ]
+    // 只在 handleEvents 的函数体内查（测评 Minor-2：全文包含法连注释都能满足）
+    const start = storeSrc.indexOf('function handleEvents')
+    const end = storeSrc.indexOf('\nfunction ', start + 10)
+    const body = storeSrc.slice(start, end > 0 ? end : undefined)
+    expect(body.length).toBeGreaterThan(200)
     for (const name of mustToast) {
-      expect(storeSrc.includes(`case '${name}':`), `${name} 缺少 toast 分支`).toBe(true)
+      expect(body.includes(`case '${name}':`), `${name} 缺少 toast 分支`).toBe(true)
     }
   })
 

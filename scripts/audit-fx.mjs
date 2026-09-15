@@ -162,7 +162,28 @@ const out = {
   E7: { generatorCheck: genCheck.pass, pass: genCheck.pass },
   fails,
 }
-writeFileSync(join(root, 'docs', 'audit-fx-output.json'), JSON.stringify(out, null, 2) + '\n')
-console.log('')
-console.log('机器校验输出：docs/audit-fx-output.json')
+const json = JSON.stringify(out, null, 2) + '\n'
+if (process.argv.includes('--check')) {
+  // 只比对不写盘：供 tests/toolchain.test.ts 断言"提交的证据 JSON == 本次脚本输出"
+  // （测评 Minor-2：原测试只比"提交的 JSON ↔ 内容表"，不能证明是脚本产物）
+  let have = null
+  try {
+    have = readText('docs/audit-fx-output.json')
+  } catch {
+    have = null
+  }
+  const norm = (s) => (s ?? '').replace(/\r\n/g, '\n')
+  if (norm(have) === json) {
+    console.log('')
+    console.log('--check 通过：docs/audit-fx-output.json 与本次审计输出一致')
+  } else {
+    console.error('')
+    console.error('--check 失败：提交的证据 JSON 与本次审计输出不一致（先跑 node scripts/audit-fx.mjs 更新）')
+    process.exitCode = 1
+  }
+} else {
+  writeFileSync(join(root, 'docs', 'audit-fx-output.json'), json)
+  console.log('')
+  console.log('机器校验输出：docs/audit-fx-output.json')
+}
 if (fails.length) process.exitCode = 1

@@ -19,4 +19,17 @@ describe('toolchain', () => {
     })
     expect(out).toContain('--check 通过')
   }, 30000)
+
+  /**
+   * 证据链不变量：提交的 docs/audit-fx-output.json 必须**就是**审计脚本的输出
+   * （测评 Minor-2：只比"JSON ↔ 内容表"不足以证明它是脚本产物）。
+   */
+  it('提交的证据 JSON == 本次 audit-fx 输出（npm run audit:fx:check）', () => {
+    const out = execFileSync('node', ['scripts/audit-fx.mjs', '--check'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    expect(out).toContain('--check 通过')
+    expect(out).toContain('审计结论：全部通过')
+  }, 60000)
 })

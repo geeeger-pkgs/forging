@@ -12,7 +12,9 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:check": "node scripts/gen-content.mjs --check"
+    "gen:check": "node scripts/gen-content.mjs --check",
+    "audit:fx": "node scripts/audit-fx.mjs",
+    "audit:fx:check": "node scripts/audit-fx.mjs --check"
   },
   "dependencies": {
     "vue": "^3.5.42"

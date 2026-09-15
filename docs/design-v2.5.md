@@ -15,7 +15,7 @@ v2.1~v2.4 把系统做厚了，但**反馈仍只有文字**：强化成功/失�
 
 ### 2.1 程序化音效引擎（`src/ui/audio.ts`，零资源）
 
-- 技术：WebAudio **振荡器 + 增益包络 + 白噪声缓冲**，无任何音频文件（体积零增长）。
+- 技术：WebAudio **振荡器 + 增益包络 + 白噪声缓冲**，无任何音频文件（体积增幅记入 §6 与路线图进度表）。
 - **硬规则**：
   1. `AudioContext` **不在模块加载时创建**；首次真实用户手势（`pointerdown`/`keydown`）后创建并 `resume()`；此前 `playCue` **静默返回 false**（不报错、不排队）。
   2. 同时发声 ≤ `maxConcurrentVoices`(8)：超限**丢弃新请求**（防爆音与 CPU 尖峰）。
@@ -79,13 +79,17 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 | **场景本体** | `SceneCanvas.vue` | 动作动画（镐/炉/砧/强化）、常驻浮尘、动作完成爆发（经总线投给表现层） | 仅技能页（`v-if` 保持既有布局） |
 | **全局表现层** | `FxLayer.vue`（新） | 粒子爆发、飘字、光环；`position: fixed` + `pointer-events: none` | **常驻**（`App.vue` 顶层），任何页面都可见 |
 
-- **粒子**：`MAX_P` 读 `CONTENT.fx.budget.maxParticles`（**单一来源**，修评审 M5 的双真值）；色系：事件侧 `spark`/`gold`/`gray`/`blue`/`abyss`，场景侧 `ore`/`spark`/`dust`。
+- **粒子**：`MAX_P` 读 `CONTENT.fx.budget.maxParticles`（**单一来源**，修评审 M5 的双真值）；色系：事件侧 `spark`/`gold`/`gray`/`blue`/`abyss`，场景侧 `ore`/`spark`。
 - **交互预算**：单次爆发 ≤ `maxBurstParticles`(60)、爆发频率 ≤ `maxBurstsPerSecond`(4)；**事件爆发与场景完成爆发共用同一 `requestBurst()` 闸门**（测评 Minor-10：原先只约束事件侧）。
 - **飘字**：同屏 ≤ `maxPopups`(6)，纵向错行槽位**夹在可见范围内**（测评 Minor-6：原 `slot≥5` 会飘出画布）：`+N 名称` / `+XP` / `+N 金`。
 - **光环**：技能升级/成就/深渊通关时扩散环。
 - **降级**：`fx = reduced` → 关闭常驻浮尘与交互爆发，仅保留飘字与光环；`fx = off` → 覆盖层立即清空并停止绘制（`store.dispatchFx` 短路 + 层内二次判定），**场景本体与音效不受影响**（测评 M3）。
 - **淘汰语义（测评 B1）**：总线在无订阅者时**直接丢弃**（`sceneDropped()` 计数可见），不做队列补放 —— 表现是即时反馈，过期即无意义。
-- **性能埋点**：`performance.now()` 采样 `drawMs`（两个画布的绘制耗时）与 `tickMs`（事件批次开销，**含微任务里的音频建图**，测评 M2），仅在 `document.visibilityState === 'visible'` 时采样，滚动窗口输出 **p50/p95/max/samples**。
+- **性能埋点**：`performance.now()` 采样三项，仅在 `document.visibilityState === 'visible'` 时采样，滚动窗口输出 **p50/p95/max/samples**：
+  - `draw`：两个画布（场景 + 全局表现层）的单帧绘制耗时；
+  - `tick`：事件批次的**同步段**（映射 + 入队 + 取声部）；
+  - `audio`：**微任务内的音效调度耗时**（单独计量）。
+  测评 M2 的诉求是"读数不能只覆盖同步段"——处置方式为**两段分别计量、相加判定**（`tick + audio ≤ loopBudgetMs`），而不是把两者混进一个数（混进去会把 toast/存档等非表现层开销也算进来）。
 
 ### 2.4 手感与信息层级
 
@@ -115,16 +119,16 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 | 4 | `src/ui/fx-probe.ts`（新） | 采样与探针：`recordDraw/recordTick/stat(p50,p95,max)/installFxProbe`（**仅 DEV** 挂 `window.__fx`，测评 M4） |
 | 5 | `src/ui/components/SceneCanvas.vue` | **场景本体**：动作动画 + 常驻浮尘 + 完成爆发（走 `requestBurst` + 总线）；`MAX_P` 读内容表；不再订阅总线 |
 | 5b | `src/ui/components/FxLayer.vue`（新） | **全局表现层**：粒子/飘字/光环，`fixed` 覆盖层 + `pointer-events:none`，常驻挂载（测评 B1） |
-| 6 | `src/app/store.ts` | `handleEvents` 接 `resolveFx` → 音效/表现；`recordTick`（微任务口径，含建图，测评 M2）；boot 同步存档设置 + 首手势 `installGestureUnlock` |
+| 6 | `src/app/store.ts` | `handleEvents` 接 `resolveFx` → 音效/表现；`recordTick`（**同步段**，与探针的 `audio` 统计分列，测评 M2）；boot 同步存档设置 + 首手势 `installGestureUnlock` |
 | 7 | `src/app/scene-bus.ts`（新，极小） | 表现指令总线（store → FxLayer）；**无订阅者即丢弃**（测评 B1） |
 | 8 | `src/ui/components/SettingsPanel.vue` | 音效开关 / 音量滑杆（`@change` 提交）/ 动效四档 / 试听（逐条 cue）/ iOS 说明 |
 | 9 | `src/App.vue` | 根节点 `data-fx` 绑定 + 解析；挂载 `<FxLayer />` |
 | 10 | `src/ui/styles/theme.css` | `[data-fx]` 与 `@media (prefers-reduced-motion)` 降级；`:active` 反馈 |
 | 11 | `src/ui/components/Toasts.vue` / `ProgressBar.vue`（+`TopBar.vue`） | 图标+滑入+合并计数 / 时间数字（测评 M5 修正指向：时间数字不在 `ActionGrid`） |
-| 12 | `src/game/types.ts` | `FxDef`/`SettingsState`/`meta.settings`；**移除 GameEvent 里 3 个 Command 成员**；`BurstKind` 增 `ore/dust` |
+| 12 | `src/game/types.ts`（+ `src/ui/fx-map.ts`） | `types.ts`：`FxDef`/`SettingsState`/`meta.settings`，**移除 GameEvent 里 3 个 Command 成员**；`fx-map.ts`：`BurstKind` 增 `ore`（场景侧动作完成爆发用色） |
 | 13 | `src/app/persist.ts` / `src/game/state.ts` | `SAVE_VERSION 11→12` + 迁移 + `ensureFields`/`sanitizeSettings` + `newGame`；抽出纯函数 `deserializeSave` |
 | 14 | `src/game/content.ts` | 载入/校验 `fx.json`（含 `maxBurstsPerSecond` 与 `fxLevels`，测评 Minor-4） |
-| 15 | `scripts/audit-fx.mjs`（新） | **静态**证据 E1~**E7**（§3.1） |
+| 15 | `scripts/audit-fx.mjs`（新） | **静态**证据 E1~E7（E7 见 §3.1 末行：内容管线同源） |
 | 16 | `tests/fx.test.ts`（新） | §4 全部用例 + 静态落点守护（CSS 降级 / `aria-live` / 单一真值 / 常驻层） |
 | 17 | `src/ui/components/MainPanel.vue` | 视图切换 120ms 淡入（§2.4；评审 M6 曾点名此处漏登记） |
 | 18 | `src/ui/components/NavBar.vue` | 快捷静音按钮（测评 M1） |
@@ -146,6 +150,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 | E4 | 预算常量 | 7 项均为正且量级合理（粒子 ≤300、并发 ≤16、帧预算 ≤5ms） | audit + 测试 |
 | E5 | 零资源 | `public/` 与 `dist/` 无新增音频/图片扩展名（白名单：既有 sw/manifest/icon/robots/llms） | audit |
 | E6 | 设置默认值 | 默认档 ∈ fxLevels；volume ∈ [0,100]；`fx='auto'` | audit + 测试 |
+| **E7** | **内容管线同源**（测评 B2） | `data/*.json` 与 `scripts/gen-content.mjs` 逐字节一致（`--check` 只比对不写盘） | audit E7 + `tests/toolchain.test.ts` |
 
 ### 3.2 运行时实测（实机烟测，**仅页面可见时采样**）
 
@@ -153,7 +158,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 |---|---|---|---|---|
 | R1 | 自动播放门槛 | 加载后 `__fx.audio().ready === false` → **真实手势**点击后 `=== true` | 严格 | ✅ false/`ctxState=null` → true/`running`（坐标点击复核） |
 | R2 | 表现层帧内耗时 | 可见状态 `draw` 的 p50/p95/max | ≤ `frameBudgetMs`(1.5ms) | ✅ 0.10 / 0.20 / 0.30ms（180 样本） |
-| R3 | 主循环表现开销 | `tick`（同步段）+ `audio`（音效调度）**两部分相加** | ≤ `loopBudgetMs`(0.5ms) | ✅ tick 0.20/0.30/0.30 + audio 0.00/0.10/0.10 → **合计 p95 0.40ms** |
+| R3 | 主循环表现开销 | `tick`（同步段）+ `audio`（音效调度）**两部分相加** | ≤ `loopBudgetMs`(0.5ms) | ✅ 两轮：合计 p95 **0.40ms** / **0.50ms**（压线，p50 合计 0.20ms） |
 | R4 | 动效开关生效 | `fx=off` → 峰值粒子 0 且飘字 0；`reduced` → 粒子 0、飘字可 >0 | 严格 | ✅ off：0/0；reduced：0/**3** |
 | R5 | 设置持久化 | 改设置 → 重载 → 值保持且 `data-fx` 正确、**引擎同步** | 严格 | ✅ 三处一致 + `audio.enabled=false` 生效 |
 | R6 | **跨视图可见（测评 B1）** | 非技能页（商店）挂机：表现层峰值 >0 且 `sceneDropped === 0` | 严格 | ✅ peakParticles 260 / peakPopups 6 / bursts 3 / **dropped 0**（页面仅 1 个画布＝全局表现层） |
@@ -190,7 +195,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 | 自动播放被拦截 | 首次手势后才创建；未手势静默丢弃（F5 + R1）；`playCue` **绝不创建**上下文（F5 新增用例） |
 | 音效 CPU 尖峰/爆音 | 并发 ≤8、超限丢弃、短包络（F4）；建图在微任务、噪声缓冲解锁时预热（烟测 D1） |
 | 音效打扰（挂机/后台） | 后台静默（`document.hidden`）+ 同 cue 120ms 冷却 + 导航栏快捷静音（测评 M1） |
-| 表现层拖慢主循环 | 爆发频率上限（**含场景侧**）+ 三档降级 + 埋点实测（R2/R3，p50/p95/max） |
+| 表现层拖慢主循环 | 爆发频率上限（**含场景侧**）+ 三档降级 + 埋点实测（R2/R3，p50/p95/max）；R3 合计 p95 已压线（0.50/0.50ms），v3.0 新增逐事件表现前需复测 |
 | 表现"迟到重放" | 全局常驻表现层 + 总线无订阅者即丢弃（测评 B1，`sceneDropped()` 可观测） |
 | 无障碍/前庭敏感 | `auto` 跟随系统偏好 + 一等开关 + `data-fx` 真关 CSS 动效（F7/R4） |
 | 音效/特效语义混淆 | 两者独立：`off` 只关覆盖层视觉，不静音；设置页与选项文案同步改写（测评 M3） |
@@ -207,14 +212,17 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 - [x] `resolveFx` 覆盖全部 35 个事件（F1）+ 分支规则（F2/F3）
 - [x] 三类动效 + 四档设置（auto 解析）+ `data-fx` 真关 CSS 动效（F7；R4 实测 off 与 reduced 均生效）
 - [x] 设置三项持久化（存档 v12）+ 迁移无损（F8）+ **引擎启动同步**（烟测 D5 修复）
-- [x] 烟测 R1~R5 全过（p50/p95/max 报告 + 2 张截图，`docs/smoke-v2.5.md`；含 D1~D7 缺陷处置）
-- [x] 测试全绿（**298**）/ typecheck / build（gzip JS 93.2KB ← v2.4 84.5KB，+8.7KB 为音效引擎与表现层）
+- [x] 烟测 R1~**R6** 全过（p50/p95/max 报告 + 2 张截图，`docs/smoke-v2.5.md`；含 D1~D14 缺陷处置）
+- [x] 测试全绿（**309**）/ typecheck / build（gzip JS 94.75KB ← v2.4 84.5KB，+10.25KB 为音效引擎与全局表现层）／`npm run gen:check` 与 `npm run audit:fx:check` 同源断言
 
 ## 7. 范围外（记入 backlog）
 
 - 背景音乐（BGM）→ v3.0 视时间决定
 - 音效主题包 → 零资源前提下不做
 - 触觉反馈（Vibration API）→ 兼容性差，不做
+- **表现层逐事件开销的余量**：R3 合计 p95 已压到预算上限（0.50ms），v3.0 若新增逐事件表现需重新评估（`loopBudgetMs` 与实现二选一调整）
+- `FxPlan.burst` 类型未按"事件侧只产 5 色"收窄（现由约定 + audit E3 静态扫描保证）
+- auto 档每帧调用 `matchMedia`（µs 级，已计入 draw 读数）
 
 ## 8. 评审处置记录（③ 评审 → 修订）
 
@@ -239,7 +247,7 @@ export function resolveFx(ev: GameEvent, ctx: { itemName: (id: string) => string
 | **B1** 表现指令"迟到重放"；深渊通关表现在深渊页不可见（计划评审 M3 未真正落地） | 成立 | 结构改为**两层**：新增常驻全局表现层 `FxLayer.vue`（`App.vue` 顶层，`fixed`+`pointer-events:none`），`SceneCanvas` 只留场景本体；`scene-bus.ts` 无订阅者**直接丢弃**（`sceneDropped()` 计数）；测试从"缓存补放"改写为"丢弃不重放"，并新增"FxLayer 常驻 + 场景不订阅"的静态守护 |
 | **B2** `data/fx.json` 与生成器不同源（跑 `npm run gen` 会回滚 `auto` 默认档并复活无来源 cue） | 成立 | ①`gen-content.mjs` 删 `queueAdvance` + `defaults.fx='auto'`（并写入"必须改生成器"的注释）；②新增 `--check` 模式与 `npm run gen:check`；③audit 新增 **E7 内容管线同源**；④`tests/toolchain.test.ts` 加回归用例 |
 | **M1** 音效无"不打扰"策略（后台照响 / 无冷却 / 无快捷静音） | 成立 | `playCue` 增加 `document.hidden` 短路与 120ms per-cue 冷却（`CUE_COOLDOWN_MS` 可导出、有测试）；导航栏新增**快捷静音**按钮（`aria-pressed`）；风险表补行 |
-| **M2** `tickMs` 口径不再覆盖建图成本 | 成立 | `recordTick` 移入**批次末尾的微任务**（FIFO 保证排在 `playCue` 的建图微任务之后）→ 读数含建图；探针输出 p50/p95/max/samples；烟测复测（见 `docs/smoke-v2.5.md`） |
+| **M2** `tickMs` 口径不再覆盖建图成本 | 成立 | **两段分别计量、相加判定**：`tick` 记同步段（`store.ts` 同步调用），新增 `audio` 统计记 `playCue` 微任务内的参数调度（`recordBuild`）；同时用**声部池**把节点分配挪到解锁时 → 实测 `tick` p95 0.30 + `audio` p95 0.10 = **0.40ms ≤ 0.5ms**；探针输出 p50/p95/max/samples（见 `docs/smoke-v2.5.md` R3） |
 | **M3** `off` 档语义不自洽（连带静音、试听仍响、文案矛盾） | 成立 | 音效与特效**解耦**：`dispatchFx` 只对视觉短路，`playCue` 由 `sound/volume` 决定；选项文案与说明改写（"关闭只关覆盖层粒子与飘字；场景动画与音效不受影响"）；`FxLayer` 在 off 档清空存量并停绘 |
 | **M4** 生产构建暴露 `window.__fx` | 成立 | `installFxProbe/attachAudioStatus` 包进 `import.meta.env.DEV`；`docs/smoke-v2.5.md` 的相应声明同步修正（并如实记录"此前声明不实"） |
 | **M5** §2.4 面板淡入零实现；§2.6 #11 指向错；iOS 说明不存在 | 成立 | ①`MainPanel` 实现 120ms 淡入（仅淡入不位移）并登记为集成点 #17；②§2.6 #11 修正为 `Toasts.vue` / `ProgressBar.vue`(+`TopBar.vue`)；③设置页补 iOS 静音档与后台静音说明 |
