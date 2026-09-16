@@ -899,7 +899,6 @@ export type Command =
   | { type: 'recycleMaterial'; itemId: ItemId; qty: number }
   | { type: 'recycleInstance'; instanceId: number }
   | { type: 'buyQueueSlot' }
-  | { type: 'acceptTutorial'; step: number }
   | { type: 'claimTutorial'; step: number }
   | { type: 'openCrate' }
   | { type: 'rerollTask'; index: number }

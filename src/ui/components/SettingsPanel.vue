@@ -165,7 +165,7 @@ function onClear(): void {
         <input v-model="loadoutName" class="text-input" placeholder="预设名称（可选）" maxlength="12" />
         <button class="btn" @click="saveLoadout">保存当前</button>
       </div>
-      <div v-if="store.state.meta.loadouts.length === 0" class="dim">暂无预设。</div>
+      <div v-if="store.state.meta.loadouts.length === 0" class="dim">暂无预设（保存后可一键重放动作与队列）</div>
       <div v-for="lo in store.state.meta.loadouts" :key="lo.id" class="lo-block">
         <div class="lo-row">
           <span class="lo-name">{{ lo.name }}</span>

@@ -129,3 +129,36 @@ function applyRewards(state: GameState, def: AchievementDef, events: GameEvent[]
     }
   }
 }
+
+/**
+ * v3.2 B6：成就当前进度值（面板用于"按接近完成度排序 + 显示 current/target"）。
+ * 与 isMet 共用同一批数据源，**不改变判定**（isMet 仍是唯一解锁口径）。
+ */
+export function achievementValue(state: GameState, def: AchievementDef): number {
+  switch (def.type) {
+    case 'stat':
+      return (state.stats as unknown as Record<string, number>)[def.stat ?? ''] ?? 0
+    case 'skillLevel':
+      return def.skill !== undefined ? levelInfo(state.skills[def.skill]).level : 0
+    case 'enhanceLevel':
+      return state.equipment.reduce((m, e) => Math.max(m, e.enhanceLevel), 0)
+    case 'totalLevel': {
+      let sum = 0
+      for (const id of Object.keys(state.skills) as (keyof typeof state.skills)[]) sum += levelInfo(state.skills[id]).level
+      return sum
+    }
+    case 'totalValue':
+      return totalValue(state)
+    case 'itemCount':
+      return def.itemId !== undefined ? materialCount(state, def.itemId) : 0
+    case 'slotsFilled':
+      return Object.values(state.slots).filter((v) => v !== undefined).length
+    case 'buffSlots':
+      return state.buffs.length
+    case 'affixSlots':
+      return state.equipment.filter((e) => (e.affixes ?? []).length > 0).length
+    default:
+      // 其余类型（伙伴稀有度/图鉴比例等）暂不提供精确进度 → 返回 0（面板显示"进行中"）
+      return 0
+  }
+}

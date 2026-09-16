@@ -2,14 +2,22 @@
 // ============================================================
 // 图鉴与赛季（v2.3）：上半部 6 分区收集度 + 里程碑；下半部赛季（声望/任务三档）
 // ============================================================
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { store } from '../../app/store'
 import { codexGate, codexIds, codexMilestonesClaimed, codexProgress, milestoneReached } from '../../game/codex'
 import { CONTENT, itemDef } from '../../game/content'
 import { msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
 import type { CodexCategory } from '../../game/codex'
 
+/** v3.2 C2：默认展开"进度最低"的分区（玩家最该补的那一栏），而不是全部收起 */
 const open = ref<string | null>(null)
+onMounted(() => {
+  const cats = codexProgress(store.state).categories
+  if (cats.length > 0) {
+    const worst = [...cats].sort((x, y) => x.found / Math.max(1, x.total) - y.found / Math.max(1, y.total))[0]
+    open.value = worst.id
+  }
+})
 
 const progress = computed(() => codexProgress(store.state))
 const claimed = computed(() => codexMilestonesClaimed(store.state))
@@ -105,7 +113,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
           <div class="chead" @click="open = open === c.id ? null : c.id">
             <b>{{ c.name }}</b>
             <span class="spacer" />
-            <span class="dim small">{{ c.found }} / {{ c.total }} · {{ pctText(c.total ? c.found / c.total : 0) }}</span>
+            <span class="dim small">{{ c.found }} / {{ c.total }} · {{ pctText(c.total ? c.found / c.total : 0) }}<template v-if="c.found < c.total">（还差 {{ c.total - c.found }} 条）</template></span>
           </div>
           <div class="bar"><i :style="{ width: (c.total ? (c.found / c.total) * 100 : 0) + '%' }" /></div>
           <div v-if="open === c.id" class="missing small">

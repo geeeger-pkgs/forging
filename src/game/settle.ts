@@ -53,7 +53,7 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
     act.startedAt = completeAt
     rounds++
 
-    const ok = performRound(state, act, events, opts.mode, rng)
+    const ok = performRound(state, act, events, opts.mode, rng, now)
     if (!ok) {
       // 阻塞：停止当前动作；队列保留待玩家手动重启（设计 §13）
       state.actions.current = null
@@ -93,11 +93,12 @@ function performRound(
   events: GameEvent[],
   mode: 'online' | 'expectation',
   rng: Rng,
+  now: number,
 ): boolean {
   const ref = act.ref
   if (ref.kind === 'enhance') return performEnhance(state, act, events, mode, rng)
 
-  const ok = applyRewards(state, ref, events, mode, rng)
+  const ok = applyRewards(state, ref, events, mode, rng, now)
   if (!ok) return false
   events.push({ type: 'actionCompleted', ref, rounds: 1 })
 
@@ -110,7 +111,7 @@ function performRound(
       const fire = act.procMisses >= need || rng.next() < E
       if (fire) {
         act.procMisses = 0
-        applyRewards(state, ref, events, mode, rng)
+        applyRewards(state, ref, events, mode, rng, now)
       }
     }
   }
@@ -124,10 +125,12 @@ function applyRewards(
   events: GameEvent[],
   mode: 'online' | 'expectation',
   rng: Rng,
+  now: number,
 ): boolean {
   const agg = aggregateEquipment(state)
   // v1.4：在线模式叠加符文增益（离线结算期间 buffs 被临时清空 → 自动为 0）
-  const buff = buffBonuses(state, Date.now())
+  // v3.2 D2：用注入的 now（此前用 Date.now()，与 simulate(now) 口径不一致；离线因 buffs 被清空而不受影响）
+  const buff = buffBonuses(state, now)
   // v1.5：精通加成（永久，离线同样生效）
   const perk = perkBonuses(state)
   const eff = agg.efficiency + buff.efficiency + perk.efficiency

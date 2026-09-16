@@ -5,6 +5,7 @@
 import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
 import { CONTENT, ROUTE_BY_ID, TRAIT_BY_ID, itemDef } from '../../game/content'
+import { fmtPct } from '../format'
 import {
   HOUR_MS,
   bannerUpgradeCost,
@@ -206,7 +207,7 @@ void levelInfo
             <template v-if="r.def.relic">· {{ itemDef(r.def.relic).name }}</template>
           </div>
           <div class="dim small">
-            成功率 <b :class="{ good: r.rate >= 1 }">{{ (r.rate * 100).toFixed(0) }}%</b>（编队战力 {{ Math.round(r.power) }}）
+            成功率 <b :class="{ good: r.rate >= 1 }">{{ fmtPct(r.rate) }}</b>（编队战力 {{ Math.round(r.power) }}）
             · 失败仍有 {{ (CONTENT.expeditions.failYieldShare * 100).toFixed(0) }}% 保底
           </div>
           <p v-if="r.lockReason" class="bad small">🔒 {{ r.lockReason }}</p>

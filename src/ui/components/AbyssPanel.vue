@@ -5,6 +5,7 @@
 import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
 import { abyssDef, abyssModifier, abyssView } from '../../game/abyss'
+import { fmtDur } from '../format'
 
 const DEF = abyssDef()
 const view = computed(() => abyssView(store.state, store.now))
@@ -67,10 +68,9 @@ function fmtW(x: number): string {
   return (Math.round(x * 100) / 100).toString()
 }
 
+/** v3.2 B4：统一用 fmtDur（"4m 33s" 这类写法） */
 function fmtMs(ms: number): string {
-  const s = Math.ceil(ms / 1000)
-  const m = Math.floor(s / 60)
-  return m > 0 ? `${m} 分 ${s % 60} 秒` : `${s} 秒`
+  return fmtDur(ms)
 }
 
 /** 扫荡产出（与内核 repeatCrystal 同式；扫荡不吃层词条倍率） */

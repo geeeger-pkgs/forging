@@ -112,6 +112,20 @@ function pct(x: number): string {
 function unequip(slot: SlotId): void {
   cmd({ type: 'unequip', slot })
 }
+/** 当前查看的实例是否已装备 → 是则返回其槽位（详情内的「卸下」按钮用） */
+/** v3.2 B3：按当前视图高亮相关的属性（挖矿页亮挖速/产量，强化页亮强化率…） */
+const isMineView = computed(() => store.ui.view === 'mining')
+const isEnhanceView = computed(() => store.ui.view === 'enhancing')
+
+const inspectedSlot = computed<SlotId | null>(() => {
+  const instId = store.ui.inspectInstanceId
+  if (instId === null) return null
+  for (const [slot, id] of Object.entries(store.state.slots)) {
+    if (id === instId) return slot as SlotId
+  }
+  return null
+})
+
 function equipInstance(instanceId: number): void {
   cmd({ type: 'equip', instanceId })
 }
@@ -169,6 +183,29 @@ function toggleRightTab(t: RightTab): void {
   rightOpen.value = true
 }
 
+/** v3.2 B1：材料「…」菜单与自动保留量内联输入（替代系统 prompt） */
+const openMenu = ref<string | null>(null)
+const keepDraft = ref<number | null>(null)
+function materialById(id: string) {
+  return materials.value.find((m) => m.id === id)
+}
+function recycleThen(kind: '1' | '10' | 'all'): void {
+  const id = openMenu.value
+  const m = id ? materialById(id) : undefined
+  if (!id || !m) return
+  if (kind === 'all') recycleAll(id, m.qty)
+  else recycleMaterial(id, kind === '1' ? 1 : Math.min(10, m.qty))
+  openMenu.value = null
+}
+function applyKeep(): void {
+  const id = openMenu.value
+  if (!id) return
+  const v = keepDraft.value
+  cmd({ type: 'setAutoRecycle', itemId: id, keep: v === null || Number.isNaN(v) ? null : Math.max(0, Math.floor(v)) })
+  keepDraft.value = null
+  openMenu.value = null
+}
+
 /** v3.1 装备预设：3 套一键换装（深渊层词条要求为某层重配装；此前约 20 击/轮） */
 const gearSets = computed(() => store.state.meta.gearSets ?? [])
 function saveGearSet(): void {
@@ -191,19 +228,6 @@ function recycleAll(itemId: string, qty: number): void {
 }
 function autoKeep(itemId: string): number | undefined {
   return store.state.meta.autoRecycle[itemId]
-}
-function toggleAuto(itemId: string): void {
-  const cur = store.state.meta.autoRecycle[itemId]
-  if (cur !== undefined) {
-    cmd({ type: 'setAutoRecycle', itemId, keep: null })
-    return
-  }
-  const name = itemDef(itemId).name
-  const input = window.prompt(`自动回收「${name}」：保留数量（超出部分自动卖出，0 = 全部卖出；取消输入则不启用）`, '0')
-  if (input === null) return
-  const keep = Math.floor(Number(input))
-  if (!Number.isFinite(keep)) return
-  cmd({ type: 'setAutoRecycle', itemId, keep: Math.max(0, keep) })
 }
 function recycleInstance(instanceId: number): void {
   cmd({ type: 'recycleInstance', instanceId })
@@ -284,22 +308,26 @@ function isTop(score: number): boolean {
             <div v-if="s.affix > 0" class="affix-badge" :class="{ top: isTop(s.score) }">
               {{ affixBadge(s.affix, s.score) }}
             </div>
-            <button class="btn sm" @click="unequip(s.id)">卸下</button>
+            <!-- v3.2 B2：卸下移入装备详情（点击槽位即打开），槽位行不再常驻 10 个按钮 -->
           </template>
           <div v-else class="slot-empty">空</div>
         </div>
       </div>
       <div class="stats-line">
-        效率 {{ pct(agg.efficiency) }} · 产量 {{ pct(agg.quantity) }} · 经验 {{ pct(agg.wisdom) }} · 稀有 {{ pct(agg.rareFind) }}<br />
-        挖速 {{ pct(agg.toolSpeed.mining + agg.allSpeed) }} · 熔速 {{ pct(agg.toolSpeed.smelting + agg.allSpeed) }} · 锻速
-        {{ pct(agg.toolSpeed.forging + agg.allSpeed) }}<br />
-        强化成功率 {{ pct(agg.enhanceRate) }} · 套装 {{ setText }}
+        <span :class="{ hot: isMineView }">效率 {{ pct(agg.efficiency) }}</span> ·
+        <span :class="{ hot: isMineView }">产量 {{ pct(agg.quantity) }}</span> ·
+        <span :class="{ hot: isMineView || isEnhanceView }">经验 {{ pct(agg.wisdom) }}</span> ·
+        <span :class="{ hot: isMineView }">稀有 {{ pct(agg.rareFind) }}</span><br />
+        <span :class="{ hot: isMineView }">挖速 {{ pct(agg.toolSpeed.mining + agg.allSpeed) }}</span> ·
+        <span :class="{ hot: store.ui.view === 'smelting' }">熔速 {{ pct(agg.toolSpeed.smelting + agg.allSpeed) }}</span> ·
+        <span :class="{ hot: store.ui.view === 'forging' }">锻速 {{ pct(agg.toolSpeed.forging + agg.allSpeed) }}</span><br />
+        <span :class="{ hot: isEnhanceView }">强化成功率 {{ pct(agg.enhanceRate) }}</span> · 套装 {{ setText }}
       </div>
     </section>
 
     <section data-sec="mats">
       <h3>资源</h3>
-      <div v-if="materials.length === 0" class="dim">暂无</div>
+      <div v-if="materials.length === 0" class="dim">暂无资源（去挖矿或熔炼获得）</div>
       <div v-for="m in materials" :key="m.id" class="row">
         <span class="clickable" @click="inspect(null, m.id)">
           <ItemIcon :item-id="m.id" :size="16" />
@@ -312,14 +340,36 @@ function isTop(score: number): boolean {
         <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
         <!-- v3.0：0 收益物品（遗物/徽记）不出现在回收入口（防误删图鉴进度） -->
         <template v-if="recyclable(m.id)">
-          <button class="btn sm" :class="{ primary: autoKeep(m.id) !== undefined }" @click="toggleAuto(m.id)">
-            {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '自动' }}
+          <!-- v3.2 B1：回收收进「…」菜单（此前一行 4 个按钮），自动保留量改内联输入 -->
+          <button
+            class="btn sm menu-btn"
+            :class="{ primary: autoKeep(m.id) !== undefined }"
+            :aria-expanded="openMenu === m.id"
+            :title="autoKeep(m.id) !== undefined ? `自动回收已开启（保留 ${autoKeep(m.id)}）` : '更多操作'"
+            @click="openMenu = openMenu === m.id ? null : m.id"
+          >
+            {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '…' }}
           </button>
-          <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
-          <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
-          <button class="btn sm" @click="recycleAll(m.id, m.qty)">全部</button>
         </template>
         <span v-else class="dim small" title="图鉴收集品：无回收价值，也不参与自动回收">收藏品</span>
+      </div>
+      <div v-if="openMenu && materialById(openMenu)" class="mat-menu">
+        <span class="dim small">{{ materialById(openMenu)!.name }}：</span>
+        <button class="btn sm" @click="recycleThen('1')">回收 1</button>
+        <button class="btn sm" @click="recycleThen('10')">回收 10</button>
+        <button class="btn sm" @click="recycleThen('all')">全部回收</button>
+        <span class="spacer" />
+        <label class="dim small">自动保留</label>
+        <input
+          v-model.number="keepDraft"
+          class="num-input"
+          type="number"
+          min="0"
+          step="10"
+          :placeholder="String(autoKeep(openMenu) ?? 0)"
+        />
+        <button class="btn sm primary" @click="applyKeep()">应用</button>
+        <button class="btn sm" @click="openMenu = null">关闭</button>
       </div>
     </section>
 
@@ -333,7 +383,7 @@ function isTop(score: number): boolean {
         <span class="spacer" />
         <button class="btn sm" title="同一原型只保留最高完美度（并列时留高强化）的一件，其余回收换金" @click="tidyBag()">整理</button>
       </div>
-      <div v-if="bagItems.length === 0" class="dim">暂无</div>
+      <div v-if="bagItems.length === 0" class="dim">行囊为空（锻造装备后会出现在这里）</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
         <span class="clickable" @click="inspect(b.inst.instanceId)">
           <ItemIcon :item-id="b.inst.itemId" :size="16" />
@@ -350,10 +400,12 @@ function isTop(score: number): boolean {
     </section>
 
     <section v-if="inspected" class="inspect">
+      <!-- 详情内卸下（v3.2 B2） -->
       <div class="inspect-head">
         <ItemIcon :item-id="inspected.def.id" :size="22" />
         <span class="inspect-name">{{ inspected.def.name }}</span>
         <span class="spacer" />
+        <button v-if="inspectedSlot" class="btn sm" title="卸下该槽位装备" @click="unequip(inspectedSlot)">卸下</button>
         <button class="btn sm" @click="inspectItem(null)">✕</button>
       </div>
       <div v-if="statsText(inspected.def)" class="stat-line">{{ statsText(inspected.def) }}</div>
@@ -513,6 +565,10 @@ h3 {
   color: var(--c-text-dim);
   font-size: 12px;
 }
+.stat-line .hot {
+  color: var(--c-accent);
+  font-weight: 600;
+}
 .stat-line {
   font-size: 12px;
   color: var(--c-accent-2);
@@ -532,6 +588,27 @@ h3 {
 }
 .inspect-name {
   font-weight: 600;
+}
+/* v3.2 B1：材料操作菜单 */
+.mat-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  margin: 2px 0 6px;
+  border: 1px dashed var(--c-border);
+  border-radius: 6px;
+}
+.num-input {
+  width: 72px;
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-family: var(--font);
+  font-size: 12px;
 }
 .spacer {
   flex: 1;

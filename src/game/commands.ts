@@ -91,8 +91,6 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return recycleInstance(state, cmd.instanceId)
     case 'buyQueueSlot':
       return buyQueueSlot(state)
-    case 'acceptTutorial':
-      return cmd.step === state.flags.tutorial.current ? [] : []
     case 'claimTutorial':
       return claimTutorial(state, cmd.step)
     case 'openCrate':
