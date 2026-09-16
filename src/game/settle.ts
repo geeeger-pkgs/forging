@@ -38,6 +38,13 @@ export interface SimulateOptions {
 const PRECIOUS_SCORE = 0.7
 const PRECIOUS_ENHANCE = 5
 
+/**
+ * 强化**成功**时的经验倍率（v3.4.6）。
+ * 弹窗（ActionDialog）与内核（performEnhance）同源展示/结算；
+ * 此前内核写 `success ? 2 : 1`、弹窗只写「成功经验翻倍」二字，两边都无数字可查（B 评审 Nit）。
+ */
+export const ENHANCE_SUCCESS_XP_MULT = 2
+
 /** 惰性推进：处理 [当前时间, now] 内所有可完成的动作轮次 */
 export function simulate(state: GameState, now: number, opts: SimulateOptions): GameEvent[] {
   const events = opts.events ?? []
@@ -274,7 +281,13 @@ function performEnhance(
   }
 
   // v3.0 审计：强化 XP 也必须吃"智慧精通"（此前只吃装备 wisdom，与其他三条技能线口径不一致）
-  grantXp(state, 'enhancing', step.xpBase * (success ? 2 : 1) * (1 + agg.wisdom + perkBonuses(state).wisdom), events)
+  // v3.4.6：成功倍率提为导出常量（弹窗文案「成功经验 ×N」与内核同源；B 评审：此前"翻倍"二字无数字可查）
+  grantXp(
+    state,
+    'enhancing',
+    step.xpBase * (success ? ENHANCE_SUCCESS_XP_MULT : 1) * (1 + agg.wisdom + perkBonuses(state).wisdom),
+    events,
+  )
   if (success) events.push(...tutorialProgress(state, 'enhanceInstance', 1))
   events.push({ type: 'actionCompleted', ref, rounds: 1 })
   events.push(...tutorialCheckTotalLevel(state))

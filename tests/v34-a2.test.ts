@@ -359,10 +359,11 @@ describe('v3.4.5：评审实测的四条口径（可复算）真修复', () => {
     const s = newGame('T', 0)
     const ref = { kind: 'mine' as const, siteId: 'void_seam' }
     const before = describeAction(s, ref, 0).drops.find((d) => d.itemId === 'emberstone')?.rate ?? 0
-    // 给一件带勘探词缀的装备（stoneFind）→ 重铸石掉率应上升
-    const id = addInstance(s, 'pick_copper')
-    s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'prospect', value: 0.2 }]
-    s.slots.pick = id
+    // v3.4.6：夹具改用**正常玩法可达**的输入（A 评审：prospect 只在护甲/饰品池、tierMin=4，
+    // 此前"T1 镐 + 满值 0.2"是不可能出现的组合）。0.07822 = T4 头盔 seed=1 的真实 roll 值。
+    const id = addInstance(s, 'helmet_gold')
+    s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'prospect', value: 0.07822 }]
+    s.slots.head = id
     // 自证前提：词缀确实贡献了 stoneFind（若词缀失效/改名，这里先红，而不是空跑）
     const { effectiveStats } = await import('../src/game/stats')
     const rf = effectiveStats(s, 0).rareFind
@@ -465,6 +466,29 @@ describe('v3.4.6：成就进度与判定同源（双人确认评审 A/B 各实�
     s.companions[legend.id] = { level: 1, xp: 0, trait: CONTENT.expeditions.traits[0].id }
     expect(achievementValue(s, def), '招募到目标稀有度 → 进度 1').toBe(1)
     expect(isMet(s, def), '与进度一致（1 ≥ 1）').toBe(true)
+  })
+
+  it('codexPercent：取整窗口（面板 24.8% 也解锁）与 value 同源 —— A 评审探针⑦c 的补课', async () => {
+    const { achievementValue, isMet } = await import('../src/game/achievements')
+    const { recordItem, codexProgress } = await import('../src/game/codex')
+    const s = newGame('T', 0)
+    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent' && a.target === 25)!
+    expect(def, '内容表缺少 codexPercent target=25').toBeTruthy()
+    // 逐步登记物品，停在「Math.round(pct*100)=25 但 pct*100<25」的窗口（不硬编码 55/222，规模变了也能自适）
+    let hit = false
+    for (const id of Object.keys(CONTENT.items)) {
+      if (Math.round(codexProgress(s).pct * 100) >= 25) break
+      recordItem(s, id as never)
+      const after = codexProgress(s)
+      if (Math.round(after.pct * 100) === 25 && after.pct * 100 < 25) {
+        hit = true
+        break
+      }
+    }
+    expect(hit, '应能命中取整窗口（未命中说明内容表规模变化，需复核本用例）').toBe(true)
+    expect(codexProgress(s).pct * 100, '窗口内：未取整值 <25（旧口径会判 false）').toBeLessThan(25)
+    expect(achievementValue(s, def), 'value 取整后 = 25').toBe(25)
+    expect(isMet(s, def), '取整后达标 → isMet=true（与 value 同源）').toBe(true)
   })
 
   it('relicCount：同 id 多件按数量计（此前只数 id 种数 → 面板系统性低估）', async () => {

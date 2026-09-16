@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { closeDialog, cmd, store } from '../../app/store'
 import { describeAction, type ActionDesc } from '../../app/describe'
 import { nextQueueSlotCost } from '../../game/commands'
+import { ENHANCE_SUCCESS_XP_MULT } from '../../game/settle'
 import { fmtDur, fmtPct } from '../format'
 import ItemIcon from './ItemIcon.vue'
 
@@ -74,7 +75,7 @@ function start(mode: 'now' | 'enqueue'): void {
 
       <div class="row">
         <label>经验</label>
-        <span>{{ desc.xp.toFixed(1) }}<template v-if="desc.xpSuccessDoubled">（成功经验翻倍）</template></span>
+        <span>{{ desc.xp.toFixed(1) }}<template v-if="desc.xpSuccessDoubled">（成功经验 ×{{ ENHANCE_SUCCESS_XP_MULT }}）</template></span>
       </div>
 
       <div v-if="desc.enhanceRate !== undefined" class="row">

@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { store } from '../../src/app/store'
-import { newGame } from '../../src/game/state'
+import { addInstance, newGame } from '../../src/game/state'
 import type { GameState } from '../../src/game/types'
 import AbyssPanel from '../../src/ui/components/AbyssPanel.vue'
 import CodexPanel from '../../src/ui/components/CodexPanel.vue'
@@ -103,6 +103,19 @@ describe('v3.4.6：其余面板的公式/计数型文案值级断言（B 评审�
     const w = mountTracked(mount(CodexPanel))
     await nextTick()
     expect(w.text()).toContain('3 条任务从')
+  })
+
+  it('ActionDialog 强化弹窗：成功经验 ×2（与内核常量 ENHANCE_SUCCESS_XP_MULT 同源）', async () => {
+    const s = boot()
+    const id = addInstance(s, 'pick_copper')
+    s.materials['ingot_copper'] = 5
+    s.materials['essence'] = 5
+    store.ui.dialogRef = { kind: 'enhance', instanceId: id, targetLevel: 2 }
+    const { default: ActionDialog } = await import('../../src/ui/components/ActionDialog.vue')
+    const w = mountTracked(mount(ActionDialog))
+    await nextTick()
+    expect(w.text(), '「翻倍」二字无数字可查，应显示 ×N').toContain('成功经验 ×2')
+    store.ui.dialogRef = null
   })
 
   it('RightPanel 存配装 title：最多 3 套（MAX_GEAR_SETS）', async () => {

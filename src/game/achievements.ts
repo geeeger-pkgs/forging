@@ -206,7 +206,8 @@ export function achievementValue(state: GameState, def: AchievementDef): number 
     case 'seasonRenown':
       return state.season?.renown ?? 0
     default:
-      // 其余类型（伙伴稀有度/图鉴比例等）暂不提供精确进度 → 返回 0（面板显示"进行中"）
+      // v3.4.6：内容表现有全部类型都有精确进度分支（19/19）；此兜底仅防"未来新增类型忘了接线"，
+      // 那时面板会显示 0 / target（A 评审指出旧注释里"伙伴稀有度/图鉴比例等"早已各有 case）
       return 0
   }
 }
