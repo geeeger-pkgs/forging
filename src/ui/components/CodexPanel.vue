@@ -193,7 +193,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         </div>
       </template>
       <p v-else class="dim">
-        赛季系统在中后期解锁（总等级 {{ CONTENT.season.unlockTotalLevel }}）：每 14 天轮换 3 条长线任务，
+        赛季系统在中后期解锁（总等级 {{ CONTENT.season.unlockTotalLevel }}）：每 {{ CONTENT.season.days }} 天轮换 3 条长线任务，
         完成后获得声望与等级奖励（金币/精华/远征徽记）。图鉴收集度独立发奖，不受此门槛影响。
       </p>
     </section>

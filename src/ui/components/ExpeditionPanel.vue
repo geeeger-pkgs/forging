@@ -199,7 +199,7 @@ void levelInfo
           </div>
           <div class="dim small">
             产出 ≈ {{ Math.round(r.def.anchorGoldPerHour * r.def.ratio * pickHours) }} 金/次（含材料）·
-            补给 {{ supplyCost(store.state, r.def, pickHours, picked.length ? picked : Object.keys(store.state.companions)).qty }}
+            补给 {{ supplyCost(store.state, r.def, pickHours, squad).qty }}
             {{ itemDef(r.def.supply.itemId).name }} ·
             徽记 ≈ {{ (r.def.tokenPer8h / 8 * pickHours).toFixed(2) }}
             <template v-if="r.def.relic">· {{ itemDef(r.def.relic).name }}</template>

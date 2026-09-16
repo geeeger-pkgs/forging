@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
-import { TASK_DAILY_BY_ID, TASK_WEEKLY_BY_ID, itemDef } from '../../game/content'
+import { CONTENT, TASK_DAILY_BY_ID, TASK_WEEKLY_BY_ID, itemDef } from '../../game/content'
 import { msToNextDay, PAID_REROLL_COST, taskProgress } from '../../game/tasks'
 import { msToSeasonEnd, seasonUnlocked, seasonView } from '../../game/season'
 import { fmtDur } from '../format'
@@ -76,7 +76,7 @@ function reroll(index: number): void {
   <div class="tasks">
     <p v-if="season" class="summary season-line">
       🗓 第 {{ season.index }} 赛季 · 剩余 {{ seasonLeft }} · 声望等级 {{ season.level }} / {{ season.maxLevel }}
-      <span class="dim small">（赛季 = 周常的长周期版：14 天一轮，任务更重、奖励更大）</span>
+      <span class="dim small">（赛季 = 周常的长周期版：{{ CONTENT.season.days }} 天一轮，任务更重、奖励更大）</span>
       （{{ season.renown }} / {{ season.maxRenown }} 声望）→ 详见「图鉴」页
     </p>
     <p class="summary">
