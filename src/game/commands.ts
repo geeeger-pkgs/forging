@@ -21,8 +21,10 @@ import {
   recruit,
   rerollTrait,
   routeDef,
+  effectiveSquad,
   squadOf,
   supplyCost,
+  teamSize,
   upgradeBanner,
 } from './expeditions'
 import { buyAbyssItem, challengeAbyss, consumeTicket, sweepAbyss, ticketUsable } from './abyss'
@@ -510,8 +512,12 @@ function dispatchExpedition(
 ): GameEvent[] {
   const reason = dispatchBlockReason(state, routeId, hours, team)
   if (reason) return [{ type: 'blocked', reason }]
-  // v3.0 C5：提交与预检共用 squadOf（同一份截断/剔除规则，杜绝"预览与提交不一致"）
-  const ids = squadOf(state, team)
+  // v3.0 C5：提交与预检共用编队口径（过滤规则一致）；显式超编仍拒绝，空队伍回退"全员并截断"
+  const filtered = squadOf(state, team)
+  if (filtered.length > teamSize(state)) {
+    return [{ type: 'blocked', reason: `队伍上限 ${teamSize(state)} 人` }]
+  }
+  const ids = team.length > 0 ? filtered : effectiveSquad(state, team)
   if (ids.length === 0) {
     return [{ type: 'blocked', reason: team.some((id) => busyCompanions(state).has(id)) ? '所选伙伴都在远征中' : '队伍里没有伙伴' }]
   }

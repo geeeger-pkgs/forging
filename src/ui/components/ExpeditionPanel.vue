@@ -8,7 +8,7 @@ import { CONTENT, ROUTE_BY_ID, TRAIT_BY_ID, itemDef } from '../../game/content'
 import {
   HOUR_MS,
   bannerUpgradeCost,
-  squadOf,
+  effectiveSquad,
   bannerPowerMultiplier,
   companionPower,
   ownedCompanions,
@@ -52,7 +52,7 @@ const companions = computed(() =>
 const locked = computed(() => CONTENT.companions.companions.filter((c) => !store.state.companions[c.id]))
 
 // v3.0 C5：预览与提交同口径（剔除远征中 + 按上限截断）
-const squad = computed(() => squadOf(store.state, picked.value))
+const squad = computed(() => effectiveSquad(store.state, picked.value))
 const teamPowerNow = computed(() => teamPower(store.state, squad.value))
 const bannerMult = computed(() => bannerPowerMultiplier(banner.value))
 

@@ -60,7 +60,12 @@ export function bannerPowerMultiplier(banner: number): number {
 export function squadOf(state: GameState, picked?: readonly string[]): string[] {
   const busy = busyCompanions(state)
   const base = picked && picked.length > 0 ? [...picked] : Object.keys(state.companions)
-  return base.filter((id) => state.companions[id] && !busy.has(id)).slice(0, teamSize(state))
+  return base.filter((id) => state.companions[id] && !busy.has(id))
+}
+
+/** 预览口径：squadOf + 按队伍上限截断（UI「全员出战」兜底与预览一致） */
+export function effectiveSquad(state: GameState, picked?: readonly string[]): string[] {
+  return squadOf(state, picked).slice(0, teamSize(state))
 }
 
 export function teamPower(state: GameState, ids?: readonly string[]): number {
@@ -121,9 +126,10 @@ export function dispatchBlockReason(state: GameState, routeId: string, hours: nu
   if (state.meta.expeditions.runs.some((r) => r.routeId === routeId)) return `${route.name}已有远征在进行`
   const busy = busyCompanions(state)
   if (busy.size >= Object.keys(state.companions).length) return '所有伙伴都在远征中（先领取已完成的远征）'
-  // v3.0 C5：补给按**实际编队**估算（不再是全员）
-  const squad = squadOf(state, picked)
+  // v3.0 C5：补给按**实际编队**估算（不再是全员）；超编仍显式拒绝（保留 v2.2 的边界语义）
+  const squad = effectiveSquad(state, picked)
   if (squad.length === 0) return '可派出的伙伴都已在外远征'
+  if (squadOf(state, picked).length > teamSize(state)) return `队伍上限 ${teamSize(state)} 人`
   const supply = supplyCost(state, route, hours, squad)
   if (materialCount(state, supply.itemId) < supply.qty) {
     return `补给不足：${itemDef(supply.itemId).name} ×${supply.qty}`
