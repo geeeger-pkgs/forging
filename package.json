@@ -1,7 +1,7 @@
 {
   "name": "forging",
   "private": true,
-  "version": "3.6.0",
+  "version": "3.7.0",
   "type": "module",
   "description": "Forging —— 纯前端挖矿锻造放置游戏",
   "scripts": {
