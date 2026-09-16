@@ -274,9 +274,10 @@ function toggleMute(): void {
       class="item mute"
       :title="soundOn ? '关闭音效（设置页可调音量与特效档位）' : '开启音效'"
       :aria-pressed="!soundOn"
+      :aria-label="soundOn ? '音效开，点击静音' : '已静音，点击开启音效'"
       @click="toggleMute"
     >
-      <span class="icon">{{ soundOn ? '🔊' : '🔇' }}</span>
+      <span class="icon" aria-hidden="true">{{ soundOn ? '🔊' : '🔇' }}</span>
       <span class="body"><span class="name">{{ soundOn ? '音效开' : '已静音' }}</span></span>
     </button>
 
@@ -503,13 +504,23 @@ function toggleMute(): void {
   .xpbar {
     display: none;
   }
-  /* 「更多 / 音效」各占半行（第二行两端对齐，不再悬在左侧） */
+  /*
+   * v3.7.8（用户反馈"音效开关需要多占那么多位置吗"）：音效只是静音快捷开关，
+   * 不配占半行 —— 窄屏只显示图标（占 1 格，40px 命中区不变，aria-label 提供可访问名），
+   * 「更多」占其余 3 格。
+   */
   .tools-toggle {
     display: flex; /* 桌面为 display:none（仅窄屏出现）—— v3.7.3 改网格时必须保留这行 */
-    grid-column: span 2;
+    grid-column: span 3;
   }
   .mute {
-    grid-column: span 2;
+    grid-column: span 1;
+  }
+  .mute .body {
+    display: none;
+  }
+  .mute .icon {
+    font-size: 18px;
   }
   /* 抽屉展开：整行跨列，内部同样 4 列网格（8 个工具整齐两行） */
   .tools {
