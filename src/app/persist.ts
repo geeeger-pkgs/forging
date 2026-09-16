@@ -5,13 +5,14 @@ import { perfectAffixCount, rollAffixes } from '../game/affixes'
 import { checkCodexBackfill } from '../game/codex'
 import { emptyCodex, normalizeCodex } from '../game/codex-store'
 import { CONTENT } from '../game/content'
+import { totalLevelOf } from '../game/expeditions'
 import { levelInfo } from '../game/level'
 import { realignSeasonForEpoch } from '../game/season'
 import type { EquipInstance, FxLevel, FxSetting, GameState, SettingsState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 14
+export const SAVE_VERSION = 15
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -204,7 +205,7 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
     version: 10,
     codex: (s as unknown as { codex?: GameState['codex'] }).codex ?? emptyCodex(),
     season:
-      (s as unknown as { season?: GameState['season'] }).season ?? { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
+      (s as unknown as { season?: GameState['season'] }).season ?? { index: -1, renown: 0, rewardedLevel: 0, tasks: [], scale: 0 },
     meta: {
       ...s.meta,
       codexMilestones: (s.meta as unknown as { codexMilestones?: string }).codexMilestones ?? '',
@@ -219,6 +220,16 @@ MIGRATIONS[13] = (s) => {
   let best = 1
   for (const xp of Object.values(skills)) best = Math.max(best, levelInfo(Number(xp) || 0).level)
   return { ...s, version: 14, meta: { ...s.meta, bestSkillLevel: best } }
+}
+
+/** v3.4 V6：赛季档位快照字段（老档按当前账号档位补一次） */
+MIGRATIONS[14] = (s) => {
+  const season = s.season as GameState['season'] | undefined
+  if (!season) return { ...s, version: 15 }
+  const coef = CONTENT.season.scaleByMaturity[
+    totalLevelOf(s) <= CONTENT.season.maturityBands.juniorMaxTotalLevel ? 'junior' : 'veteran'
+  ]
+  return { ...s, version: 15, season: { ...season, scale: season.scale && season.scale > 0 ? season.scale : coef } }
 }
 
 function migrate(s: GameState): GameState {
@@ -283,7 +294,7 @@ function ensureFields(s: GameState): GameState {
       abyss: { bestFloor: 0, crystals: 0, stamina: CONTENT.abyss.staminaMax, staminaAt: Date.now(), purchased: {}, tickets: 0, permanentSpeed: 0, title: false },
     }
   }
-  if (!out.season) out = { ...out, season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] } }
+  if (!out.season) out = { ...out, season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [], scale: 0 } }
   if (typeof out.meta.codexMilestones !== 'string') out = { ...out, meta: { ...out.meta, codexMilestones: '' } }
   if (typeof out.meta.seasonUnlockedOnce !== 'boolean') {
     out = { ...out, meta: { ...out.meta, seasonUnlockedOnce: false } }

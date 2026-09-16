@@ -497,8 +497,8 @@ describe('F8 收尾项（C1/C4/C5/C12）', () => {
 // ---------------- F9 迁移全链 ----------------
 
 describe('F9 迁移全链（1 → 13）', () => {
-  it('SAVE_VERSION = 14（v3.4 A2 里程碑粘性字段）', () => {
-    expect(SAVE_VERSION).toBe(14)
+  it('SAVE_VERSION = 15（v3.4：里程碑 v14 + 赛季档位快照 v15）', () => {
+    expect(SAVE_VERSION).toBe(15)
   })
 
   it('v1 老档（最小结构）可迁到当前版本且结构完整', () => {

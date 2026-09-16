@@ -24,7 +24,7 @@ export function newGame(name: string, now: number): GameState {
     companions: {},
     abyss: { bestFloor: 0, crystals: 0, stamina: 12, staminaAt: now, purchased: {}, tickets: 0, permanentSpeed: 0, title: false },
     codex: emptyCodex(),
-    season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
+    season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [], scale: 0 },
     flags: {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },
       achievements: { unlocked: [] },

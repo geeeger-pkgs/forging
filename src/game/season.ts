@@ -51,13 +51,20 @@ export function maturityClassOf(state: GameState): 'junior' | 'veteran' {
 export function seasonTargetsFor(state: GameState, tplId: string): [number, number, number] {
   const tpl = templateById(tplId)
   const base = (tpl?.targets ?? [0, 0, 0]) as [number, number, number]
-  const coef = DEF.scaleByMaturity[maturityClassOf(state)]
+  // v3.4 V6：优先用**本季快照**（赛季内恒定）；缺失（老档/异常）时回落到当前档位
+  const coef = state.season?.scale > 0 ? state.season.scale : DEF.scaleByMaturity[maturityClassOf(state)]
   return base.map((t) => Math.max(1, Math.ceil(t * coef))) as [number, number, number]
 }
 
 /** 当前缩放系数（UI 展示与测试用） */
 export function seasonScaleCoef(state: GameState): number {
-  return DEF.scaleByMaturity[maturityClassOf(state)]
+  // v3.4 V6：对外一律报**本季快照**（面板与结算同源）
+  return state.season?.scale > 0 ? state.season.scale : DEF.scaleByMaturity[maturityClassOf(state)]
+}
+
+/** 轮换时冻结本季档位（由 refreshSeason 调用） */
+export function snapshotSeasonScale(state: GameState): void {
+  state.season.scale = DEF.scaleByMaturity[maturityClassOf(state)]
 }
 
 /** 确定性地从模板池抽取 3 条（同赛季所有玩家一致；不做随机，评审 B3-2 的可复现要求） */
@@ -169,7 +176,8 @@ export function refreshSeason(state: GameState, now: number): GameEvent[] {
     slot.base = tpl ? counterValue(state, tpl.counter) : 0
   }
   const rotated = state.season.index >= 0
-  state.season = { index: idx, renown: 0, rewardedLevel: 0, tasks }
+  // v3.4 V6：轮换即冻结本季档位（赛季内目标恒定，跨档不再改变已得档位）
+  state.season = { index: idx, renown: 0, rewardedLevel: 0, tasks, scale: DEF.scaleByMaturity[maturityClassOf(state)] }
   if (rotated) events.push({ type: 'seasonRotated', index: idx })
   return events
 }
@@ -190,7 +198,13 @@ export function realignSeasonForEpoch(state: GameState, now: number): void {
     const tpl = templateById(slot.defId)
     slot.base = tpl ? counterValue(state, tpl.counter) : 0
   }
-  state.season = { index: idx, renown: state.season.renown, rewardedLevel: state.season.rewardedLevel, tasks }
+  state.season = {
+    index: idx,
+    renown: state.season.renown,
+    rewardedLevel: state.season.rewardedLevel,
+    tasks,
+    scale: state.season.scale > 0 ? state.season.scale : DEF.scaleByMaturity[maturityClassOf(state)],
+  }
 }
 
 /**

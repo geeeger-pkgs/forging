@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { SAVE_VERSION, deserializeSave } from '../src/app/persist'
 import { CONTENT, validateContent } from '../src/game/content'
 import { milestoneView, xpForLevel } from '../src/game/level'
+import { seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
 import { doPrestige, prestigePointsFor } from '../src/game/prestige'
 import { aggregateEquipment } from '../src/game/stats'
 import { addInstance, newGame } from '../src/game/state'
@@ -90,8 +91,8 @@ describe('A2 解锁口径与聚合单源', () => {
 })
 
 describe('A2 存档 v14 与迁移', () => {
-  it('SAVE_VERSION = 14', () => {
-    expect(SAVE_VERSION).toBe(14)
+  it('SAVE_VERSION = 15（里程碑 v14 + 赛季档位快照 v15）', () => {
+    expect(SAVE_VERSION).toBe(15)
   })
 
   it('v13 档迁移：用当前技能等级回填 bestSkillLevel（单调口径，不回退）', () => {
@@ -101,7 +102,7 @@ describe('A2 存档 v14 与迁移', () => {
     s.skills.smelting = xpForLevel(12)
     delete (s.meta as unknown as { bestSkillLevel?: number }).bestSkillLevel
     const back = deserializeSave(JSON.stringify(s))!
-    expect(back.version).toBe(14)
+    expect(back.version).toBe(15)
     expect(back.meta.bestSkillLevel).toBe(63)
   })
 
@@ -190,5 +191,30 @@ describe('v3.4 处置回归（评审 V2~V5）', () => {
     expect(top).toContain('技能里程碑')
     expect(top).toContain('任一技能 Lv')
     expect(top).toMatch(/\.ms \{[\s\S]{0,100}display: inline/)
+  })
+})
+
+describe('V6 赛季档位快照（赛季内目标恒定）', () => {
+  it('轮换时冻结档位；赛季中途提升技能等级不改变本季目标', () => {
+    const s: GameState = newGame('T', 0)
+    const ms = CONTENT.season.templates[0]
+    // 新晋档（总等级 4）
+    s.season.scale = CONTENT.season.scaleByMaturity.junior
+    const before = seasonTargetsFor(s, ms.id)
+    // 中途把技能练到很高（本应跨到老手档）
+    s.skills.mining = xpForLevel(100)
+    s.skills.smelting = xpForLevel(100)
+    s.skills.forging = xpForLevel(100)
+    s.skills.enhancing = xpForLevel(100)
+    const after = seasonTargetsFor(s, ms.id)
+    expect(after, '赛季内目标必须恒定（快照口径）').toEqual(before)
+    // 对外报的系数也是快照值
+    expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.junior)
+  })
+
+  it('缺失/异常快照时回落到当前档位（老档兼容）', () => {
+    const s: GameState = newGame('T', 0)
+    s.season.scale = 0
+    expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.junior)
   })
 })

@@ -33,7 +33,7 @@ function sample(v: number): Record<string, unknown> {
   // v2.3（= 存档版本 10）起：图鉴与赛季字段存在
   if (v >= 10) {
     base.codex = { items: '', recipes: '', affixes: '', ores: '' } // 旧格式（逗号串）
-    base.season = { index: -1, renown: 0, rewardedLevel: 0, tasks: [] }
+    base.season = { index: -1, renown: 0, rewardedLevel: 0, tasks: [], scale: 0 }
     ;(base.meta as Record<string, unknown>).codexMilestones = ''
     ;(base.meta as Record<string, unknown>).seasonUnlockedOnce = false
   }
@@ -45,8 +45,8 @@ function sample(v: number): Record<string, unknown> {
 }
 
 describe('迁移全链（1 → 13）', () => {
-  it('SAVE_VERSION 为当前版本（v3.4 起为 14）', () => {
-    expect(SAVE_VERSION).toBe(14)
+  it('SAVE_VERSION 为当前版本（v3.4 起为 15）', () => {
+    expect(SAVE_VERSION).toBe(15)
   })
 
   it('v1~v12 每个版本都能迁到当前版本，且关键字段无损', () => {
@@ -103,7 +103,7 @@ describe('迁移全链（1 → 13）', () => {
 
   it('v13 赛季 realign：index 重算但 renown/rewardedLevel 保留', () => {
     const s = newGame('赛季', 0)
-    s.season = { index: 0, renown: 40, rewardedLevel: 5, tasks: [] }
+    s.season = { index: 0, renown: 40, rewardedLevel: 5, tasks: [], scale: 0 }
     s.meta.seasonUnlockedOnce = true
     const raw = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
     raw.version = 12

@@ -566,8 +566,8 @@ describe('F7 设置命令与档位解析', () => {
 // ---------------- F8 存档 v12 迁移 ----------------
 
 describe('F8 存档 v12：设置字段迁移与幂等', () => {
-  it('SAVE_VERSION === 14（v3.4 里程碑粘性字段）', () => {
-    expect(SAVE_VERSION).toBe(14) // v3.4 A2 里程碑粘性字段
+  it('SAVE_VERSION === 15（v3.4）', () => {
+    expect(SAVE_VERSION).toBe(15) // v3.4 A2 里程碑粘性字段
   })
 
   it('新档自带默认设置', () => {

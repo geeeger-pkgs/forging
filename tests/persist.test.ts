@@ -285,7 +285,9 @@ describe('v2.3 迁移（S10）', () => {
     // v3.0：图鉴为位图（bits + 内容表指纹 fp）
     expect(loaded!.codex.bits).toBe(emptyCodex().bits)
     expect(loaded!.codex.fp).toBe(emptyCodex().fp)
-    expect(loaded!.season).toEqual({ index: -1, renown: 0, rewardedLevel: 0, tasks: [] })
+    // v3.4 V6：season 新增 scale（本季档位快照），故按字段断言而非整体 toEqual
+    expect(loaded!.season).toMatchObject({ index: -1, renown: 0, rewardedLevel: 0, tasks: [] })
+    expect(loaded!.season.scale, '迁移后应已快照本季档位').toBeGreaterThan(0)
     expect(loaded!.meta.codexMilestones).toBe('')
   })
 

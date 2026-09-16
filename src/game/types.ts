@@ -552,6 +552,12 @@ export interface SeasonSlot {
 export interface SeasonState {
   /** 赛季序号（floor((now − epoch)/14d)）；仅前向轮换 */
   index: number
+  /**
+   * v3.4 V6：本季**档位快照**（轮换时冻结的目标缩放系数）。
+   * 起因（评审）：两档系数差 94%，赛季中途跨过 120 会让目标翻倍、已得银档退回铜档、声望倒退。
+   * 冻结后赛季内目标恒定；下一季按当时账号重新快照。
+   */
+  scale: number
   renown: number
   /** 已发奖到的等级（单调不回退，保证幂等） */
   rewardedLevel: number
