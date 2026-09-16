@@ -182,7 +182,7 @@ const SCENARIOS = [
 ]
 console.log('')
 console.log('═'.repeat(78))
-console.log('E. 可达性（最不利抽取组合；预算 = 14 天 × 24h × 离线折算）')
+console.log(`E. 可达性（最不利抽取组合；预算 = ${SEASON_DAYS} 天 × 24h × 离线折算）`)
 console.log('═'.repeat(78))
 console.log(['计入口径'.padEnd(20), '预算'.padStart(6), ...SCENARIOS.map((s) => s.label.padStart(16))].join(' | '))
 const feasibility = []
