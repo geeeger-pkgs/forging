@@ -262,7 +262,8 @@ function performEnhance(
     act.ref = { kind: 'enhance', instanceId: ref.instanceId, targetLevel: inst.enhanceLevel + 1 }
   }
 
-  grantXp(state, 'enhancing', step.xpBase * (success ? 2 : 1) * (1 + agg.wisdom), events)
+  // v3.0 审计：强化 XP 也必须吃"智慧精通"（此前只吃装备 wisdom，与其他三条技能线口径不一致）
+  grantXp(state, 'enhancing', step.xpBase * (success ? 2 : 1) * (1 + agg.wisdom + perkBonuses(state).wisdom), events)
   if (success) events.push(...tutorialProgress(state, 'enhanceInstance', 1))
   events.push({ type: 'actionCompleted', ref, rounds: 1 })
   events.push(...tutorialCheckTotalLevel(state))

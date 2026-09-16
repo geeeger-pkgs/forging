@@ -137,7 +137,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         <p v-if="gate.next" class="dim small">
           下一档「{{ gate.next.title }}」还差：{{
             gate.shortfall.map((x) => `${x.name} ${x.found}/${x.need}`).join(' ｜ ')
-          }}<br />门槛按**分区**计算：每个分区都要各自达标（避免只堆单一分区）。
+          }}<br />门槛按分区计算：每个分区都要各自达标（避免只堆单一分区）。
         </p>
       </div>
     </section>

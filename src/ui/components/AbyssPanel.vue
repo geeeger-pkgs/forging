@@ -54,6 +54,11 @@ const chainOptions = computed(() => {
 })
 const canSweep = computed(() => view.value.bestFloor >= 1 && view.value.stamina >= 1)
 
+/** 权重显示：最多两位小数、去尾零（原始浮点会渲染出 ×1.0499999999999998） */
+function fmtW(x: number): string {
+  return (Math.round(x * 100) / 100).toString()
+}
+
 function fmtMs(ms: number): string {
   const s = Math.ceil(ms / 1000)
   const m = Math.floor(s / 60)
@@ -100,7 +105,7 @@ function sweep(n: number): void {
         <div v-for="b in breakdown" :key="b.key" class="row">
           <span class="rlabel">{{ b.label }}</span>
           <span class="dim small">
-            ×{{ b.weight }}
+            ×{{ fmtW(b.weight) }}
             <em v-if="b.weight !== b.baseWeight" class="boost">（词条 ×{{ (b.weight / b.baseWeight).toFixed(1) }}）</em>
           </span>
           <span class="spacer" />
@@ -169,7 +174,7 @@ function sweep(n: number): void {
         </button>
       </div>
       <p class="dim small">
-        连打 = 从下一层起**逐层判定**：通过就继续，遇到第一个不达标的层停下（整次只花 1 点体力；首通奖励逐层照发）。
+        连打 = 从下一层起逐层判定：通过就继续，遇到第一个不达标的层停下（整次只花 1 点体力；首通奖励逐层照发）。
         层词条每 5 层一循环：{{ mod.name }}{{ mod.id === 'rich' ? '（墙：门槛 ×1.06、首通结晶 ×1.5）' : mod.id === 'rift' ? '（喘息：门槛 ×0.94、首通结晶 ×0.8）' : '（该层权重倾斜，重配装有利）' }}。
       </p>
       <p v-if="view.gap > 0" class="bad small">⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。</p>
@@ -213,7 +218,7 @@ function sweep(n: number): void {
       <p class="dim small">
         首通奖励 = (10 + 2×层) × 本层词条结晶倍率（裂隙 ×0.8 / 富矿 ×1.5），向下取整；
         扫荡奖励 = 1 + ⌊最高层 / 20⌋（不含词条倍率，避免停在裂隙层反而吃亏）。
-        层数**不封顶**：主题每 25 层循环、词条每 5 层轮换，深度由配装决定。
+        层数不封顶：主题每 25 层循环、词条每 5 层轮换，深度由配装决定。
       </p>
     </section>
   </div>

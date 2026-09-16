@@ -397,15 +397,18 @@ const sumPrice = (item, n) => {
   return sum
 }
 // 首轮目标：4 券 + 3 遗物 + 5 级永久 + 称号
+/** 遗物兑换项（表里是 3 个独立商品，各 max=1）——必须遍历累加（v3.0 审计订正：旧版只算 1 件，少 400 结晶） */
+const relicEntries = ABYSS_TABLE.shop.filter((x) => x.itemId)
+const relicTotal = relicEntries.reduce((sum, x) => sum + x.crystal * x.max, 0)
 const firstTier =
   sumPrice(ABYSS.shop.rerollTicket, 4) +
-  ABYSS.shop.relicExchange.crystal * ABYSS.shop.relicExchange.max +
+  relicTotal +
   sumPrice(ABYSS.shop.permanentSpeed, 5) +
   ABYSS.shop.title.crystal
 // 全部可重复项买满（券 max + 永久 max + 遗物 3 + 称号 1）——数量取自内容表
 const shopTotal =
   sumPrice(ABYSS.shop.rerollTicket, ABYSS.shop.rerollTicket.max) +
-  ABYSS.shop.relicExchange.crystal * ABYSS.shop.relicExchange.max +
+  relicTotal +
   sumPrice(ABYSS.shop.permanentSpeed, ABYSS.shop.permanentSpeed.max) +
   ABYSS.shop.title.crystal
 console.log(['到达层'.padStart(7), '累计首通结晶'.padStart(13), '扫荡/次'.padStart(9)].join(' | '))

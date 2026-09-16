@@ -10,35 +10,71 @@
     "milestones": [
       {
         "m": 0.25,
-        "need": 56,
+        "title": "初识万象",
+        "need": 83,
         "gold": 2500,
         "essence": 10,
         "tokens": 0,
-        "value": 2650
+        "value": 2650,
+        "bySection": {
+          "items": 42,
+          "recipes": 28,
+          "affixes": 4,
+          "companions": 3,
+          "relics": 2,
+          "ores": 4
+        }
       },
       {
         "m": 0.5,
-        "need": 111,
+        "title": "博览群书",
+        "need": 150,
         "gold": 12000,
         "essence": 25,
         "tokens": 3,
-        "value": 12975
+        "value": 12975,
+        "bySection": {
+          "items": 73,
+          "recipes": 56,
+          "affixes": 7,
+          "companions": 5,
+          "relics": 3,
+          "ores": 6
+        }
       },
       {
         "m": 0.75,
-        "need": 167,
+        "title": "格物致知",
+        "need": 199,
         "gold": 30000,
         "essence": 45,
         "tokens": 6,
-        "value": 31875
+        "value": 31875,
+        "bySection": {
+          "items": 94,
+          "recipes": 79,
+          "affixes": 9,
+          "companions": 6,
+          "relics": 3,
+          "ores": 8
+        }
       },
       {
         "m": 1,
+        "title": "万物归一",
         "need": 222,
         "gold": 80000,
         "essence": 80,
         "tokens": 15,
-        "value": 84200
+        "value": 84200,
+        "bySection": {
+          "items": 104,
+          "recipes": 92,
+          "affixes": 9,
+          "companions": 6,
+          "relics": 3,
+          "ores": 8
+        }
       }
     ]
   },

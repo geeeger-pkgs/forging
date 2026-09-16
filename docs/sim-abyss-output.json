@@ -283,9 +283,9 @@
     "end": 1595
   },
   "daysToClearShop": {
-    "online": 8.1,
-    "login2": 16.3,
-    "login1": 16.3
+    "online": 12.3,
+    "login2": 24.6,
+    "login1": 24.6
   },
   "auditedLiterals": [
     2.736,
@@ -313,6 +313,6 @@
     "35": 1715,
     "40": 2172
   },
-  "firstTier": 2376,
-  "shopTotal": 11412
+  "firstTier": 2776,
+  "shopTotal": 11812
 }

@@ -90,18 +90,33 @@ console.log('')
 console.log('═'.repeat(78))
 console.log('B. 图鉴里程碑（每 25% 一档；与赛季**解耦**，只给自奖励）')
 console.log('═'.repeat(78))
-const MILESTONES = [0.25, 0.5, 0.75, 1.0]
+// v3.0 审计订正：里程碑是**分区门槛**（内核 codex.ts milestoneReached），不是线性 25/50/75/100%
+// → 直接读 data/season.json 的 req 与奖励（此前脚本内硬编码线性阈值 56/111/167/222，与内核冲突）
+const MILESTONES = SEASON.codexMilestones
+const sectionSizes = {
+  items: Object.keys(ITEMS).filter((id) => ITEMS[id].category !== 'relic').length,
+  recipes: RECIPES.length,
+  affixes: AFFIXES.affixes.length,
+  companions: COMPANIONS.companions.length,
+  relics: Object.keys(ITEMS).filter((id) => ITEMS[id].category === 'relic').length,
+  ores: ORES.length,
+}
 const milestoneRows = MILESTONES.map((m) => {
-  const need = Math.ceil(CODEX_TOTAL * m)
-  // v2.3 测评 M5：奖励与获取成本匹配（100% 需 222 条，含 3 件遗物）
-  const gold = [2500, 12000, 30000, 80000][MILESTONES.indexOf(m)]
-  const essence = [10, 25, 45, 80][MILESTONES.indexOf(m)]
-  const tokens = [0, 3, 6, 15][MILESTONES.indexOf(m)]
-  return { m, need, gold, essence, tokens, value: gold + essence * 15 + tokens * 200 }
+  const need = Object.entries(m.req).reduce((sum, [k, ratio]) => sum + Math.ceil(sectionSizes[k] * ratio), 0)
+  return {
+    m: m.pct,
+    title: m.title,
+    need,
+    gold: m.gold,
+    essence: m.essence,
+    tokens: m.tokens,
+    value: m.gold + m.essence * 15 + m.tokens * 200,
+    bySection: Object.fromEntries(Object.entries(m.req).map(([k, r]) => [k, Math.ceil(sectionSizes[k] * r)])),
+  }
 })
-console.log(['里程碑'.padEnd(8), '条目'.padStart(6), '金'.padStart(7), '精华'.padStart(5), '徽记'.padStart(5), '价值'.padStart(7)].join(' | '))
+console.log(['里程碑'.padEnd(8), '称号'.padEnd(10), '条目'.padStart(6), '金'.padStart(7), '精华'.padStart(5), '徽记'.padStart(5), '价值'.padStart(7)].join(' | '))
 for (const r of milestoneRows) {
-  console.log([pct(r.m, 0).padEnd(8), String(r.need).padStart(6), String(r.gold).padStart(7), String(r.essence).padStart(5), String(r.tokens).padStart(5), String(r.value).padStart(7)].join(' | '))
+  console.log([pct(r.m, 0).padEnd(8), r.title.padEnd(10), String(r.need).padStart(6), String(r.gold).padStart(7), String(r.essence).padStart(5), String(r.tokens).padStart(5), String(r.value).padStart(7)].join(' | '))
 }
 const codexRewardValue = milestoneRows.reduce((s, r) => s + r.value, 0)
 const codexTokens = milestoneRows.reduce((s, r) => s + r.tokens, 0)
