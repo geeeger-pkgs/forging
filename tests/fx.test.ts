@@ -20,7 +20,7 @@ import {
   setAudioVolume,
   unlockAudio,
 } from '../src/ui/audio'
-import { resolveFx, resolveFxLevel, type FxContext } from '../src/ui/fx-map'
+import { __resetMatchMediaCache, resolveFx, resolveFxLevel, type FxContext } from '../src/ui/fx-map'
 import {
   __resetFxProbe,
   fxSnapshot,
@@ -46,6 +46,7 @@ const ctx: FxContext = {
 const SITE = CONTENT.ores[0].id
 
 afterEach(() => {
+  __resetMatchMediaCache()
   __resetAudioForTest()
   setAudioContextFactory(null)
   __resetFxProbe()
@@ -508,6 +509,7 @@ describe('F7 设置命令与档位解析', () => {
   it('resolveFxLevel：auto + prefers-reduced-motion:reduce → reduced（用户显式档位仍优先）', () => {
     const g = globalThis as unknown as { matchMedia?: (q: string) => { matches: boolean } }
     const saved = g.matchMedia
+    __resetMatchMediaCache()
     g.matchMedia = (q: string) => ({ matches: q.includes('prefers-reduced-motion') })
     try {
       expect(resolveFxLevel('auto')).toBe('reduced')
@@ -521,9 +523,34 @@ describe('F7 设置命令与档位解析', () => {
     }
   })
 
+  it('matchMedia 缓存：MQL 对象只建一次，但 matches 仍实时生效（v3.0 性能修复）', () => {
+    let calls = 0
+    const g = globalThis as unknown as { matchMedia?: (q: string) => { matches: boolean } }
+    const saved = g.matchMedia
+    const mq = { matches: false }
+    g.matchMedia = () => {
+      calls += 1
+      return mq
+    }
+    __resetMatchMediaCache()
+    try {
+      expect(resolveFxLevel('auto')).toBe('full')
+      expect(resolveFxLevel('auto')).toBe('full')
+      expect(calls).toBe(1) // 只建一次 MQL
+      mq.matches = true // 用户在系统里改了偏好
+      expect(resolveFxLevel('auto')).toBe('reduced') // 无需重建即生效
+      expect(calls).toBe(1)
+    } finally {
+      if (saved === undefined) delete g.matchMedia
+      else g.matchMedia = saved
+      __resetMatchMediaCache()
+    }
+  })
+
   it('resolveFxLevel：matchMedia 抛错时按 full 兜底（不崩界面）', () => {
     const g = globalThis as unknown as { matchMedia?: (q: string) => { matches: boolean } }
     const saved = g.matchMedia
+    __resetMatchMediaCache()
     g.matchMedia = () => {
       throw new Error('blocked')
     }

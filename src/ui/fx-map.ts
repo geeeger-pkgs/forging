@@ -16,20 +16,36 @@ import type { FxLevel, FxSetting, GameEvent } from '../game/types'
 export type BurstKind = 'spark' | 'gold' | 'gray' | 'blue' | 'abyss' | 'ore'
 
 /**
+ * 系统「减少动态效果」偏好。
+ * v3.0 §2.5：**缓存 MediaQueryList 对象**而不是每次调用 matchMedia ——
+ * 后者每次都会新建 MQL（实机实测把 tick 的 p95 顶到 0.70ms）。
+ * 缓存对象后其 matches 仍是实时值（用户在系统里改偏好无需重载即生效）。
+ */
+let mql: { matches: boolean } | null | undefined
+function prefersReducedMotion(): boolean {
+  if (mql === undefined) {
+    const w = globalThis as unknown as { matchMedia?: (q: string) => { matches: boolean } }
+    try {
+      mql = typeof w.matchMedia === 'function' ? w.matchMedia('(prefers-reduced-motion: reduce)') : null
+    } catch {
+      mql = null
+    }
+  }
+  return mql ? mql.matches : false
+}
+
+/** 仅测试用：清掉 MQL 缓存（模拟环境变化） */
+export function __resetMatchMediaCache(): void {
+  mql = undefined
+}
+
+/**
  * 动效档位解析（设计 §2.5）：auto 跟随系统「减少动态效果」偏好，用户显式档位优先。
  * 放在纯模块里（不在 store）以便 node 测试直接断言 —— store.ts 在 node 下导入即抛错。
  */
 export function resolveFxLevel(fx: FxSetting | undefined): FxLevel {
   if (fx === 'full' || fx === 'reduced' || fx === 'off') return fx
-  const w = globalThis as unknown as { matchMedia?: (q: string) => { matches: boolean } }
-  if (typeof w.matchMedia === 'function') {
-    try {
-      if (w.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'reduced'
-    } catch {
-      // matchMedia 不可用 → 按 full
-    }
-  }
-  return 'full'
+  return prefersReducedMotion() ? 'reduced' : 'full'
 }
 
 export interface FxPlan {

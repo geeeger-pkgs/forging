@@ -90,9 +90,11 @@ function pick(card: ActionCard): void {
   <main class="main">
     <h2>{{ title }}</h2>
 
-    <!-- v2.5 §2.4：视图切换 120ms 淡入（此前文档写了但没实现，测评 M5）。
-         [data-fx='off'/'reduced'] 与 prefers-reduced-motion 下由 theme.css 统一取消动画。 -->
-    <Transition name="panel" mode="out-in">
+    <!-- v2.5 §2.4：视图切换 120ms 淡入。
+         实现用**只进不出的 CSS 动画**（不用 <Transition mode="out-in">）：
+         后者要等 leave 过渡结束才挂载新视图，在"不绘制的环境/后台标签页"里会卡住不换页
+         （v3.0 烟测实机发现：store.ui.view 已变、面板内容仍是旧的）。
+         [data-fx='off'/'reduced'] 与 prefers-reduced-motion 下由 theme.css 取消动画。 -->
     <div :key="view" class="panel">
     <SceneCanvas v-if="showScene" />
 
@@ -157,7 +159,6 @@ function pick(card: ActionCard): void {
       <SettingsPanel />
     </template>
     </div>
-    </Transition>
   </main>
 </template>
 
@@ -172,12 +173,18 @@ h2 {
   margin: 0 0 12px;
   font-size: 18px;
 }
-/* 只淡入不位移：窄屏下位移会引起重排/横向抖动的观感问题 */
-.panel-enter-active {
-  transition: opacity 0.12s ease-out;
+/* 只淡入不位移：窄屏下位移会引起重排/横向抖动的观感问题。
+   用 animation（而非 transition）→ 不参与 Vue 的过渡生命周期，切换永不阻塞。 */
+.panel {
+  animation: panelIn 0.12s ease-out;
 }
-.panel-enter-from {
-  opacity: 0;
+@keyframes panelIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .tabs {
   display: flex;
