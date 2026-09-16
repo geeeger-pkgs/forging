@@ -41,6 +41,9 @@ const maxToolSpeed = computed(() => {
 
 /** v3.4.4：下一个队列位的价格（内核同源，供标价与置灰） */
 const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
+
+/** v3.4.5：金币商店增长率从内容表插值（此前写死 ×1.02） */
+const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
 </script>
 
 <template>
@@ -63,7 +66,7 @@ const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
     </section>
 
     <section class="card">
-      <h3>金币商店<span class="dim">（循环出口：金 → 助剂，价格随次数 ×1.02）</span></h3>
+      <h3>金币商店<span class="dim">（循环出口：金 → 助剂，价格随次数 ×{{ goldGrowth }}）</span></h3>
       <p class="dim">金币在中后期会饱和——这里的助剂是可无限购买的出口，价格逐次递增（防套利：买价恒高于回收价）。</p>
       <div class="sell-list">
         <div v-for="g in goldShop" :key="g.id" class="sell-row">

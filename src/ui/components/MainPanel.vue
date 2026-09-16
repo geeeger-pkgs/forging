@@ -128,7 +128,7 @@ function pick(card: ActionCard): void {
     <!-- v2.5 §2.4：视图切换 120ms 淡入。
          实现用“只进不出的 CSS 动画”（不用 <Transition mode="out-in">）：
          后者要等 leave 过渡结束才挂载新视图，在"不绘制的环境/后台标签页"里会卡住不换页
-         （v3.0 烟测实机发现：store.ui.view 已变、面板内容仍是旧的）。
+         （面板内容以 store.ui.view 为准，避免视图已切换而内容滞留）。
          [data-fx='off'/'reduced'] 与 prefers-reduced-motion 下由 theme.css 取消动画。 -->
     <div :key="view" class="panel">
     <SceneCanvas v-if="showScene" />

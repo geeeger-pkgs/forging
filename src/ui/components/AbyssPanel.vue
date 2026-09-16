@@ -89,6 +89,15 @@ const growthText = computed(() => {
   const items = shop.filter((s) => (s.growth ?? 1) > 1)
   return items.map((s) => `${s.name} ×${s.growth}`).join(" / ")
 })
+
+/** v3.4.5：词条倍率文案从内容表插值（此前写死 ×0.8 / ×1.5） */
+const modifierMulText = computed(() => {
+  // 只列"首通结晶倍率 ≠ 1"的层（与内容表 abyss.mods 同源）
+  return CONTENT.abyss.mods
+    .filter((m) => m.crystalMul !== 1)
+    .map((m) => `${m.name} ×${m.crystalMul}`)
+    .join(" / ")
+})
 </script>
 
 <template>
@@ -242,7 +251,7 @@ const growthText = computed(() => {
         <template v-if="view.title"><br />称号：<b>深渊行者</b></template>
       </p>
       <p class="dim small">
-        首通奖励 = (10 + 2×层) × 本层词条结晶倍率（裂隙 ×0.8 / 富矿 ×1.5），向下取整；
+        首通奖励 = (10 + 2×层) × 本层词条结晶倍率（{{ modifierMulText }}），向下取整；
         扫荡奖励 = 1 + ⌊最高层 / 20⌋（不含词条倍率，避免停在裂隙层反而吃亏）。
         层数不封顶：主题每 25 层循环、词条每 5 层轮换，深度由配装决定。
       </p>

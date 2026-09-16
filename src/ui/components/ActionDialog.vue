@@ -74,7 +74,7 @@ function start(mode: 'now' | 'enqueue'): void {
 
       <div class="row">
         <label>经验</label>
-        <span>{{ desc.xp.toFixed(1) }}<template v-if="desc.xpSuccessDoubled">（成功 ×2）</template></span>
+        <span>{{ desc.xp.toFixed(1) }}<template v-if="desc.xpSuccessDoubled">（成功经验翻倍）</template></span>
       </div>
 
       <div v-if="desc.enhanceRate !== undefined" class="row">

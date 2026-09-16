@@ -4,6 +4,8 @@ import { cmd, store } from '../../app/store'
 import { CONTENT } from '../../game/content'
 import { levelInfo, totalLevel } from '../../game/level'
 import {
+  PERK_OVERDRIVE_COST_MULT,
+  PERK_OVERDRIVE_MULT,
   PRESTIGE_FIRST_POINT_SKILL,
   PRESTIGE_MIN_LEVEL,
   perkMaxLevel,
@@ -68,7 +70,7 @@ function confirmPrestige(): void {
       <h3>精通殿堂 <span class="pts">可用精通点 {{ points }}</span></h3>
       <p class="dim">购买/退款即时生效，退款免费；效果永久保留，跨传承累计。</p>
       <p class="dim">
-        深造：基础上限后可继续购买至 2 倍，深造部分每级价格 ×2（例：迅捷 20 → 40 级）。
+        深造：基础上限后可继续购买至 {{ PERK_OVERDRIVE_MULT }} 倍，深造部分每级价格 ×{{ PERK_OVERDRIVE_COST_MULT }}（例：迅捷 20 → 40 级）。
       </p>
       <div class="grid">
         <div
@@ -81,7 +83,7 @@ function confirmPrestige(): void {
             <span class="perk-name">{{ p.def.name }}<span v-if="p.level > p.def.max" class="tag">深造</span></span>
             <span class="perk-lv">{{ p.level }} / {{ p.cap }}</span>
           </div>
-          <div class="dim">{{ p.def.desc }} · 下一级 {{ p.next }} 点<span v-if="p.next > p.def.cost">（深造 ×2）</span></div>
+          <div class="dim">{{ p.def.desc }} · 下一级 {{ p.next }} 点<span v-if="p.next > p.def.cost">（深造 ×{{ PERK_OVERDRIVE_COST_MULT }}）</span></div>
           <div class="perk-actions">
             <button class="btn sm" :disabled="p.level <= 0" @click="cmd({ type: 'refundPerk', perkId: p.def.id })">− 退款</button>
             <button class="btn sm" :disabled="p.level >= p.cap" @click="cmd({ type: 'buyPerk', perkId: p.def.id })">+ 购买</button>
