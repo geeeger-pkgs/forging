@@ -46,7 +46,12 @@ export function msToSeasonEnd(now: number): number {
  * 该效应有界（每赛季每级奖励只发一次，rewardedLevel 单调），v3.4 视实机反馈再评估是否改为落档快照。
  */
 export function maturityClassOf(state: GameState): 'junior' | 'veteran' {
-  return totalLevelOf(state) <= DEF.maturityBands.juniorMaxTotalLevel ? 'junior' : 'veteran'
+  // 3.4.1（终审 Major）：改用**生涯最高技能等级**取档（meta.bestSkillLevel，单调不回退）——
+  // 此前按当前总等级，导致"刚传承完（总等级 ≤44）的号整季被锁在新晋档"，传承循环者几乎见不到老手档。
+  // 量纲：门槛 juniorMaxTotalLevel 是**总等级**，而 bestSkillLevel 是**单技能等级**（上限 100）→ 换算成总等级等价量（×4 技能）
+  const best = (state.meta.bestSkillLevel ?? 1) * 4
+  const level = Math.max(totalLevelOf(state), best) // 取两者较大：既尊重生涯最高，也兼容老档
+  return level <= DEF.maturityBands.juniorMaxTotalLevel ? 'junior' : 'veteran'
 }
 
 /** 某赛季模板在当前账号下的目标（缩放后；**只读派生**，不修改内容表） */

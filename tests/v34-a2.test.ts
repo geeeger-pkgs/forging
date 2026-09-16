@@ -129,13 +129,13 @@ describe('A6 传承点数：消除反直觉最优解', () => {
     expect(scan.acceptable).toBe(true)
   })
 
-  it('实现与证据同式：门槛处 0 点、满级（最低技能 100）= 36 点', () => {
+  it('实现与证据同式：门槛处 0 点、满级（最低技能 100）= 42 点（3.4.1 曲线）', () => {
     expect(simD.d.prestige.fast.points).toBe(0)
-    expect(simD.d.prestige.maxed.points).toBe(36) // 三审：min 100 → steps 6 → 36 点
+    expect(simD.d.prestige.maxed.points).toBe(42) // 3.4.1：min 100 → 6²+6
     const s = newGame('T', 0)
     const xp100 = xpForLevel(100)
     s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
-    expect(prestigePointsFor(s)).toBe(36)
+    expect(prestigePointsFor(s)).toBe(42)
   })
 
   it('门槛处不给点也不再"白轮回"：doPrestige 被拦下且提示可执行', () => {
@@ -239,5 +239,20 @@ describe('三审 T5：缩放目标的浮点假进位（实机截图发现）', (
     const t = seasonTargetsFor(s, tpl.id)
     expect(t[2]).toBe(204)
     for (const v of t) expect(Number.isInteger(v)).toBe(true)
+  })
+})
+
+describe('3.4.1 终审处置：赛季档位按生涯最高技能等级取档', () => {
+  it('刚传承（当前技能低）但生涯最高已过线 → 仍按老手档', () => {
+    const s = newGame('T', 0)
+    s.meta.bestSkillLevel = 100 // 生涯最高（曾经练满）
+    s.skills = { mining: 0, smelting: 0, forging: 0, enhancing: 0 } // 刚传承：当前很低
+    expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.veteran)
+  })
+
+  it('从未练过（生涯最高也低）→ 新晋档', () => {
+    const s = newGame('T', 0)
+    s.meta.bestSkillLevel = 20 // 20×4 = 80 ≤ 119 → 新晋
+    expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.junior)
   })
 })

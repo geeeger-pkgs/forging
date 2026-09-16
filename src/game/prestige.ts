@@ -55,8 +55,11 @@ export function prestigePointsFor(state: GameState): number {
   // 三审建议参数：steps = ⌊(min − 40)/10⌋，点数 = steps²（min 50/60/70/80/90/100 → 1/4/9/16/25/36）
   // 选择理由（评审复算）：点/h 仍严格单调、全域最优仍是满级，且毕业回到 2.17 次满级轮回、
   // 消除"差一级全归零"的断崖（此前 min70+4×steps² 把首点门槛抬了 32 倍）
+  // 3.4.1（终审 Blocker 处置）：曲线从 steps² 改为 steps² + steps ——
+  // 原式首点只值 1 点（2763.6h ≈ 115 天），且 min50~60 两档的"点/小时"过于陡峭（低于满级档 3.17×）。
+  // 新式：min 50/60/70/80/90/100 → 2/6/12/20/30/42（点/小时仍严格单调递增，满级仍唯一最优）。
   const steps = Math.floor((minLv - 40) / 10)
-  const points = steps * steps
+  const points = steps * steps + steps
   return points
 }
 
