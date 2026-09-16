@@ -147,6 +147,24 @@ export function refreshSeason(state: GameState, now: number): GameEvent[] {
 }
 
 /**
+ * v3.0 C8：EPOCH 对齐迁移（幂等）。旧 EPOCH（2026-01-01Z，周四）改成周一 00:00(+08:00) 后，
+ * 同一时刻算出的 index 可能不同；此时**保留 renown / rewardedLevel**（不抹掉玩家已得的进度），
+ * 只按新 index 重摇任务集与基线。
+ * 迁移使用当前时间（先例：v2.4 的 staminaAt 迁移同样使用 Date.now()，并写入文档）。
+ */
+export function realignSeasonForEpoch(state: GameState, now: number): void {
+  if (state.season.index < 0) return
+  const idx = seasonIndex(now)
+  if (idx < 0 || idx === state.season.index) return
+  const tasks = pickSeasonTasks(idx)
+  for (const slot of tasks) {
+    const tpl = templateById(slot.defId)
+    slot.base = tpl ? counterValue(state, tpl.counter) : 0
+  }
+  state.season = { index: idx, renown: state.season.renown, rewardedLevel: state.season.rewardedLevel, tasks }
+}
+
+/**
  * 结算：更新声望、按等级发奖（幂等）。
  * 调用点必须在 refreshSeason **之前**（硬规则 4：先结算旧赛季再轮换）。
  */

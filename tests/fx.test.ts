@@ -73,7 +73,7 @@ describe('F1 resolveFx 穷举（设计 §2.2 契约）', () => {
     { type: 'companionLevelUp', name: '矿工阿岩', level: 3 },
     { type: 'traitRerolled', name: '矿工阿岩', trait: '坚毅' },
     { type: 'bannerUpgraded', level: 2 },
-    { type: 'codexMilestone', pct: 0.5, gold: 500 },
+    { type: 'codexMilestone', pct: 0.5, gold: 500, title: '博览群书' },
     { type: 'seasonLevelUp', level: 4 },
     { type: 'seasonRotated', index: 2 },
     { type: 'abyssCleared', floor: 12, crystals: 34, clearedTo: 12, count: 1, modName: '丰饶层' },
@@ -539,8 +539,8 @@ describe('F7 设置命令与档位解析', () => {
 // ---------------- F8 存档 v12 迁移 ----------------
 
 describe('F8 存档 v12：设置字段迁移与幂等', () => {
-  it('SAVE_VERSION === 12', () => {
-    expect(SAVE_VERSION).toBe(12)
+  it('SAVE_VERSION === 13（v3.0 图鉴位图）', () => {
+    expect(SAVE_VERSION).toBe(13)
   })
 
   it('新档自带默认设置', () => {
@@ -556,7 +556,7 @@ describe('F8 存档 v12：设置字段迁移与幂等', () => {
     delete meta.settings
     const back = deserializeSave(JSON.stringify(raw))
     expect(back).not.toBeNull()
-    expect(back!.version).toBe(12)
+    expect(back!.version).toBe(13)
     expect(back!.meta.settings).toEqual(CONTENT.fx.defaults)
     expect(back!.gold).toBe(s.gold)
   })

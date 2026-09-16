@@ -335,7 +335,8 @@ const companionsDef = { companions, startLevelCap: 30 }
 // 数值口径：docs/design-v2.3.md（先模拟后定档，scripts/sim-season.mjs → docs/sim-season-output.json）
 const season = {
   /** 赛季纪元（UTC 2026-01-01T00:00:00Z）；seasonIndex = floor((now − epoch) / 14d)，且仅当前向轮换 */
-  epoch: 1767225600000,
+  // v3.0 C8：EPOCH 对齐到**周一 00:00 (+08:00)**（旧值 2026-01-01T00:00Z 是周四，与本地日/周常错位）
+  epoch: Date.parse('2026-01-05T00:00:00+08:00'),
   days: 14,
   /** 解锁门槛：总等级 */
   unlockTotalLevel: 60,
@@ -354,11 +355,17 @@ const season = {
     { id: 's_reforge', title: '精益求精', desc: '重铸词缀（需在线）', counter: 'totalReforges', unit: '次', targets: [15, 35, 60] },
   ],
   /** 图鉴里程碑（每 25%；与赛季解耦，只给自奖励） */
+  /**
+   * 图鉴里程碑（v3.0 §2.2c）：**分区门槛**而不是线性百分比。
+   * 病灶：物品+配方占 88.3%，旧的"总数 50%"≈全物品+7 条配方 → 玩家在单一分区撞墙。
+   * 现在每档都要求在**每个分区**各达标（pct 仅用于展示与成就 codex_25/50/75/100）。
+   * 门槛值由 scripts/sim-codex.mjs 实算并落 JSON，测试逐条断言。
+   */
   codexMilestones: [
-    { pct: 0.25, gold: 2500, essence: 10, tokens: 0 },
-    { pct: 0.5, gold: 12000, essence: 25, tokens: 3 },
-    { pct: 0.75, gold: 30000, essence: 45, tokens: 6 },
-    { pct: 1.0, gold: 80000, essence: 80, tokens: 15 },
+    { pct: 0.25, title: '初识万象', gold: 2500, essence: 10, tokens: 0, req: { items: 0.4, recipes: 0.3, affixes: 0.34, companions: 0.34, relics: 0.34, ores: 0.5 } },
+    { pct: 0.5, title: '博览群书', gold: 12000, essence: 25, tokens: 3, req: { items: 0.7, recipes: 0.6, affixes: 0.67, companions: 0.67, relics: 0.67, ores: 0.75 } },
+    { pct: 0.75, title: '格物致知', gold: 30000, essence: 45, tokens: 6, req: { items: 0.9, recipes: 0.85, affixes: 1, companions: 1, relics: 1, ores: 1 } },
+    { pct: 1.0, title: '万物归一', gold: 80000, essence: 80, tokens: 15, req: { items: 1, recipes: 1, affixes: 1, companions: 1, relics: 1, ores: 1 } },
   ],
 }
 

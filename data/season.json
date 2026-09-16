@@ -1,5 +1,5 @@
 {
-  "epoch": 1767225600000,
+  "epoch": 1767542400000,
   "days": 14,
   "unlockTotalLevel": 60,
   "levels": 20,
@@ -95,27 +95,63 @@
   "codexMilestones": [
     {
       "pct": 0.25,
+      "title": "初识万象",
       "gold": 2500,
       "essence": 10,
-      "tokens": 0
+      "tokens": 0,
+      "req": {
+        "items": 0.4,
+        "recipes": 0.3,
+        "affixes": 0.34,
+        "companions": 0.34,
+        "relics": 0.34,
+        "ores": 0.5
+      }
     },
     {
       "pct": 0.5,
+      "title": "博览群书",
       "gold": 12000,
       "essence": 25,
-      "tokens": 3
+      "tokens": 3,
+      "req": {
+        "items": 0.7,
+        "recipes": 0.6,
+        "affixes": 0.67,
+        "companions": 0.67,
+        "relics": 0.67,
+        "ores": 0.75
+      }
     },
     {
       "pct": 0.75,
+      "title": "格物致知",
       "gold": 30000,
       "essence": 45,
-      "tokens": 6
+      "tokens": 6,
+      "req": {
+        "items": 0.9,
+        "recipes": 0.85,
+        "affixes": 1,
+        "companions": 1,
+        "relics": 1,
+        "ores": 1
+      }
     },
     {
       "pct": 1,
+      "title": "万物归一",
       "gold": 80000,
       "essence": 80,
-      "tokens": 15
+      "tokens": 15,
+      "req": {
+        "items": 1,
+        "recipes": 1,
+        "affixes": 1,
+        "companions": 1,
+        "relics": 1,
+        "ores": 1
+      }
     }
   ]
 }

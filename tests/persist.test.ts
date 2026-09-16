@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SAVE_VERSION, clearSave, importSaveFile, loadGame, saveGame } from '../src/app/persist'
 import { rollAffixes } from '../src/game/affixes'
+import { codexIds } from '../src/game/codex'
+import { emptyCodex } from '../src/game/codex-store'
 import { CONTENT } from '../src/game/content'
 import { addInstance, newGame } from '../src/game/state'
 
@@ -280,7 +282,9 @@ describe('v2.3 迁移（S10）', () => {
     const loaded = loadGame()
     expect(loaded).not.toBeNull()
     expect(loaded!.version).toBe(SAVE_VERSION)
-    expect(loaded!.codex).toEqual({ items: '', recipes: '', affixes: '', ores: '' })
+    // v3.0：图鉴为位图（bits + 内容表指纹 fp）
+    expect(loaded!.codex.bits).toBe(emptyCodex().bits)
+    expect(loaded!.codex.fp).toBe(emptyCodex().fp)
     expect(loaded!.season).toEqual({ index: -1, renown: 0, rewardedLevel: 0, tasks: [] })
     expect(loaded!.meta.codexMilestones).toBe('')
   })
@@ -290,12 +294,17 @@ describe('v2.3 迁移（S10）', () => {
     addInstance(s, 'pick_copper')
     s.materials['ore_iron'] = 5
     const v9 = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    // v12 及以前是逗号串；v13 迁移应把它转成位图（这里故意用旧格式喂进去）
     v9.codex = { items: '', recipes: '', affixes: '', ores: '' }
     localStorage.setItem('forging.save', JSON.stringify({ ...v9, version: 9 }))
     const loaded = loadGame()!
-    expect(loaded.codex.items).toContain('ore_iron')
-    expect(loaded.codex.items).toContain('pick_copper')
-    expect(loaded.codex.recipes).toBe('')
+    const ids = codexIds(loaded, 'items')
+    expect(ids.has('ore_iron')).toBe(true)
+    expect(ids.has('pick_copper')).toBe(true)
+    expect(codexIds(loaded, 'recipes').size).toBe(0)
+    // 位图体积：≤ 32B 的 base64（约 40 字符）
+    expect(loaded.codex.bits.length).toBeLessThanOrEqual(44)
+    expect(loaded.codex.fp).toBeTruthy()
   })
 
   it('v1 → v10 全链：赛季与图鉴字段齐全，进行中的远征保留', () => {

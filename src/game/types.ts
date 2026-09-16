@@ -488,12 +488,14 @@ export interface SettingsState {
 
 // ---------- 图鉴与赛季（v2.3） ----------
 
-/** 图鉴登记（逗号分隔 id 串，压缩存档体积；伙伴/遗物由 companions 与材料表推导） */
+/**
+ * 图鉴登记（v3.0 位图）。
+ * bits = base64 位图（216 bit = 27B，覆盖 物品/配方/词缀/矿场 四个分区；遗物也是 item id，同池登记）；
+ * fp = 内容表指纹（id 顺序 + 规模）—— 不符时按已收集 id 重建位序（内容表增删条目不丢进度）。
+ */
 export interface CodexState {
-  items: string
-  recipes: string
-  affixes: string
-  ores: string
+  bits: string
+  fp: string
 }
 
 export type SeasonTier = 'bronze' | 'silver' | 'gold'
@@ -525,6 +527,10 @@ export interface SeasonState {
 }
 
 export interface CodexMilestoneDef {
+  /** v3.0：图鉴称号（四档各一个，显示在顶栏） */
+  title: string
+  /** v3.0：分区门槛（物品/配方/词缀/伙伴/遗物/矿场 各自的相对进度，0~1） */
+  req: Record<'items' | 'recipes' | 'affixes' | 'companions' | 'relics' | 'ores', number>
   pct: number
   gold: number
   essence: number
@@ -812,6 +818,8 @@ export interface GameState {
     seasonUnlockedOnce: boolean
     /** v2.5：表现层设置 */
     settings?: SettingsState
+    /** v3.0 L2：实例级自动回收的完美度阈值（0~100；0 = 关闭）；低于阈值的非装备实例自动回收 */
+    autoRecyclePerfect?: number
   }
   stats: {
     totalCrafts: number
@@ -899,7 +907,7 @@ export type GameEvent =
   | { type: 'companionLevelUp'; name: string; level: number }
   | { type: 'traitRerolled'; name: string; trait: string }
   | { type: 'bannerUpgraded'; level: number }
-  | { type: 'codexMilestone'; pct: number; gold: number }
+  | { type: 'codexMilestone'; pct: number; gold: number; title: string }
   | { type: 'seasonLevelUp'; level: number }
   | { type: 'seasonRotated'; index: number }
   /** v3.0：连打后 floor/clearedTo 为最高层，count 为本次通过层数 */

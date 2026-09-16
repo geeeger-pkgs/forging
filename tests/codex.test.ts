@@ -10,6 +10,7 @@ import {
   recordOre,
   recordRecipe,
 } from '../src/game/codex'
+import { emptyCodex } from '../src/game/codex-store'
 import { applyCommand } from '../src/game/commands'
 import { CONTENT, itemDef } from '../src/game/content'
 import { sweepAutoRecycle } from '../src/game/automation'
@@ -102,10 +103,27 @@ describe('图鉴进度与里程碑（C4/C5）', () => {
 
   it('C4：里程碑达到即发奖，且幂等（重复调用不重发）', () => {
     const s = newGame('T', 0)
-    // 直接塞满 25% 所需的物品登记（用内容表前 N 项）
-    const ids = Object.keys(CONTENT.items).filter((id) => itemDef(id).category !== 'relic')
-    const need = Math.ceil(222 * SEASON_DEF.codexMilestones[0].pct)
-    for (const id of ids.slice(0, need)) recordItem(s, id)
+    // v3.0：里程碑改为**分区门槛**（每档在每个分区都要达标）→ 按第一档的 req 登记
+    const m0 = { pct: 0.25, req: { items: 0.4, recipes: 0.3, affixes: 0.34, companions: 0.34, relics: 0.34, ores: 0.5 } }
+    const cats = codexProgress(s).categories
+    for (const [id, ratio] of Object.entries(m0.req)) {
+      const cat = cats.find((x) => x.id === id)!
+      const need = Math.ceil(cat.total * ratio)
+      if (id === 'items') {
+        const ids = Object.keys(CONTENT.items).filter((x) => itemDef(x).category !== 'relic')
+        for (const x of ids.slice(0, need)) recordItem(s, x)
+      } else if (id === 'recipes') {
+        for (const r of CONTENT.recipes.slice(0, need)) recordRecipe(s, r.id)
+      } else if (id === 'affixes') {
+        for (const a of CONTENT.affixes.affixes.slice(0, need)) recordAffix(s, a.id)
+      } else if (id === 'ores') {
+        for (const o of CONTENT.ores.slice(0, need)) recordOre(s, o.id)
+      } else if (id === 'companions') {
+        for (const c of CONTENT.companions.companions.slice(0, need)) s.companions[c.id] = { level: 1, xp: 0, trait: 'scholar' }
+      } else if (id === 'relics') {
+        for (const x of Object.keys(CONTENT.items).filter((x) => itemDef(x).category === 'relic').slice(0, need)) recordItem(s, x)
+      }
+    }
     const ev1 = checkCodexMilestones(s)
     expect(ev1.some((e) => e.type === 'codexMilestone')).toBe(true)
     const goldAfter = s.gold
@@ -118,10 +136,8 @@ describe('图鉴进度与里程碑（C4/C5）', () => {
   it('C4b：100% 里程碑发徽记（图鉴与赛季解耦，不发赛季声望）', () => {
     const s = newGame('T', 0)
     // 全量登记（物品/配方/词缀/矿场）+ 伙伴 + 遗物
-    for (const id of Object.keys(CONTENT.items)) {
-      if (itemDef(id).category !== 'relic') recordItem(s, id)
-      else s.materials[id] = 1
-    }
+    // v3.0：遗物也是 item id → 同样走 recordItem（位图单一真源，不再靠 materials 反推）
+    for (const id of Object.keys(CONTENT.items)) recordItem(s, id)
     for (const r of CONTENT.recipes) recordRecipe(s, r.id)
     for (const a of CONTENT.affixes.affixes) recordAffix(s, a.id)
     for (const o of CONTENT.ores) recordOre(s, o.id)
@@ -139,11 +155,11 @@ describe('图鉴进度与里程碑（C4/C5）', () => {
 describe('冷启动回溯（C6）', () => {
   it('C6：老档（无 codex）回溯登记持有物与装备词缀；配方/词缀历史不回溯', () => {
     const s = newGame('T', 0)
-    s.codex = { items: '', recipes: '', affixes: '', ores: '' }
+    s.codex = emptyCodex()
     addMaterial(s, 'ore_iron', 5)
     const id = addInstance(s, 'pick_mithril')
     // 模拟"老档"：清空登记但保留持有物
-    s.codex = { items: '', recipes: '', affixes: '', ores: '' }
+    s.codex = emptyCodex()
     checkCodexBackfill(s)
     expect(codexIds(s, 'items').has('ore_iron')).toBe(true)
     expect(codexIds(s, 'items').has('pick_mithril')).toBe(true)

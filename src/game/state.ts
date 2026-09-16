@@ -5,6 +5,7 @@
 import { perfectAffixCount, rollAffixes } from './affixes'
 import { recordAffix, recordItem } from './codex'
 import { CONTENT } from './content'
+import { emptyCodex } from './codex-store'
 import type { EquipInstance, GameState, ItemId } from './types'
 
 export function newGame(name: string, now: number): GameState {
@@ -22,7 +23,7 @@ export function newGame(name: string, now: number): GameState {
     buffs: [],
     companions: {},
     abyss: { bestFloor: 0, crystals: 0, stamina: 12, staminaAt: now, purchased: {}, tickets: 0, permanentSpeed: 0, title: false },
-    codex: { items: '', recipes: '', affixes: '', ores: '' },
+    codex: emptyCodex(),
     season: { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
     flags: {
       tutorial: { current: 1, progress: 0, completed: [], claimed: [] },

@@ -3,12 +3,14 @@
 // ============================================================
 import { perfectAffixCount, rollAffixes } from '../game/affixes'
 import { checkCodexBackfill } from '../game/codex'
+import { emptyCodex, normalizeCodex } from '../game/codex-store'
 import { CONTENT } from '../game/content'
+import { realignSeasonForEpoch } from '../game/season'
 import type { EquipInstance, FxLevel, FxSetting, GameState, SettingsState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 12
+export const SAVE_VERSION = 13
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -154,6 +156,26 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       settings: (s.meta as unknown as { settings?: GameState['meta']['settings'] }).settings ?? { ...CONTENT.fx.defaults },
     },
   }),
+  /**
+   * v3.0：图鉴改位图（旧逗号串 → 位图，按内容表 id 顺序编位；遗物同池登记）。
+   * 同时补 v3.0 新字段：实例级自动回收阈值（默认 60%，0 = 关闭）。
+   * 迁移是**确定性**的：同一旧档必然得到同一位图。
+   */
+  12: (s) => {
+    const legacy = (s as unknown as { codex?: Partial<Record<'items' | 'recipes' | 'affixes' | 'ores', string>> }).codex
+    const next: GameState = {
+      ...s,
+      version: 13,
+      codex: normalizeCodex({ bits: '', fp: '' }, legacy),
+      meta: {
+        ...s.meta,
+        autoRecyclePerfect: (s.meta as unknown as { autoRecyclePerfect?: number }).autoRecyclePerfect ?? 60,
+      },
+    }
+    // v3.0 C8：赛季 EPOCH 对齐（保留 renown/rewardedLevel，只重算 index 与任务集）
+    realignSeasonForEpoch(next, Date.now())
+    return next
+  },
   // v2.4：深渊回廊（体力给满 12：迁移不纯但被持久化，与 newAffixSalt 同先例）
   10: (s) => ({
     ...s,
@@ -179,7 +201,7 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
   9: (s) => ({
     ...s,
     version: 10,
-    codex: (s as unknown as { codex?: GameState['codex'] }).codex ?? { items: '', recipes: '', affixes: '', ores: '' },
+    codex: (s as unknown as { codex?: GameState['codex'] }).codex ?? emptyCodex(),
     season:
       (s as unknown as { season?: GameState['season'] }).season ?? { index: -1, renown: 0, rewardedLevel: 0, tasks: [] },
     meta: {
@@ -230,7 +252,7 @@ function ensureFields(s: GameState): GameState {
     out = { ...out, meta: { ...out.meta, expeditions: { runs: [], banner: 0, nextRunId: 1 } } }
   }
   if (!out.companions) out = { ...out, companions: {} }
-  if (!out.codex) out = { ...out, codex: { items: '', recipes: '', affixes: '', ores: '' } }
+  out = { ...out, codex: normalizeCodex(out.codex ?? { bits: '', fp: '' }, out.codex as never) }
   // v2.5：设置补齐 + 非法值消毒（手改存档/跨版本导入都不应让界面进入未定义档位）
   out = { ...out, meta: { ...out.meta, settings: sanitizeSettings(out.meta.settings) } }
   if (!out.abyss) {
