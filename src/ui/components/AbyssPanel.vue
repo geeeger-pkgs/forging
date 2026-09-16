@@ -40,7 +40,13 @@ const breakdown = computed(() =>
   })).sort((a, b) => b.contribution - a.contribution),
 )
 
-const canChallenge = computed(() => view.value.gap <= 0 && view.value.stamina >= 1)
+/** v3.1：按"距离下一层还差多少"给出补强建议（取当前贡献最低的三项） */
+const topGapLabels = computed(() => {
+  const order = [...breakdown.value].sort((x, y) => x.contribution - y.contribution)
+  return order.slice(0, 3).map((b) => b.label).join(' / ')
+})
+
+const canChallenge = computed(() => view.value.gap <= 0 && view.value.stamina >= chainCost.value)
 /** v3.0 测评 Minor：扫荡次数选项去重 + 文案与实际执行次数一致 */
 const sweepChoices = computed(() => {
   const max = sweepMax.value
@@ -48,6 +54,8 @@ const sweepChoices = computed(() => {
 })
 const sweepActual = computed(() => Math.min(sweepCount.value, sweepMax.value))
 /** 连打可选项：受内容表上限与"下一层是否达标"限制（逐层判定，内核会在首个失败层停止） */
+/** v3.1：连打体力代价（×1/×2 = 1 点、×3 = 2 点，取自内容表） */
+const chainCost = computed(() => DEF.chainCost?.[chainTarget.value - 1] ?? chainTarget.value)
 const chainOptions = computed(() => {
   const max = Math.min(DEF.challengeMaxFloors, 3)
   return Array.from({ length: max }, (_, i) => i + 1)
@@ -147,7 +155,7 @@ function sweep(n: number): void {
           :title="view.gap > 0 ? '战力不足：不满足门槛时无法发起（也不会消耗体力）' : view.stamina < 1 ? '体力不足' : ''"
           @click="cmd({ type: 'challengeAbyss', floors: chainTarget })"
         >
-          挑战第 {{ view.nextFloor }} 层起（连打 {{ chainTarget }} 层 · 1 体力）
+          挑战第 {{ view.nextFloor }} 层起（连打 {{ chainTarget }} 层 · {{ chainCost }} 体力）
         </button>
       </div>
       <div class="actions">
@@ -174,10 +182,19 @@ function sweep(n: number): void {
         </button>
       </div>
       <p class="dim small">
-        连打 = 从下一层起逐层判定：通过就继续，遇到第一个不达标的层停下（整次只花 1 点体力；首通奖励逐层照发）。
+        连打 = 从下一层起逐层判定：通过就继续，遇到第一个不达标的层停下（首通奖励逐层照发；战力不足不消耗体力）。
         层词条每 5 层一循环：{{ mod.name }}{{ mod.id === 'rich' ? '（墙：门槛 ×1.06、首通结晶 ×1.5）' : mod.id === 'rift' ? '（喘息：门槛 ×0.94、首通结晶 ×0.8）' : '（该层权重倾斜，重配装有利）' }}。
       </p>
-      <p v-if="view.gap > 0" class="bad small">⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。</p>
+      <p v-if="view.gap > 0" class="bad small">
+        ⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。
+        <template v-if="view.bestFloor === 0">
+          <br />入门提示：第 1 层只需 {{ view.nextRequirement.toFixed(2) }}（入门三层之一），
+          一件 T3+ 强化装备 + 少量速度/稀有词缀即可起步；再往上才需要整套 build。
+        </template>
+        <template v-else>
+          <br />补强建议（按本层有效权重排序）：优先提升 {{ topGapLabels }}。
+        </template>
+      </p>
     </section>
 
     <section class="card">

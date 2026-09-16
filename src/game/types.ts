@@ -719,6 +719,18 @@ export interface LoadoutDef {
   actions: LoadoutAction[]
 }
 
+/**
+ * v3.1 装备预设（测评 A/B 共同点名：深渊层词条要求"为某层重配装"，
+ * 但换装一次要约 20 次点击 → 摩擦 >> 收益）。
+ * 只存槽位 → instanceId 的映射；应用时逐槽穿戴（装备已被回收/不存在的槽位跳过并如实提示）。
+ */
+export interface GearSetDef {
+  id: string
+  name: string
+  /** 槽位 → 实例 id（缺省 = 该槽留空） */
+  slots: Partial<Record<SlotId, number>>
+}
+
 /** 自动回收：itemId → 保留数量（卖出超出部分） */
 export type AutoRecycleMap = Record<string, number>
 
@@ -840,6 +852,8 @@ export interface GameState {
     autoRecyclePerfect?: number
     /** v3.1：金币商店购买次数（itemId → 次数），用于价格递增 */
     goldShop?: Record<string, number>
+    /** v3.1：装备预设（最多 3 套，深潜/远征/日常各一） */
+    gearSets?: GearSetDef[]
   }
   stats: {
     totalCrafts: number
@@ -917,6 +931,10 @@ export type Command =
   | { type: 'setSettings'; patch: Partial<SettingsState> }
   /** v3.1：金币商店（金 → 精华/重铸石，价格递增的循环出口） */
   | { type: 'buyGoldShopItem'; id: string }
+  /** v3.1：装备预设（保存当前着装 / 一键穿戴 / 删除） */
+  | { type: 'saveGearSet'; name: string }
+  | { type: 'applyGearSet'; setId: string }
+  | { type: 'deleteGearSet'; setId: string }
 
 // ---------- 事件（内核 → UI 回流） ----------
 

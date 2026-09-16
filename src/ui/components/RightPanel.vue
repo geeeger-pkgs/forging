@@ -152,6 +152,14 @@ function tidyBag(): void {
   cmd({ type: 'tidyBag' })
 }
 
+/** v3.1 装备预设：3 套一键换装（深渊层词条要求为某层重配装；此前约 20 击/轮） */
+const gearSets = computed(() => store.state.meta.gearSets ?? [])
+function saveGearSet(): void {
+  const input = window.prompt('保存当前着装为配装（最多 3 套，超出挤掉最旧的）：名称', `配装${gearSets.value.length + 1}`)
+  if (input === null) return
+  cmd({ type: 'saveGearSet', name: input })
+}
+
 /** v3.0：是否可回收（0 收益的遗物/徽记不可回收，避免误删图鉴进度） */
 function recyclable(itemId: string): boolean {
   return (CONTENT.items[itemId]?.value ?? 0) > 0
@@ -209,6 +217,27 @@ function isTop(score: number): boolean {
   <aside class="right">
     <section>
       <h3>装备</h3>
+      <div class="gearsets">
+        <button
+          v-for="g in gearSets"
+          :key="g.id"
+          class="btn sm"
+          :title="`一键穿戴「${g.name}」`"
+          @click="cmd({ type: 'applyGearSet', setId: g.id })"
+        >
+          {{ g.name }}
+        </button>
+        <button class="btn sm" title="保存当前着装（最多 3 套）" @click="saveGearSet">存配装</button>
+        <button
+          v-for="g in gearSets"
+          :key="'del-' + g.id"
+          class="btn sm danger"
+          :title="`删除「${g.name}」`"
+          @click="cmd({ type: 'deleteGearSet', setId: g.id })"
+        >
+          ✕
+        </button>
+      </div>
       <div class="slots">
         <div v-for="s in slots" :key="s.id" class="slot" :class="{ filled: s.inst }">
           <div class="slot-label">{{ s.label }}</div>
@@ -304,6 +333,13 @@ function isTop(score: number): boolean {
 </template>
 
 <style scoped>
+.gearsets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 6px;
+}
 .bagbar {
   display: flex;
   align-items: center;

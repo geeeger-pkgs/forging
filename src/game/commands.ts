@@ -59,6 +59,7 @@ import type {
   ItemId,
   LoadoutAction,
   SettingsState,
+  SlotId,
 } from './types'
 
 /** 壳层便捷入口：先结算已流逝时间，再应用命令 */
@@ -147,6 +148,12 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       upgradeBanner(state, events)
       return events
     }
+    case 'saveGearSet':
+      return saveGearSet(state, cmd.name)
+    case 'applyGearSet':
+      return applyGearSet(state, cmd.setId)
+    case 'deleteGearSet':
+      return deleteGearSet(state, cmd.setId)
     case 'buyGoldShopItem': {
       const events: GameEvent[] = []
       buyGoldShopItem(state, cmd.id, events)
@@ -336,6 +343,62 @@ function recycleInstance(state: GameState, instanceId: number): GameEvent[] {
   if (idx >= 0) state.equipment.splice(idx, 1)
   addGold(state, gain)
   return [{ type: 'goldGained', amount: gain }]
+}
+
+// ---------------- v3.1 装备预设（深渊换装的落地条件） ----------------
+
+/** 最多 3 套（UI 一屏放得下，也不至于让"预设"变成第二种行囊） */
+export const MAX_GEAR_SETS = 3
+
+function saveGearSet(state: GameState, name: string): GameEvent[] {
+  const sets = (state.meta.gearSets ??= [])
+  const slots: Partial<Record<SlotId, number>> = {}
+  for (const [slot, instId] of Object.entries(state.slots)) {
+    if (typeof instId === 'number') slots[slot as SlotId] = instId
+  }
+  if (Object.keys(slots).length === 0) return [{ type: 'blocked', reason: '当前没有已装备的物品' }]
+  const trimmed = name.trim().slice(0, 10) || `配装${sets.length + 1}`
+  const id = `gs_${Date.now().toString(36)}_${sets.length}`
+  sets.push({ id, name: trimmed, slots })
+  // 超出上限：挤掉最旧的一套（与 toast 上限同一取舍：保留最近的）
+  while (sets.length > MAX_GEAR_SETS) sets.shift()
+  if (!sets.some((s) => s.id === id)) {
+    // 被挤掉的正是刚存的（理论上不会发生）→ 兜底替换最后一套
+    sets[sets.length - 1] = { id, name: trimmed, slots }
+  }
+  return [{ type: 'notice', text: `已保存配装「${trimmed}」（${Object.keys(slots).length} 件）` }]
+}
+
+function applyGearSet(state: GameState, setId: string): GameEvent[] {
+  const sets = state.meta.gearSets ?? []
+  const set = sets.find((s) => s.id === setId)
+  if (!set) return [{ type: 'blocked', reason: '配装不存在' }]
+  const events: GameEvent[] = []
+  const missing: string[] = []
+  for (const [slot, instId] of Object.entries(set.slots) as [SlotId, number][]) {
+    const inst = instanceById(state, instId)
+    if (!inst) {
+      missing.push(slot)
+      continue
+    }
+    state.slots[slot] = instId
+  }
+  // 预设里没有的槽位：保持现状（不主动卸下 —— 避免"穿一半"的意外）
+  events.push({
+    type: 'notice',
+    text: missing.length
+      ? `已应用配装「${set.name}」（${missing.length} 件已不存在，跳过：${missing.join('、')}）`
+      : `已应用配装「${set.name}」`,
+  })
+  return events
+}
+
+function deleteGearSet(state: GameState, setId: string): GameEvent[] {
+  const sets = state.meta.gearSets ?? []
+  const i = sets.findIndex((s) => s.id === setId)
+  if (i < 0) return [{ type: 'blocked', reason: '配装不存在' }]
+  const [removed] = sets.splice(i, 1)
+  return [{ type: 'notice', text: `已删除配装「${removed.name}」` }]
 }
 
 // ---------------- v3.1 金币商店（循环出口） ----------------
