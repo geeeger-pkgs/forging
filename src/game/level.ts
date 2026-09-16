@@ -50,6 +50,15 @@ export function totalLevel(skills: Record<SkillId, number>): number {
 }
 
 /** 升到指定等级所需的累计 XP（v1.5：传承起点等级用） */
+/** v3.4 A2：里程碑解锁状态（供 UI 与测试；纯读） */
+export function milestoneView(bestSkillLevel: number): { level: number; desc: string; unlocked: boolean }[] {
+  return (CONTENT.levelCurve.milestones ?? []).map((m) => ({
+    level: m.level,
+    desc: m.desc,
+    unlocked: bestSkillLevel >= m.level,
+  }))
+}
+
 export function xpForLevel(level: number): number {
   let sum = 0
   for (let l = 1; l < level; l++) sum += xpToNext(l)

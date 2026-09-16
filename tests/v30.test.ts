@@ -497,11 +497,11 @@ describe('F8 收尾项（C1/C4/C5/C12）', () => {
 // ---------------- F9 迁移全链 ----------------
 
 describe('F9 迁移全链（1 → 13）', () => {
-  it('SAVE_VERSION = 13', () => {
-    expect(SAVE_VERSION).toBe(13)
+  it('SAVE_VERSION = 14（v3.4 A2 里程碑粘性字段）', () => {
+    expect(SAVE_VERSION).toBe(14)
   })
 
-  it('v1 老档（最小结构）可迁到 v13 且结构完整', () => {
+  it('v1 老档（最小结构）可迁到当前版本且结构完整', () => {
     const minimal = {
       version: 1,
       character: { name: '老档', createdAt: 0 },
@@ -518,7 +518,7 @@ describe('F9 迁移全链（1 → 13）', () => {
     }
     const back = deserializeSave(JSON.stringify(minimal))
     expect(back).not.toBeNull()
-    expect(back!.version).toBe(13)
+    expect(back!.version).toBe(SAVE_VERSION)
     expect(back!.gold).toBe(123)
     expect(back!.character.name).toBe('老档')
     expect(back!.codex.bits).toBeTruthy()
@@ -536,7 +536,7 @@ describe('F9 迁移全链（1 → 13）', () => {
     delete (raw.meta as Record<string, unknown>).autoRecyclePerfect
     const back = deserializeSave(JSON.stringify(raw))
     expect(back).not.toBeNull()
-    expect(back!.version).toBe(13)
+    expect(back!.version).toBe(SAVE_VERSION)
     const items = codexIds(back!, 'items')
     expect(items.has('ore_copper')).toBe(true)
     expect(items.has('pick_iron')).toBe(true)

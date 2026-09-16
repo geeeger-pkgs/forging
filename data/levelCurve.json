@@ -25,5 +25,37 @@
       "fromLevel": 76,
       "multiplier": 1.01
     }
+  ],
+  "milestones": [
+    {
+      "level": 80,
+      "stat": "allSpeed",
+      "value": 0.01,
+      "desc": "全体动作速度 +1%"
+    },
+    {
+      "level": 85,
+      "stat": "quantity",
+      "value": 0.01,
+      "desc": "产量 +1%"
+    },
+    {
+      "level": 90,
+      "stat": "wisdom",
+      "value": 0.02,
+      "desc": "经验 +2%"
+    },
+    {
+      "level": 95,
+      "stat": "rareFind",
+      "value": 0.01,
+      "desc": "稀有发现 +1%"
+    },
+    {
+      "level": 100,
+      "stat": "allSpeed",
+      "value": 0.01,
+      "desc": "全体速度再 +1%（满级）"
+    }
   ]
 }

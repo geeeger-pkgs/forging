@@ -5,7 +5,7 @@ import { activeBuffs } from '../../game/buffs'
 import { codexMilestonesClaimed } from '../../game/codex'
 import { CONTENT, RUNE_BY_ID } from '../../game/content'
 import { totalValue } from '../../game/economy'
-import { totalLevel } from '../../game/level'
+import { milestoneView, totalLevel } from '../../game/level'
 import { refLabel } from '../../game/refs'
 import { buffIcon, fmtNum } from '../icons'
 import ProgressBar from './ProgressBar.vue'
@@ -15,6 +15,9 @@ const queue = computed(() => store.state.actions.queue)
 const shownQueue = computed(() => queue.value.slice(0, 4))
 const overflow = computed(() => Math.max(0, queue.value.length - 4))
 const tl = computed(() => totalLevel(store.state.skills))
+/** v3.4 A2：里程碑进度（按历史最高技能等级；传承后不掉档） */
+const milestones = computed(() => milestoneView(store.state.meta.bestSkillLevel ?? 1))
+const nextMilestone = computed(() => milestones.value.find((m) => !m.unlocked) ?? null)
 const tv = computed(() => totalValue(store.state))
 
 /** v3.0 L4：已达成图鉴里程碑的最高档称号 */
@@ -73,6 +76,15 @@ const buffs = computed(() =>
       <!-- v3.0 L4：图鉴四档称号（取已达成的最高档） -->
       <span v-if="codexTitle" class="title-badge codex" title="图鉴里程碑称号">图鉴·{{ codexTitle }}</span>
       <span class="dim tl">总等级 {{ tl }}</span>
+      <!-- v3.4 A2：Lv76~100 里程碑（回答满级段还有什么；下一档悬停可见说明） -->
+      <span
+        v-if="milestones.length"
+        class="dim tl"
+        :title="nextMilestone ? `下一档 Lv${nextMilestone.level}：${nextMilestone.desc}` : '里程碑已全部达成'"
+      >
+        🏅 里程碑 {{ milestones.filter((m) => m.unlocked).length }}/{{ milestones.length }}
+        <template v-if="nextMilestone"> · 下一档 Lv{{ nextMilestone.level }}</template>
+      </span>
     </div>
   </header>
 </template>

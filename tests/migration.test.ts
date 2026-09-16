@@ -45,8 +45,8 @@ function sample(v: number): Record<string, unknown> {
 }
 
 describe('迁移全链（1 → 13）', () => {
-  it('SAVE_VERSION 为 13', () => {
-    expect(SAVE_VERSION).toBe(13)
+  it('SAVE_VERSION 为当前版本（v3.4 起为 14）', () => {
+    expect(SAVE_VERSION).toBe(14)
   })
 
   it('v1~v12 每个版本都能迁到当前版本，且关键字段无损', () => {
@@ -90,7 +90,7 @@ describe('迁移全链（1 → 13）', () => {
     const raw = sample(12) as Record<string, unknown>
     raw.codex = { items: 'ore_iron,pick_copper', recipes: 'smelt_copper', affixes: 'keen', ores: 'copper_seam' }
     const back = deserializeSave(JSON.stringify(raw))!
-    expect(back.version).toBe(13)
+    expect(back.version).toBe(SAVE_VERSION)
     const items = codexIds(back, 'items')
     expect(items.has('ore_iron')).toBe(true)
     expect(items.has('pick_copper')).toBe(true)

@@ -238,6 +238,23 @@ const AUDIT_EVIDENCE = {
     minActionFloorMs: config.minActionTimeMs,
   },
 }
+// v3.4 A2：Lv76~100 里程碑对进度时长的影响（口径：时长 ∝ 1/(1+速度加成) × 1/(1+经验加成)）
+// 说明：里程碑 5 条中，allSpeed 两条（+2%）影响动作速度；wisdom 一条（+2%）影响升级所需时间；
+// quantity/rareFind 改变产出结构但不改变 76→100 的时长口径（故不计入）。模型与 F 段同源（同档供应链基线）。
+const lc = rd('levelCurve.json')
+const msSpeed = (lc.milestones ?? []).filter((m) => m.stat === 'allSpeed').reduce((a, m) => a + m.value, 0)
+const msWisdom = (lc.milestones ?? []).filter((m) => m.stat === 'wisdom').reduce((a, m) => a + m.value, 0)
+const msDurationDelta = 1 / (1 + msSpeed) / (1 + msWisdom) - 1
+AUDIT_EVIDENCE.f = {
+  milestones: {
+    count: (lc.milestones ?? []).length,
+    speedBonus: msSpeed,
+    wisdomBonus: msWisdom,
+    durationDeltaPct: msDurationDelta,
+    model: '时长 ∝ 1/(1+速度) × 1/(1+经验)；仅计 allSpeed 与 wisdom 两类里程碑',
+    withinBudget: Math.abs(msDurationDelta) <= 0.05,
+  },
+}
 writeFileSync(join(root, 'docs', 'sim-audit-output.json'), JSON.stringify(AUDIT_EVIDENCE, null, 2) + String.fromCharCode(10))
 
 console.log('F. 进度时间线（v2.0 可玩性证据）：升到目标级所需小时数（链路受限）')

@@ -10,5 +10,15 @@
     "speedMaxAll": 3.2835,
     "rareMax": 1.84,
     "minActionFloorMs": 250
+  },
+  "f": {
+    "milestones": {
+      "count": 5,
+      "speedBonus": 0.02,
+      "wisdomBonus": 0.02,
+      "durationDeltaPct": -0.038831218762014674,
+      "model": "时长 ∝ 1/(1+速度) × 1/(1+经验)；仅计 allSpeed 与 wisdom 两类里程碑",
+      "withinBudget": true
+    }
   }
 }

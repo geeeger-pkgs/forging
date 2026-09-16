@@ -132,6 +132,16 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
     const perLevel = abyssDef.shop.find((x: { id: string; perLevel?: number }) => x.id === 'permanent_speed')?.perLevel ?? 0
     agg.allSpeed += perLevel * permLevel
   }
+  // v3.4 A2：Lv76~100 里程碑（每 5 级一条永久被动，按**历史最高技能等级**解锁；
+  // 与词缀/符文/精通同池相加，不新增乘区 —— 单源聚合，面板与结算都从这里读）
+  for (const m of CONTENT.levelCurve.milestones ?? []) {
+    if (state.meta.bestSkillLevel < m.level) continue
+    if (m.stat === 'allSpeed') agg.allSpeed += m.value
+    else if (m.stat === 'quantity') agg.quantity += m.value
+    else if (m.stat === 'wisdom') agg.wisdom += m.value
+    else if (m.stat === 'rareFind') agg.rareFind += m.value
+    else if (m.stat === 'efficiency') agg.efficiency += m.value
+  }
   agg.setTier = bestCount >= 3 ? bestTier : null
   agg.setCount = bestCount
   if (bestCount >= 5) agg.allSpeed += 0.04

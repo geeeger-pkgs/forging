@@ -34,6 +34,7 @@ export function newGame(name: string, now: number): GameState {
       carry: { items: {} },
       tasks: { dailyDate: '', daily: [], rerollsLeft: 1, paidRerollsLeft: 3, weekKey: '', weekly: null },
       prestige: { points: 0, perks: {} },
+      bestSkillLevel: 1,
       autoRecycle: {},
       loadouts: [],
       affixSalt: (Math.floor(Math.random() * 0xffffffff) + 1) >>> 0,

@@ -333,6 +333,8 @@ function grantXp(state: GameState, skill: SkillId, amount: number, events: GameE
   state.skills[skill] += amount
   events.push({ type: 'xpGained', skill, xp: amount })
   const after = levelInfo(state.skills[skill]).level
+  // v3.4 A2：维护历史最高技能等级（单调；里程碑按它解锁，传承后不掉档）
+  if (after > (state.meta.bestSkillLevel ?? 1)) state.meta.bestSkillLevel = after
   for (let l = before + 1; l <= after; l++) events.push({ type: 'levelUp', skill, level: l })
 }
 

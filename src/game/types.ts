@@ -132,6 +132,19 @@ export interface LevelCurveDef {
   baseXp: number
   /** 分段乘区（k 属于 [fromLevel, nextFrom-1]） */
   bands: LevelBand[]
+  /**
+   * v3.4 A2：Lv76~100 段里程碑（每 5 级一条永久被动）。
+   * 触发口径：**历史最高技能等级**（`meta.bestSkillLevel`，单调）—— 传承重置技能后不掉档。
+   * 起因：v3.0 双玩家评审"Lv80→100 零内容"（曲线压过一半、内容没补）。
+   */
+  milestones?: LevelMilestoneDef[]
+}
+
+export interface LevelMilestoneDef {
+  level: number
+  stat: 'allSpeed' | 'quantity' | 'wisdom' | 'rareFind' | 'efficiency'
+  value: number
+  desc: string
 }
 
 export interface TutorialStepDef {
@@ -842,6 +855,8 @@ export interface GameState {
     carry: OfflineCarry
     tasks: TaskState
     prestige: PrestigeState
+    /** v3.4 A2：历史最高技能等级（单调；里程碑由此派生，传承不掉档） */
+    bestSkillLevel: number
     /** v1.7：自动回收（itemId → 保留数量） */
     autoRecycle: AutoRecycleMap
     /** v1.7：动作预设 */

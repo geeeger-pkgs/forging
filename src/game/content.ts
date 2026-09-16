@@ -469,6 +469,18 @@ export function validateContent(t: ContentTables): string[] {
 
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
+  // v3.4 A2：里程碑表校验（手写数据，gen:check 不覆盖 → 必须在这里守住）
+  const lms = t.levelCurve.milestones ?? []
+  if (lms.length !== 5) errs.push('levelCurve.milestones 应为 5 条（Lv80/85/90/95/100）')
+  const allowedStats = ['allSpeed', 'quantity', 'wisdom', 'rareFind', 'efficiency']
+  for (let i = 0; i < lms.length; i++) {
+    const m = lms[i]
+    if (!(m.level >= 76 && m.level <= 100)) errs.push('里程碑等级越界: ' + m.level)
+    if (i > 0 && !(m.level > lms[i - 1].level)) errs.push('里程碑等级必须严格递增')
+    if (!allowedStats.includes(m.stat)) errs.push('里程碑 stat 未知: ' + m.stat)
+    if (!(m.value > 0) || m.value > 0.02) errs.push('里程碑数值越界(应 ∈ (0, 0.02]): ' + m.desc)
+    if (!m.desc) errs.push('里程碑缺少说明文案')
+  }
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
     if (t.levelCurve.bands[i].fromLevel <= t.levelCurve.bands[i - 1].fromLevel) errs.push('levelCurve 分段必须递增')
   }

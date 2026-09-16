@@ -5,12 +5,13 @@ import { perfectAffixCount, rollAffixes } from '../game/affixes'
 import { checkCodexBackfill } from '../game/codex'
 import { emptyCodex, normalizeCodex } from '../game/codex-store'
 import { CONTENT } from '../game/content'
+import { levelInfo } from '../game/level'
 import { realignSeasonForEpoch } from '../game/season'
 import type { EquipInstance, FxLevel, FxSetting, GameState, SettingsState } from '../game/types'
 
 const SAVE_KEY = 'forging.save'
 const BAK_KEY = 'forging.save.bak'
-export const SAVE_VERSION = 13
+export const SAVE_VERSION = 14
 
 /** 存档私有词缀盐（迁移 7→8 时生成一次并持久化） */
 function newAffixSalt(): number {
@@ -210,6 +211,14 @@ const MIGRATIONS: Record<number, (s: GameState) => GameState> = {
       seasonUnlockedOnce: (s.meta as unknown as { seasonUnlockedOnce?: boolean }).seasonUnlockedOnce ?? false,
     },
   }),
+}
+
+/** v3.4 A2：用当前技能等级回填历史最高技能等级（里程碑口径，单调不回退） */
+MIGRATIONS[13] = (s) => {
+  const skills = s.skills as Record<string, number>
+  let best = 1
+  for (const xp of Object.values(skills)) best = Math.max(best, levelInfo(Number(xp) || 0).level)
+  return { ...s, version: 14, meta: { ...s.meta, bestSkillLevel: best } }
 }
 
 function migrate(s: GameState): GameState {
