@@ -2,6 +2,7 @@
 // ============================================================
 // 深渊回廊（v2.4）：战力明细 / 下一层门槛 / 体力 / 挑战与扫荡 / 商店 / 记录
 // ============================================================
+import { CONTENT } from '../../game/content'
 import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
 import { abyssDef, abyssModifier, abyssView } from '../../game/abyss'
@@ -81,6 +82,13 @@ const sweepMax = computed(() => Math.min(DEF.sweepMaxCount, Math.max(1, view.val
 function sweep(n: number): void {
   cmd({ type: 'sweepAbyss', count: n })
 }
+
+/** v3.4.5：增长率文案由**内容表插值**（此前写死，评审把 ×1.3 改成 ×1.2 全套测试仍绿） */
+const growthText = computed(() => {
+  const shop = CONTENT.abyss.shop as unknown as { name: string; growth?: number }[]
+  const items = shop.filter((s) => (s.growth ?? 1) > 1)
+  return items.map((s) => `${s.name} ×${s.growth}`).join(" / ")
+})
 </script>
 
 <template>
@@ -223,7 +231,7 @@ function sweep(n: number): void {
         </div>
       </div>
       <p class="dim small">
-        可重复购买项的价格逐次上调（重铸券 ×1.3 / 永久速度 ×1.1，与内容表一致）；结晶不可回收、不可换金（只在本店使用）。
+        可重复购买项的价格逐次上调（{{ growthText }}）；结晶不可回收、不可换金（只在本店使用）。
       </p>
     </section>
 

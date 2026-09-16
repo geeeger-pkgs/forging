@@ -174,8 +174,8 @@ export function achievementValue(state: GameState, def: AchievementDef): number 
       return state.season ? Math.floor((state.season.renown ?? 0) / (CONTENT.season.renownPerLevel || 1)) : 0
     case 'codexPercent': {
       // 与图鉴里程碑同源：用 codexProgress 的收集比例
-      const p = codexProgress(state)
-      return typeof p === 'number' ? p : (p as { pct?: number })?.pct ?? 0
+      const { pct } = codexProgress(state)
+      return pct * 100 // v3.4.5：与 target 单位一致（百分数）；此前返回 0~1 小数
     }
     case 'bannerLevel':
       return state.meta.expeditions?.banner ?? 0

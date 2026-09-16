@@ -68,12 +68,12 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
       okLevel: lv >= site.unlockLevel,
       durationMs: dur,
       baseTimeMs: baseTimeOf(ref),
-      xp: site.xp * (1 + agg.wisdom),
+      xp: site.xp * (1 + effectiveStats(state, now).wisdom), // v3.4.5：含精通（此前只给装备侧）
       xpSuccessDoubled: false,
       inputs: [],
       outputs: [],
       mineYield: { min: y.min, max: y.max, itemId: y.itemId, name: outDef.name },
-      drops: dropsInfo(ref, agg.rareFind),
+      drops: dropsInfo(ref, effectiveStats(state, now).rareFind, effectiveStats(state, now).stoneFind), // v3.4.5：真接线（此前 stoneFind 参数无人传）
       canStart: !blockReason,
       blockReason,
     }
@@ -98,11 +98,11 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
       okLevel: lv >= recipe.unlockLevel,
       durationMs: dur,
       baseTimeMs: baseTimeOf(ref),
-      xp: recipe.xp * (1 + agg.wisdom),
+      xp: recipe.xp * (1 + effectiveStats(state, now).wisdom), // v3.4.5：含精通
       xpSuccessDoubled: false,
       inputs,
       outputs: recipe.outputs.map((o) => ({ itemId: o.itemId, name: itemDef(o.itemId).name, qty: o.qty })),
-      drops: dropsInfo(ref, agg.rareFind),
+      drops: dropsInfo(ref, effectiveStats(state, now).rareFind, effectiveStats(state, now).stoneFind), // v3.4.5：真接线
       canStart: !blockReason,
       blockReason,
     }

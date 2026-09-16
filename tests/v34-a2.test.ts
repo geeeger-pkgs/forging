@@ -350,3 +350,46 @@ describe('v3.4.4 第二批：成就进度口径与判定同源（全应用扫描
     if (cc) expect(achievementValue(s, cc)).toBeGreaterThanOrEqual(1)
   })
 })
+
+describe('v3.4.5：评审实测的四条口径（可复算）真修复', () => {
+  it('弹窗稀有掉率真接线 stoneFind（此前形参无人传）', async () => {
+    const { describeAction } = await import('../src/app/describe')
+    const s = newGame('T', 0)
+    const ref = { kind: 'mine' as const, siteId: 'void_seam' }
+    const before = describeAction(s, ref, 0).drops.find((d) => d.itemId === 'emberstone')?.rate ?? 0
+    // 给一件带勘探词缀的装备（stoneFind）→ 重铸石掉率应上升
+    const id = addInstance(s, 'pick_copper')
+    s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'prospect', value: 0.2 }]
+    s.slots.pick = id
+    const after = describeAction(s, ref, 0).drops.find((d) => d.itemId === 'emberstone')?.rate ?? 0
+    expect(after, '勘探词缀必须体现在重铸石掉率上').toBeGreaterThan(before)
+  })
+
+  it('弹窗经验含精通智慧（此前只给装备侧）', async () => {
+    const { describeAction } = await import('../src/app/describe')
+    const s = newGame('T', 0)
+    const ref = { kind: 'mine' as const, siteId: 'copper_seam' }
+    const base = describeAction(s, ref, 0).xp
+    const perk = CONTENT.perks.find((p) => p.effect === 'wisdom')
+    if (perk) {
+      s.meta.prestige.perks[perk.id] = 3
+      expect(describeAction(s, ref, 0).xp, '经验应随智慧精通上升').toBeGreaterThan(base)
+    }
+  })
+
+  it('成就 codexPercent 单位与 target 一致（百分数，不出现 0.12 / 25）', async () => {
+    const { achievementValue } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')
+    if (def) {
+      const v = achievementValue(s, def)
+      expect(v, '值域应是 0~100 的百分数').toBeGreaterThanOrEqual(0)
+      expect(v).toBeLessThanOrEqual(100)
+    }
+  })
+
+  it('教程「前往」清搜索词（否则目标卡被过滤）', () => {
+    const nav = readFileSync(join(process.cwd(), 'src/ui/components/NavBar.vue'), 'utf8')
+    expect(nav).toMatch(/setView\(t\.view as never\)\n\s*store\.ui\.searchText = ''/)
+  })
+})

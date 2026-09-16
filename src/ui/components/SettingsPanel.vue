@@ -288,7 +288,7 @@ function onClear(): void {
     <section class="card">
       <h3>关于</h3>
       <p class="dim">
-        Forging v3.4.4 · 纯前端单机放置游戏（四技能线 / 词缀与重铸 / 符文 / 传承精通 / 远征与伙伴 / 图鉴与赛季 / 深渊回廊（层词条·连打·扫荡）/ 自动化 / 视听与手感）<br />
+        Forging v{{ appVersion }} · 纯前端单机放置游戏（四技能线 / 词缀与重铸 / 符文 / 传承精通 / 远征与伙伴 / 图鉴与赛季 / 深渊回廊（层词条·连打·扫荡）/ 自动化 / 视听与手感）<br />
         参考 Milky Way Idle 的核心循环设计；离线上限 {{ CONTENT.config.offlineCapHours }} 小时（可经精通扩展）。<br />
         构建：{{ appVersion }}
       </p>

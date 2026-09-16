@@ -121,6 +121,7 @@ function gotoStep(): void {
   const t = tutorial.value
   if (!t) return
   setView(t.view as never)
+  store.ui.searchText = '' // v3.4.5：清搜索词，否则目标卡被过滤（落点空白）
   const g = t.step.goal as { type: string; itemId?: string; slotId?: string }
   if (g.type === 'craftItem' && g.itemId) {
     const r = CONTENT.recipes.find((x) => x.outputs.some((o) => o.itemId === g.itemId))
