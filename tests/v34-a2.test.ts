@@ -307,12 +307,12 @@ describe('v3.4.4 全应用扫描处置：describe 口径与内核对齐（数字
     s.equipment.find((e) => e.instanceId === id)!.affixes = []
     const ref = { kind: 'enhance' as const, instanceId: id, targetLevel: 2 }
     const base = describeAction(s, ref, 0).xp
-    const pick = CONTENT.perks.find((p) => p.effect === 'wisdom')
-    if (pick) {
-      s.meta.prestige.perks[pick.id] = 2
-      const boosted = describeAction(s, ref, 0).xp
-      expect(boosted, '经验应随 wisdom 提升').toBeGreaterThan(base)
-    }
+    const perk = CONTENT.perks.find((p) => p.effect === 'wisdom')!
+    expect(perk, '内容表缺少 wisdom 精通').toBeTruthy()
+    s.meta.prestige.perks[perk.id] = 2
+    const boosted = describeAction(s, ref, 0).xp
+    // 精确：×2 点 ×3%/点 = +6%
+    expect(boosted, '经验应按 (1+0.03×2) 提升').toBeCloseTo(base * 1.06, 6)
   })
 
   it('面板与弹窗的强化成功率同源（都含符文；RightPanel 用 effectiveStats）', () => {
@@ -329,8 +329,9 @@ describe('v3.4.4 第二批：成就进度口径与判定同源（全应用扫描
     const s = newGame('T', 0)
     // 行囊里放 5 件带词缀但不装备的 → 旧口径会数成 5
     for (let i = 0; i < 5; i++) addInstance(s, 'pick_copper')
-    const def = CONTENT.achievements.find((a) => a.type === 'affixSlots')
-    if (def) expect(achievementValue(s, def), '未装备不应计入').toBe(0)
+    const def = CONTENT.achievements.find((a) => a.type === 'affixSlots')!
+    expect(def, '内容表缺少 affixSlots 类型').toBeTruthy()
+    expect(achievementValue(s, def), '未装备不应计入').toBe(0)
   })
 
   it('abyssFloor / seasonLevel / companionCount / bannerLevel 有真实进度（不再是恒 0）', async () => {
@@ -339,15 +340,16 @@ describe('v3.4.4 第二批：成就进度口径与判定同源（全应用扫描
     s.abyss.bestFloor = 7
     s.meta.expeditions.banner = 3
     s.season.renown = CONTENT.season.renownPerLevel * 5
-    const pick = (t: string) => CONTENT.achievements.find((a) => a.type === t)
-    const ab = pick('abyssFloor')
-    if (ab) expect(achievementValue(s, ab)).toBe(7)
-    const bn = pick('bannerLevel')
-    if (bn) expect(achievementValue(s, bn)).toBe(3)
-    const sl = pick('seasonLevel')
-    if (sl) expect(achievementValue(s, sl)).toBe(5)
-    const cc = pick('companionCount')
-    if (cc) expect(achievementValue(s, cc)).toBeGreaterThanOrEqual(1)
+    // 不用 if 守卫：内容表里这些类型都存在，守卫只会把断言变成空跑（探针证伪过）
+    const pick = (t: string) => {
+      const a = CONTENT.achievements.find((d) => d.type === t)
+      expect(a, `内容表缺少类型 ${t}`).toBeTruthy()
+      return a!
+    }
+    expect(achievementValue(s, pick('abyssFloor'))).toBe(7)
+    expect(achievementValue(s, pick('bannerLevel'))).toBe(3)
+    expect(achievementValue(s, pick('seasonLevel'))).toBe(5)
+    expect(achievementValue(s, pick('companionCount'))).toBeGreaterThanOrEqual(1)
   })
 })
 
@@ -361,8 +363,15 @@ describe('v3.4.5：评审实测的四条口径（可复算）真修复', () => {
     const id = addInstance(s, 'pick_copper')
     s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'prospect', value: 0.2 }]
     s.slots.pick = id
+    // 自证前提：词缀确实贡献了 stoneFind（若词缀失效/改名，这里先红，而不是空跑）
+    const { effectiveStats } = await import('../src/game/stats')
+    const rf = effectiveStats(s, 0).rareFind
+    const sf = effectiveStats(s, 0).stoneFind
+    expect(sf, '勘探词缀应贡献 stoneFind>0').toBeGreaterThan(0)
     const after = describeAction(s, ref, 0).drops.find((d) => d.itemId === 'emberstone')?.rate ?? 0
-    expect(after, '勘探词缀必须体现在重铸石掉率上').toBeGreaterThan(before)
+    // 精确值：base×(1+rf+sf)，base=before/(1+rf)。调用点漏传 stoneFind 时 after=base×(1+rf)≠期望（探针已证红）
+    expect(after, '勘探词缀必须按 (1+rareFind+stoneFind) 体现在重铸石掉率上').toBeCloseTo((before / (1 + rf)) * (1 + rf + sf), 9)
+    expect(after).toBeGreaterThan(before)
   })
 
   it('弹窗经验含精通智慧（此前只给装备侧）', async () => {
@@ -370,27 +379,26 @@ describe('v3.4.5：评审实测的四条口径（可复算）真修复', () => {
     const s = newGame('T', 0)
     const ref = { kind: 'mine' as const, siteId: 'copper_seam' }
     const base = describeAction(s, ref, 0).xp
-    const perk = CONTENT.perks.find((p) => p.effect === 'wisdom')
-    if (perk) {
-      s.meta.prestige.perks[perk.id] = 3
-      expect(describeAction(s, ref, 0).xp, '经验应随智慧精通上升').toBeGreaterThan(base)
-    }
+    const perk = CONTENT.perks.find((p) => p.effect === 'wisdom')!
+    expect(perk, '内容表缺少 wisdom 精通').toBeTruthy()
+    s.meta.prestige.perks[perk.id] = 3
+    // 精确：×3 点 ×3%/点 = +9%
+    expect(describeAction(s, ref, 0).xp, '经验应按 (1+0.03×3) 提升').toBeCloseTo(base * 1.09, 6)
   })
 
   it('成就 codexPercent 单位与 target 一致（百分数，不出现 0.12 / 25）', async () => {
     const { achievementValue } = await import('../src/game/achievements')
     const s = newGame('T', 0)
-    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')
-    if (def) {
-      const v = achievementValue(s, def)
-      expect(v, '值域应是 0~100 的百分数').toBeGreaterThanOrEqual(0)
-      expect(v).toBeLessThanOrEqual(100)
-    }
+    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')!
+    expect(def, '内容表缺少 codexPercent 类型').toBeTruthy()
+    const v = achievementValue(s, def)
+    expect(v, '值域应是 0~100 的百分数').toBeGreaterThanOrEqual(0)
+    expect(v).toBeLessThanOrEqual(100)
   })
 
   it('教程「前往」清搜索词（否则目标卡被过滤）', () => {
     const nav = readFileSync(join(process.cwd(), 'src/ui/components/NavBar.vue'), 'utf8')
-    expect(nav).toMatch(/setView\(t\.view as never\)\n\s*store\.ui\.searchText = ''/)
+    expect(nav).toMatch(/setView\(t\.view as never\)\r?\n\s*store\.ui\.searchText = ''/) // \r?\n：工作树是 CRLF
   })
 })
 
@@ -402,20 +410,23 @@ describe('v3.4.5 第二批：成就 5 类真进度 + 其余口径', () => {
     s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'keen', value: 0.02 }, { id: 'plenty', value: 0.02 }]
     s.abyss.crystals = 7
     s.season.renown = 30
-    const pick = (t: string) => CONTENT.achievements.find((a) => a.type === t)
-    const ac = pick('affixCount')
-    if (ac) expect(achievementValue(s, ac)).toBeGreaterThanOrEqual(2)
-    const cr = pick('abyssCrystals')
-    if (cr) expect(achievementValue(s, cr)).toBe(7)
-    const sr = pick('seasonRenown')
-    if (sr) expect(achievementValue(s, sr)).toBe(30)
+    // 不用 if 守卫（同前）：类型存在，守卫会让篡改探针变绿
+    const pick = (t: string) => {
+      const a = CONTENT.achievements.find((d) => d.type === t)
+      expect(a, `内容表缺少类型 ${t}`).toBeTruthy()
+      return a!
+    }
+    expect(achievementValue(s, pick('affixCount')), '单件最多词缀数=2，不是"总词缀数"').toBe(2)
+    expect(achievementValue(s, pick('abyssCrystals'))).toBe(7)
+    expect(achievementValue(s, pick('seasonRenown'))).toBe(30)
   })
 
   it('codexPercent 进度是整数（面板不会出现 5.4 / 25）', async () => {
     const { achievementValue } = await import('../src/game/achievements')
     const s = newGame('T', 0)
-    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')
-    if (def) expect(Number.isInteger(achievementValue(s, def))).toBe(true)
+    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')!
+    expect(def, '内容表缺少 codexPercent 类型').toBeTruthy()
+    expect(Number.isInteger(achievementValue(s, def))).toBe(true)
   })
 
   it('赛季等级奖励的精华数读内容表（essencePerFour=1 时与旧式等价）', async () => {
