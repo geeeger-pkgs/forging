@@ -209,9 +209,11 @@ console.log('═'.repeat(72))
 console.log('D. 传承精通点（B3）')
 console.log('═'.repeat(72))
 const maxTotal = 400
-const perPrestige = Math.floor(maxTotal / 10) + 4
+const perPrestige = Math.floor(Math.max(0, maxTotal - 120) / 10) + 4 * 4 // v3.4 A6：门槛后起算 + 满级技能 ×4
 const sink = perks.reduce((s, p) => s + p.cost * p.max, 0)
 console.log(`满级一次传承获得 ${perPrestige} 点；全精通买满需 ${sink} 点 → 约 ${f(sink / perPrestige, 2)} 次满级传承即毕业（溢出风险：研究生效）`)
+
+
 console.log(`过载提案（上限×2、超出部分成本×2）追加消耗：${perks.reduce((s, p) => s + p.cost * p.max, 0)} 点 → 总计 ${sink * 2} 点 ≈ ${f((sink * 2) / perPrestige, 1)} 次`)
 
 console.log('')
@@ -255,7 +257,6 @@ AUDIT_EVIDENCE.f = {
     withinBudget: Math.abs(msDurationDelta) <= 0.05,
   },
 }
-writeFileSync(join(root, 'docs', 'sim-audit-output.json'), JSON.stringify(AUDIT_EVIDENCE, null, 2) + String.fromCharCode(10))
 
 console.log('F. 进度时间线（v2.0 可玩性证据）：升到目标级所需小时数（链路受限）')
 console.log('   说明：熔炼/锻造/强化必须消耗上游产出 → 按「完整供应链耗时」折算')
@@ -377,4 +378,32 @@ console.log(
     `Lv50 ≈ ${f(capped('锻造', 50), 0)}h（所有技能 50 档之后进入长尾）`,
 )
 console.log('（强化非主要经验来源，由富余材料自然驱动；未计精通智慧经验加成/符文/自动回收加速，保守上界）')
+// ── v3.4 A6：传承「快轮回 vs 满级轮回」每小时点数（需 F 段的 capped，故置于文件末尾）
+// 模型：总等级 = 四技能等级之和；快轮回 = 每技能练到 30（总 120，刚过门槛），满级轮回 = 每技能 100（总 400）。
+// 时长复用 F 段的供应链口径（capped = 基线/投资两档取较慢，保守）；点数公式与实现同源（⌊总等级/10⌋ + 满级技能数）。
+const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduce((sum, k) => sum + capped(k, target), 0)
+const fastHours = hoursPerSkill(30)
+const maxHours = hoursPerSkill(100)
+const fastPoints = Math.floor(Math.max(0, 120 - 120) / 10) // v3.4 A6：门槛处为 0 点
+const maxPoints = Math.floor(Math.max(0, 400 - 120) / 10) + 4 * 4
+const fastPerHour = fastPoints / fastHours
+const maxPerHour = maxPoints / maxHours
+const fastRatio = fastPerHour / maxPerHour
+console.log('')
+console.log(`快轮回（总 120，每技能 30）: ${f(fastHours, 1)}h → ${fastPoints} 点 → ${f(fastPerHour, 4)} 点/h`)
+console.log(`满级轮回（总 400，每技能 100）: ${f(maxHours, 1)}h → ${maxPoints} 点 → ${f(maxPerHour, 4)} 点/h`)
+console.log(`快/满 效率比 ${f(fastRatio, 2)}× → ${fastRatio > 1.25 ? '⚠ 快轮回仍是反直觉最优，需改点数公式' : '✅ 无显著倒挂（≤1.25× 视为可接受）'}`)
+
+AUDIT_EVIDENCE.d = {
+  prestige: {
+    fast: { totalLevel: 120, hours: fastHours, points: fastPoints, perHour: fastPerHour },
+    maxed: { totalLevel: 400, hours: maxHours, points: maxPoints, perHour: maxPerHour },
+    ratio: fastRatio,
+    acceptable: fastRatio <= 1.25,
+  },
+}
+writeFileSync(join(root, 'docs', 'sim-audit-output.json'), JSON.stringify(AUDIT_EVIDENCE, null, 2) + String.fromCharCode(10))
+
+
 EXIT()
+

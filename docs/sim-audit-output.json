@@ -20,5 +20,23 @@
       "model": "时长 ∝ 1/(1+速度) × 1/(1+经验)；仅计 allSpeed 与 wisdom 两类里程碑",
       "withinBudget": true
     }
+  },
+  "d": {
+    "prestige": {
+      "fast": {
+        "totalLevel": 120,
+        "hours": 321.6552799689681,
+        "points": 0,
+        "perHour": 0
+      },
+      "maxed": {
+        "totalLevel": 400,
+        "hours": 31342.464858159907,
+        "points": 44,
+        "perHour": 0.001403846193945552
+      },
+      "ratio": 0,
+      "acceptable": true
+    }
   }
 }

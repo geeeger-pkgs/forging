@@ -1,7 +1,7 @@
 // ============================================================
 // Forging · 传承系统（v1.5）
 // 解锁：总等级 ≥ config.prestigeUnlockLevel（120）
-// 结算：精通点 = ⌊总等级 ÷ 10⌋ + 每个满级技能 +1
+// 结算（v3.4 A6 改）：精通点 = ⌊(总等级 − 门槛) ÷ 10⌋ + 每个满级技能 ×4
 // 重置：技能等级/经验（至起点精通加成）、当前动作、队列
 // 保留：材料/装备/金币/成就/任务/队列位/增益
 // v1.9 深造：基础上限后可继续购买（价格 ×2），上限 = 基础上限 ×2
@@ -38,9 +38,12 @@ export function prestigeUnlocked(state: GameState): boolean {
 /** 本次传承可获得的精通点 */
 export function prestigePointsFor(state: GameState): number {
   const total = totalLevel(state.skills)
-  let points = Math.floor(total / 10)
+  // v3.4 A6：点数**从门槛之后起算**。旧式 ⌊总等级/10⌋ 使"刚过门槛就轮回"成为反直觉最优解
+  // （sim 实测 0.0373 点/h vs 满级轮回 0.0014 点/h = 26.6× 倒挂）。
+  // 新式：⌊(总等级 − 门槛)/10⌋ + 满级技能 ×4 —— 满级轮回总量不变（28+16=44），门槛处为 0。
+  let points = Math.floor(Math.max(0, total - PRESTIGE_MIN_LEVEL) / 10)
   for (const id of Object.keys(state.skills) as SkillId[]) {
-    if (levelInfo(state.skills[id]).level >= MAX_LEVEL) points += 1
+    if (levelInfo(state.skills[id]).level >= MAX_LEVEL) points += 4
   }
   return points
 }
@@ -70,7 +73,11 @@ export function doPrestige(state: GameState): GameEvent[] {
     return [{ type: 'blocked', reason: `总等级达到 ${PRESTIGE_MIN_LEVEL} 才能传承` }]
   }
   const points = prestigePointsFor(state)
-  if (points <= 0) return [{ type: 'blocked', reason: '没有可获得的精通点' }]
+  if (points <= 0) {
+    // v3.4 A6：点数从门槛后起算 → 门槛处为 0；给出可执行的下一步
+    const next = PRESTIGE_MIN_LEVEL + 10
+    return [{ type: 'blocked', reason: `当前可获得 0 点：总等级达到 ${next} 才有第 1 点（现 ${totalLevel(state.skills)}）` }]
+  }
 
   // 重置：技能（回到起点精通加成的等级）
   const perk = perkBonuses(state)

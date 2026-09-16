@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { SAVE_VERSION, deserializeSave } from '../src/app/persist'
 import { CONTENT, validateContent } from '../src/game/content'
 import { milestoneView, xpForLevel } from '../src/game/level'
+import { doPrestige, prestigePointsFor } from '../src/game/prestige'
 import { aggregateEquipment } from '../src/game/stats'
 import { addInstance, newGame } from '../src/game/state'
 import { simulate } from '../src/game/settle'
@@ -108,5 +109,39 @@ describe('A2 存档 v14 与迁移', () => {
     const s: GameState = newGame('T', 0)
     expect(s.meta.bestSkillLevel).toBe(1)
     expect(milestoneView(s.meta.bestSkillLevel).filter((m) => m.unlocked)).toEqual([])
+  })
+})
+
+// ============================================================
+// v3.4 A6：传承「快轮回 vs 满级轮回」（D 段证据 + 实现同步）
+// 起因（v3.0 硬核评审）：玩家实测"120 快轮回 1~2.5h/点，要反着玩"。本轮先用 D 段建模量化。
+// ============================================================
+describe('A6 传承点数：消除反直觉最优解', () => {
+  const simD = JSON.parse(readFileSync(join(process.cwd(), 'docs', 'sim-audit-output.json'), 'utf8')) as {
+    d: { prestige: { fast: { points: number; perHour: number }; maxed: { points: number; perHour: number }; ratio: number; acceptable: boolean } }
+  }
+
+  it('证据：快轮回/满级轮回的每小时点数比 ≤1.25（改前实测 26.6× 倒挂）', () => {
+    expect(simD.d.prestige.ratio).toBeLessThanOrEqual(1.25)
+    expect(simD.d.prestige.acceptable).toBe(true)
+  })
+
+  it('实现与证据同式：门槛处 0 点、满级轮回 44 点（总量不变）', () => {
+    expect(simD.d.prestige.fast.points).toBe(0)
+    expect(simD.d.prestige.maxed.points).toBe(44)
+    const s = newGame('T', 0)
+    const xp100 = xpForLevel(100)
+    s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
+    expect(prestigePointsFor(s)).toBe(44)
+  })
+
+  it('门槛处不给点也不再"白轮回"：doPrestige 被拦下且提示可执行', () => {
+    const s = newGame('T', 0)
+    const xp30 = xpForLevel(30)
+    s.skills = { mining: xp30, smelting: xp30, forging: xp30, enhancing: xp30 } // 总 120
+    expect(prestigePointsFor(s)).toBe(0)
+    const ev = doPrestige(s)
+    expect(ev.some((e) => e.type === 'blocked')).toBe(true)
+    expect(s.skills.mining, '被拦下时不应重置任何东西').toBe(xp30)
   })
 })

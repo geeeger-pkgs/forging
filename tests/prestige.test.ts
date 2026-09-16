@@ -21,17 +21,25 @@ describe('传承系统（v1.5）', () => {
     expect(prestigeUnlocked(s)).toBe(true)
   })
 
-  it('精通点结算：⌊总等级÷10⌋ + 满级技能奖励', () => {
+  it('精通点结算（v3.4 A6 改）：⌊(总等级−门槛)÷10⌋ + 满级技能×4', () => {
+    const s = newGame('T', 0)
+    setSkillLevel(s, 30) // 总等级 120 = 门槛 → 0 点（旧式给 12 点，是"快轮回最优"的根源）
+    expect(prestigePointsFor(s)).toBe(0)
+    s.skills.mining = xpForLevel(100) // 总 190 → ⌊70/10⌋ + 4 = 11
+    expect(prestigePointsFor(s)).toBe(11)
+  })
+
+  it('0 点时传承被拦下并给出可执行提示（门槛处不白轮回）', () => {
     const s = newGame('T', 0)
     setSkillLevel(s, 30)
-    expect(prestigePointsFor(s)).toBe(12)
-    s.skills.mining = xpForLevel(100) // 满级（上限 100）→ +1（总 190 → 19 + 1）
-    expect(prestigePointsFor(s)).toBe(20)
+    const ev = doPrestige(s)
+    expect(ev[0]?.type).toBe('blocked')
+    expect((ev[0] as { reason: string }).reason).toContain('总等级达到 130')
   })
 
   it('传承：重置技能/动作/队列；保留材料/金币/装备/成就/队列位/增益', () => {
     const s = newGame('T', 0)
-    setSkillLevel(s, 30)
+    setSkillLevel(s, 35) // v3.4 A6：门槛处 0 点，升到总 140 才有 2 点
     s.materials['ore_copper'] = 99
     s.gold = 500
     s.queueSlots = 2
@@ -53,7 +61,7 @@ describe('传承系统（v1.5）', () => {
     })
 
     const ev = doPrestige(s)
-    expect(ev.some((e) => e.type === 'prestigeDone' && e.points === 12)).toBe(true)
+    expect(ev.some((e) => e.type === 'prestigeDone' && e.points === 2)).toBe(true)
     // 重置项
     expect(s.skills.mining).toBe(0)
     expect(s.actions.current).toBeNull()
@@ -65,9 +73,9 @@ describe('传承系统（v1.5）', () => {
     expect(s.flags.achievements.unlocked).toContain('mine_10')
     expect(s.buffs).toHaveLength(1)
     // 点数与统计
-    expect(s.meta.prestige.points).toBe(12)
+    expect(s.meta.prestige.points).toBe(2)
     expect(s.stats.totalPrestiges).toBe(1)
-    expect(s.stats.totalPrestigePointsEarned).toBe(12)
+    expect(s.stats.totalPrestigePointsEarned).toBe(2)
   })
 
   it('未达阈值传承被阻塞', () => {
@@ -143,7 +151,7 @@ describe('传承系统（v1.5）', () => {
     const s = newGame('T', 0)
     s.meta.prestige.points = 2
     buyPerk(s, 'headstart') // 起始等级 +2 → Lv3
-    setSkillLevel(s, 30)
+    setSkillLevel(s, 40) // v3.4 A6：总 160 → 4 点（门槛处为 0）
     doPrestige(s)
     expect(s.skills.mining).toBe(xpForLevel(3))
   })
