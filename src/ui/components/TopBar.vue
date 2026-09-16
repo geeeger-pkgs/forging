@@ -95,9 +95,13 @@ const buffs = computed(() =>
   align-items: center;
   gap: 16px;
   padding: 8px 16px;
-  background: var(--c-panel);
+  /* v3.7：微渐变 + 投影，让主区有"浮在下方"的层次 */
+  background: linear-gradient(180deg, #141a33, var(--c-panel));
   border-bottom: 1px solid var(--c-border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
   min-height: 56px;
+  position: relative;
+  z-index: 2;
 }
 .left {
   min-width: 150px;
@@ -107,6 +111,11 @@ const buffs = computed(() =>
 .gold {
   color: var(--c-accent);
   font-weight: 600;
+  /* v3.7：金币用展示字体（Russo One 数字宽厚）+ 极简金色发光（OLED 风格"少而克制"） */
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 12px rgba(255, 176, 58, 0.28);
 }
 .center {
   flex: 1;

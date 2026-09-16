@@ -630,15 +630,25 @@ function isTop(score: number): boolean {
   border: 1px solid var(--c-border);
   background: transparent;
   color: var(--c-text);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 6px 8px;
   font-size: 13px;
   font-family: var(--font);
   cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+.rtab:hover:not(.active) {
+  background: var(--c-panel-2);
 }
 .rtab.active {
-  border-color: var(--c-accent);
+  /* v3.7：选中 Tab 金渐变铺底 + 细发光边 */
+  background: linear-gradient(180deg, rgba(255, 176, 58, 0.16), rgba(255, 176, 58, 0.06));
+  border-color: rgba(255, 176, 58, 0.55);
   color: var(--c-accent);
+  font-weight: 600;
 }
 .right {
   width: 300px;

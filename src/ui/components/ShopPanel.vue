@@ -143,12 +143,7 @@ const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
   gap: 14px;
   max-width: 620px;
 }
-.card {
-  background: var(--c-panel-2);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
+/* v3.7：卡片外壳上提为全局 .card；保留本面板标题字号 */
 .card h3 {
   margin: 0 0 8px;
   font-size: 15px;

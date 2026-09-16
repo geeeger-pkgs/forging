@@ -207,12 +207,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
   gap: 14px;
   max-width: 720px;
 }
-.card {
-  background: var(--c-panel-2);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
+/* v3.7：卡片外壳已上提为全局 .card（theme.css 统一质感）；此处仅保留本面板的标题差异 */
 .card h3 {
   margin: 0 0 8px;
   font-size: 15px;

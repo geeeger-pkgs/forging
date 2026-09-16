@@ -152,7 +152,8 @@ function reroll(index: number): void {
 }
 .card.done {
   border-color: var(--c-success);
-  opacity: 0.85;
+  /* v3.7：不用整卡透明（会把文字压到对比度边缘）→ 绿色微光叠层表达"已完成" */
+  background: linear-gradient(180deg, rgba(74, 222, 128, 0.07), rgba(74, 222, 128, 0) 62%), var(--c-panel-2);
 }
 .card.weekly {
   border-color: var(--c-accent-2);

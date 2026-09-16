@@ -1,20 +1,51 @@
-/* Forging 主题 tokens（暗色科幻，对齐 MWI 参考风格；具体色值可后续调优） */
+/*
+ * Forging 主题 tokens
+ * v3.7 视觉升级（全面美化）：OLED 深色分层 + 极简发光 + 游戏感字体（拉丁/数字用 Chakra Petch，
+ * 中文回退系统字体）。色板语义不变（金=锻造/金币、蓝=效率/信息、新增紫=传承/深渊），
+ * 所有前景色在最亮卡片面（--c-panel-2）上的对比度均 ≥5.6:1（AA 要求 4.5:1）。
+ */
 :root {
-  --c-bg: #0b0e1a;
-  --c-bg-deep: #070912;
-  --c-panel: #131829;
-  --c-panel-2: #1a2036;
-  --c-border: #262e4a;
-  --c-text: #e6e9f2;
-  --c-text-dim: #8a93ad;
-  --c-accent: #f5a623;
-  /* v3.6 F1：原 #4f7cff 在卡片背景(--c-panel-2)上仅 4.34:1（低于 WCAG AA 正文 4.5）→ 提亮到 4.97:1 */
-  --c-accent-2: #6288ff;
-  --c-success: #3fbf6f;
-  /* v3.6 F2：原 #e2544a 在卡片背景上仅 4.30:1 → 提亮到 5.16:1（danger 文本/.bad 提示/锁定原因共用） */
-  --c-danger: #ea6a60;
+  /* 表面层次（四层：页面底 → 侧栏 → 卡片 → 悬浮/嵌套） */
+  --c-bg: #080a14;
+  --c-bg-deep: #05060d;
+  --c-panel: #10142a;
+  --c-panel-2: #171d38;
+  --c-panel-3: #1f2745;
+  --c-border: #2a3358;
+  --c-border-soft: #1d2440;
+
+  /* 文本 */
+  --c-text: #eef1fa;
+  --c-text-dim: #96a0bd;
+
+  /* 强调色 */
+  --c-accent: #ffb03a; /* 金：锻造 / 金币 / 主 CTA（on panel-2 = 9.08） */
+  --c-accent-2: #6f91ff; /* 蓝：效率 / 信息（5.65） */
+  --c-mana: #a78bfa; /* 紫：传承 / 深渊 / 魔法（6.08） */
+  --c-success: #4ade80; /* 9.49 */
+  --c-danger: #ff7a6e; /* 6.51 */
+
+  /* 形状与节奏 */
   --radius: 8px;
-  --font: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* 阴影与发光（OLED 风格：少而克制） */
+  --sh-card: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --sh-pop: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --glow-accent: 0 0 14px rgba(255, 176, 58, 0.28);
+  --glow-info: 0 0 14px rgba(111, 145, 255, 0.28);
+
+  /* 动效 */
+  --t-fast: 0.12s;
+  --t-base: 0.2s;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 字体：拉丁/数字用游戏字体（中文自动回退系统字体） */
+  --font: "Chakra Petch", "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --font-display: "Russo One", "Chakra Petch", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+
   /* v3.6 F5：阅读型辅助字号（说明/标签/单价等；徽章类不随此缩放）。窄屏提到 12px（可读性） */
   --fs-note: 11px;
 }
@@ -27,13 +58,42 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--c-bg);
+  /* v3.7：极简径向光晕（左上冷光 / 右上紫光），给纯色底以纵深，不干扰内容 */
+  background:
+    radial-gradient(1100px 560px at 15% -12%, rgba(111, 145, 255, 0.07), transparent 62%),
+    radial-gradient(900px 520px at 102% -6%, rgba(167, 139, 250, 0.06), transparent 58%),
+    var(--c-bg);
+  background-attachment: fixed;
   color: var(--c-text);
   font-family: var(--font);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   /* v3.6 F4：触屏去掉双击缩放延迟/误触（不影响滚动与捏合缩放本身） */
   touch-action: manipulation;
+}
+
+/* v3.7：滚动条（游戏感细条，暗色不刺眼） */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3b4778;
+  background-clip: content-box;
 }
 
 /* v3.6 F5：窄屏把阅读型辅助字号提到 12px（徽章类仍用固定 11px） */
@@ -78,20 +138,52 @@ body {
   min-height: 100vh;
 }
 
+/* ---------- 通用卡片（v3.7：从各面板 scoped 上提，统一质感；标题带几何竖条） ---------- */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 42%), var(--c-panel-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  box-shadow: var(--sh-card);
+}
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h3::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--c-accent), rgba(255, 176, 58, 0.3));
+}
+
 /* ---------- 通用按钮 ---------- */
 .btn {
   border: 1px solid var(--c-border);
   background: var(--c-panel-2);
   color: var(--c-text);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 6px 12px;
   font-size: 13px;
   cursor: pointer;
   font-family: var(--font);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    transform var(--t-fast) var(--ease);
 }
 .btn:hover:not(:disabled) {
   border-color: var(--c-accent-2);
+  background: var(--c-panel-3);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -107,15 +199,26 @@ body {
   font-size: 12px;
 }
 .btn.primary {
-  background: var(--c-accent);
-  border-color: var(--c-accent);
+  /* v3.7：金渐变 + 克制发光（主 CTA 的"锻造"质感） */
+  background: linear-gradient(180deg, #ffc45f, var(--c-accent));
+  border-color: rgba(255, 208, 138, 0.85);
   color: #1a1204;
   font-weight: 600;
+  box-shadow: 0 2px 10px rgba(255, 176, 58, 0.22);
+}
+.btn.primary:hover:not(:disabled) {
+  border-color: #ffd89a;
+  background: linear-gradient(180deg, #ffd076, #ffb03a);
+  box-shadow: 0 4px 16px rgba(255, 176, 58, 0.38);
 }
 .btn.danger {
   background: transparent;
   border-color: var(--c-danger);
   color: var(--c-danger);
+}
+.btn.danger:hover:not(:disabled) {
+  border-color: var(--c-danger);
+  background: rgba(255, 122, 110, 0.1);
 }
 .btn.ghost {
   background: transparent;
@@ -131,9 +234,10 @@ body {
   z-index: 50;
 }
 .dialog {
-  background: var(--c-panel);
+  /* v3.7：顶部微光 + 大圆角 + 深投影（浮层质感） */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 34%), var(--c-panel);
   border: 1px solid var(--c-border);
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   padding: 16px 18px;
   min-width: 380px;
   max-width: 560px;
@@ -141,11 +245,22 @@ body {
   /* v3.6.1（评审 B-m3）：iOS Safari 工具栏下 vh 是"大视口"，吸底按钮可能被工具栏盖住 → dvh 优先 */
   max-height: 84dvh;
   overflow: auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--sh-pop);
   color: var(--c-text);
 }
 .dialog h3 {
   margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dialog h3::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--c-accent), rgba(255, 176, 58, 0.3));
 }
 /* v2.1：窄屏解除 min-width，避免弹窗横向溢出（评审 m2） */
 @media (max-width: 900px) {

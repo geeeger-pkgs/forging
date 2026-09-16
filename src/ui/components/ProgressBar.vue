@@ -59,17 +59,22 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
   text-align: right;
 }
 .bar {
-  height: 8px;
+  height: 9px;
   background: var(--c-bg-deep);
   border: 1px solid var(--c-border);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
   min-width: 80px;
   flex: 1;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--c-accent-2), var(--c-accent));
+  /* v3.7：金色锻造渐变 + 顶部高光 + 极简发光（熔炉进度感） */
+  background: linear-gradient(180deg, #ffd076, #ff9f1f 60%, #f08a00);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 10px rgba(255, 176, 58, 0.35);
   transition: none;
 }
 </style>

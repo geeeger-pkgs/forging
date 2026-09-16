@@ -289,7 +289,8 @@ function toggleMute(): void {
         :title="tutOpen ? '收起教程卡（省屏幕高度）' : '展开教程卡'"
         @click="tutOpen = !tutOpen"
       >
-        <span>📘 教程 · {{ tutorial.step.title }}<span class="dim small">（第 {{ tutorial.step.step }} / {{ CONTENT.tutorial.length }} 步）</span></span>
+        <span class="t-name">📘 教程 · {{ tutorial.step.title }}</span>
+        <span class="dim small t-step">第 {{ tutorial.step.step }} / {{ CONTENT.tutorial.length }} 步</span>
         <span class="chev" aria-hidden="true">{{ tutOpen ? '▾' : '▸' }}</span>
       </button>
       <div class="t-goal">{{ tutorial.goalText }}</div>
@@ -323,18 +324,26 @@ function toggleMute(): void {
   border: 1px solid transparent;
   background: transparent;
   color: var(--c-text);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 6px 8px;
   cursor: pointer;
   font-family: var(--font);
   text-align: left;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
 }
 .item:hover {
   background: var(--c-panel-2);
 }
+/* v3.7：选中态 = 左侧金色几何条 + 渐变铺底（块状风格），比"换个边框色"更醒目 */
 .item.active {
-  background: var(--c-panel-2);
-  border-color: var(--c-accent-2);
+  background: linear-gradient(90deg, rgba(255, 176, 58, 0.16), rgba(255, 176, 58, 0.04) 62%, transparent);
+  border-color: transparent;
+  box-shadow: inset 3px 0 0 var(--c-accent);
+}
+.item.active .name {
+  color: var(--c-accent);
 }
 .icon {
   font-size: 18px;
@@ -406,10 +415,10 @@ function toggleMute(): void {
 }
 .t-title {
   font-weight: 600;
-  /* v3.6.1：标题是折叠开关（按钮 reset：外观与文本一致，但键盘/读屏可达） */
+  /* v3.6.1：标题是折叠开关（按钮 reset：外观与文本一致，但键盘/读屏可达）
+     v3.7：三段式（标题 flex:1 省略号 / 步序 / chevron），桌面 200px 侧栏不再折行 */
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 6px;
   width: 100%;
   padding: 0;
@@ -423,6 +432,19 @@ function toggleMute(): void {
 }
 .chev {
   color: var(--c-text-dim);
+  flex: 0 0 auto;
+}
+/* v3.7：桌面 200px 侧栏里"标题 + 步序"会折行 → 标题省略号、步序独立短标签 */
+.t-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.t-step {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .tutorial.folded .t-goal,
 .tutorial.folded .t-progress,

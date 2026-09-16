@@ -39,19 +39,27 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
   justify-content: center;
   gap: 6px;
   height: 120px;
-  background: var(--c-panel-2);
+  /* v3.7：顶部微光 + 卡片投影（与全局 .card 同语言） */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 46%), var(--c-panel-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-card);
   color: var(--c-text);
   cursor: pointer;
   font-family: var(--font);
-  transition: border-color 0.15s, transform 0.1s;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease),
+    box-shadow var(--t-base) var(--ease);
 }
 /* v3.6.1（评审 B-m5）：hover 效果只在真 hover 设备生效（触屏点完不残留高亮） */
 @media (hover: hover) {
   .cell:hover:not(.locked) {
-    border-color: var(--c-accent);
-    transform: translateY(-1px);
+    border-color: rgba(255, 176, 58, 0.65);
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.4),
+      var(--glow-accent);
   }
 }
 /* v3.6.1：触屏按压反馈（点按瞬间的位移，替代 hover 残留） */
