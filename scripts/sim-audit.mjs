@@ -235,7 +235,7 @@ console.log('═'.repeat(72))
 
 // ---------------- v3.4：机器可读证据（评审 #6：本脚本此前无落盘） ----------------
 const AUDIT_EVIDENCE = {
-  version: '3.4.0',
+  version: JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version, // v3.4.4：读 package.json，不再写死
   a: {
     efficiency: { online: effOnline, equipOnly: effEquip, procRateOnline: procRate(effOnline), procRateEquipOnly: procRate(effEquip) },
     speedMaxAll,

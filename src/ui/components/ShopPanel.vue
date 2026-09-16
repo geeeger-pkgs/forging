@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { goldShopNextPrice, nextQueueSlotCost } from '../../game/commands'
 import { cmd, store } from '../../app/store'
 import { CONTENT, itemDef } from '../../game/content'
-import { goldShopNextPrice } from '../../game/commands'
 
 const slots = computed(() => store.state.queueSlots)
 const maxSlots = CONTENT.config.maxQueueSlots
@@ -38,6 +38,9 @@ const maxToolSpeed = computed(() => {
   }
   return m || 1.05
 })
+
+/** v3.4.4：下一个队列位的价格（内核同源，供标价与置灰） */
+const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
 </script>
 
 <template>
@@ -46,8 +49,15 @@ const maxToolSpeed = computed(() => {
       <h3>行动队列扩容</h3>
       <p class="dim">当前队列位：{{ slots }} / {{ maxSlots }}{{ tutorialGrant ? '（含教程赠送 1 位）' : '' }}</p>
       <p class="dim">队列位让多个动作自动接力：当前动作完成后自动执行队首动作。</p>
-      <button v-if="slots < maxSlots" class="btn primary" @click="cmd({ type: 'buyQueueSlot' })">
-        购买队列位
+      <!-- v3.4.4：显示价格并按金币置灰（此前价格只在被拒的 toast 里） -->
+      <button
+        v-if="slots < maxSlots"
+        class="btn primary"
+        :disabled="(nextSlotCost ?? 0) > store.state.gold"
+        :title="`花费 ${nextSlotCost} 金`"
+        @click="cmd({ type: 'buyQueueSlot' })"
+      >
+        购买队列位（{{ nextSlotCost }} 金）
       </button>
       <p v-else class="dim">队列已达上限（{{ maxSlots }}）。</p>
     </section>

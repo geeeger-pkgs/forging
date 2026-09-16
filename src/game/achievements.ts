@@ -155,8 +155,30 @@ export function achievementValue(state: GameState, def: AchievementDef): number 
       return Object.values(state.slots).filter((v) => v !== undefined).length
     case 'buffSlots':
       return state.buffs.length
-    case 'affixSlots':
-      return state.equipment.filter((e) => (e.affixes ?? []).length > 0).length
+    case 'affixSlots': {
+      // v3.4.4（全应用扫描）：进度口径必须与判定同源（isMet 用的是"已装备且完美度达标"），
+      // 此前数的是"行囊里带词缀的件数"→ 会出现"显示 20/6 却还锁着"。
+      let n = 0
+      for (const v of Object.values(state.slots)) {
+        if (v === undefined) continue
+        const inst = state.equipment.find((e) => e.instanceId === v)
+        if (inst && perfectScore(inst.itemId, inst.affixes ?? []) >= AFFIX_SLOT_SCORE) n += 1
+      }
+      return n
+    }
+    case 'companionCount':
+      return Object.keys(state.companions ?? {}).length
+    case 'abyssFloor':
+      return state.abyss?.bestFloor ?? 0
+    case 'seasonLevel':
+      return state.season ? Math.floor((state.season.renown ?? 0) / (CONTENT.season.renownPerLevel || 1)) : 0
+    case 'codexPercent': {
+      // 与图鉴里程碑同源：用 codexProgress 的收集比例
+      const p = codexProgress(state)
+      return typeof p === 'number' ? p : (p as { pct?: number })?.pct ?? 0
+    }
+    case 'bannerLevel':
+      return state.meta.expeditions?.banner ?? 0
     default:
       // 其余类型（伙伴稀有度/图鉴比例等）暂不提供精确进度 → 返回 0（面板显示"进行中"）
       return 0

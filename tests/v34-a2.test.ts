@@ -322,3 +322,31 @@ describe('v3.4.4 全应用扫描处置：describe 口径与内核对齐（数字
     expect(st).toContain('enhanceRate: agg.enhanceRate + buff.enhanceRate')
   })
 })
+
+describe('v3.4.4 第二批：成就进度口径与判定同源（全应用扫描发现）', () => {
+  it('affixSlots：进度 = 已装备且完美度达标的槽位数（不再数行囊件数）', async () => {
+    const { achievementValue } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    // 行囊里放 5 件带词缀但不装备的 → 旧口径会数成 5
+    for (let i = 0; i < 5; i++) addInstance(s, 'pick_copper')
+    const def = CONTENT.achievements.find((a) => a.type === 'affixSlots')
+    if (def) expect(achievementValue(s, def), '未装备不应计入').toBe(0)
+  })
+
+  it('abyssFloor / seasonLevel / companionCount / bannerLevel 有真实进度（不再是恒 0）', async () => {
+    const { achievementValue } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    s.abyss.bestFloor = 7
+    s.meta.expeditions.banner = 3
+    s.season.renown = CONTENT.season.renownPerLevel * 5
+    const pick = (t: string) => CONTENT.achievements.find((a) => a.type === t)
+    const ab = pick('abyssFloor')
+    if (ab) expect(achievementValue(s, ab)).toBe(7)
+    const bn = pick('bannerLevel')
+    if (bn) expect(achievementValue(s, bn)).toBe(3)
+    const sl = pick('seasonLevel')
+    if (sl) expect(achievementValue(s, sl)).toBe(5)
+    const cc = pick('companionCount')
+    if (cc) expect(achievementValue(s, cc)).toBeGreaterThanOrEqual(1)
+  })
+})

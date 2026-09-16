@@ -517,7 +517,8 @@ function isTop(score: number): boolean {
           <button class="btn sm" @click="recycleThen('10')">回收 10</button>
           <button class="btn sm" title="从该材料开始自动回收：保留量以上的部分自动卖出" @click="recycleThen('all')">全部回收</button>
           <span class="spacer" />
-          <label class="dim small">自动保留</label>
+          <label class="dim small" title="保留量以上的部分会被自动卖出">自动保留</label>
+          <span class="dim small">（留 0 = 全部卖出）</span>
           <input
             v-model.number="keepDraft"
             class="num-input"
