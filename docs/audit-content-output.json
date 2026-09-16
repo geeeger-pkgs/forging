@@ -17,6 +17,14 @@
   "badRecipes": [],
   "badAchievements": [],
   "missingCounters": [],
-  "neverIncremented": [],
-  "findings": []
+  "neverIncremented": [
+    "totalEnhancesT4",
+    "totalReforgesT4"
+  ],
+  "findings": [
+    {
+      "sev": "Major",
+      "msg": "计数器从未被累加（任务永远做不完）：totalEnhancesT4, totalReforgesT4"
+    }
+  ]
 }
