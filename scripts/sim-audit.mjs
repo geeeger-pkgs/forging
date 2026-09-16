@@ -8,6 +8,11 @@
 // 运行：node scripts/sim-audit.mjs
 // ============================================================
 import fs from 'node:fs'
+import { writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 const rd = (f) => JSON.parse(fs.readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'))
 const asArr = (x) => (Array.isArray(x) ? x : Object.values(x))
@@ -88,15 +93,27 @@ for (const s of ores.slice(0, 8)) {
   const floor = s.baseTimeMs / (1 + speedMaxAll) < config.minActionTimeMs ? ' ⚠触底' : ''
   console.log(`  ${s.id.padEnd(16)} 基础 ${s.baseTimeMs}ms → 满配 ${tMax}ms${floor}`)
 }
-// v2.1（评审 M2）：效率按真实语义出数——在线是「每轮概率额外产出一份、链式上限 1」的 proc，
-// 每轮期望倍率 = 1 + 1/(2−E)（E<1）；离线期望用 1+E 乘区（含精通）。两者不可混为一谈。
-const procRate = (E) => (E >= 1 ? 1 : 1 / (2 - E))
+// v2.1（评审 M2）→ **v3.4 A1 修正**：效率 proc 的口径必须与实现一致。
+// 实现（settle.ts）：E>0 时每轮 rng<E 触发；否则累计，达到 ceil(1/E) 必触发；触发后清零。
+// 因此每轮触发率 = 1/E[K]，其中 K 为间隔分布（K=need 的尾部概率收敛为必然）。
+// 旧式 1/(2−E) 只在 need=2（E≥0.5）时巧合相等，E 小时高估近一倍（评审已实测 E=0.2：实际 0.297 vs 旧式 0.556）。
+const procRate = (E) => {
+  if (E >= 1) return 1
+  if (E <= 0) return 0
+  const need = Math.ceil(1 / E)
+  let expK = 0
+  for (let k = 1; k < need; k++) expK += k * Math.pow(1 - E, k - 1) * E
+  expK += need * Math.pow(1 - E, need - 1)
+  return 1 / expK
+}
+// v3.4 A1：符文与精通现在**在线同样参与**（此前只读装备侧 → 丰饶符文"看得见挖不动"）
 const effEquip = effMax - runeVal('efficiency', 3) - runeVal('efficiency', 2) - perkVal('efficiency')
+const effOnline = effMax
 console.log(
-  `效率（装备侧）E=${f(effEquip, 3)} → 在线每轮期望倍率 ×${f(1 + procRate(effEquip), 3)}（触发率 ${f(procRate(effEquip), 3)}/轮）`,
+  `效率（装备+符文+精通）E=${f(effOnline, 3)} → 在线每轮期望倍率 ×${f(1 + procRate(effOnline), 3)}（触发率 ${f(procRate(effOnline), 3)}/轮，按实现的保底更新过程仿算）`,
 )
 console.log(
-  `  ｜离线期望（装备+精通）×(1+${f(effEquip + perkVal('efficiency'), 3)})：符文/精通在线不参与 proc，离线偏乐观（设计取舍）`,
+  `  ｜对照：仅装备侧 E=${f(effEquip, 3)} → ×${f(1 + procRate(effEquip), 3)}；离线期望仍用 (1+E) 乘区（含精通，不含符文——离线清空临时增益）`,
 )
 console.log(`效率合计（含符文/精通）+${f(effMax, 3)}；稀有合计 +${f(rareMax, 3)} → 稀有率 ×${f(1 + rareMax, 3)}`)
 const minBase = config.minActionTimeMs * (1 + speedMaxAll)
@@ -210,6 +227,19 @@ console.log('离线规则：offline 结算期间 state.buffs 临时清空 → �
 
 console.log('')
 console.log('═'.repeat(72))
+
+// ---------------- v3.4：机器可读证据（评审 #6：本脚本此前无落盘） ----------------
+const AUDIT_EVIDENCE = {
+  version: '3.4.0',
+  a: {
+    efficiency: { online: effOnline, equipOnly: effEquip, procRateOnline: procRate(effOnline), procRateEquipOnly: procRate(effEquip) },
+    speedMaxAll,
+    rareMax,
+    minActionFloorMs: config.minActionTimeMs,
+  },
+}
+writeFileSync(join(root, 'docs', 'sim-audit-output.json'), JSON.stringify(AUDIT_EVIDENCE, null, 2) + String.fromCharCode(10))
+
 console.log('F. 进度时间线（v2.0 可玩性证据）：升到目标级所需小时数（链路受限）')
 console.log('   说明：熔炼/锻造/强化必须消耗上游产出 → 按「完整供应链耗时」折算')
 console.log('   基线 = 同档工具无强化；投资 = 同档+5 + 套装4% + 迅捷10级（+19%）')

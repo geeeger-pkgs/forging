@@ -15,7 +15,7 @@ import { levelInfo } from './level'
 import { randInt, systemRng, type Rng } from './rng'
 import { durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf, xpOf } from './rules'
 import { addInstance, addMaterial, freeInstances, instanceById, materialCount, removeMaterial } from './state'
-import { aggregateEquipment } from './stats'
+import { aggregateEquipment, effectiveEfficiency } from './stats'
 import { tutorialCheckTotalLevel, tutorialProgress } from './tutorial'
 import type {
   ActionRef,
@@ -105,7 +105,8 @@ function performRound(
 
   if (mode === 'online') {
     // 效率：概率触发「立即免费重复一次」；保底 ⌈1/E⌉ 次必触发（链式上限 1）
-    const E = aggregateEquipment(state).efficiency
+    // v3.4 A1：用**有效效率**（装备 + 符文 + 精通）—— 此前只读装备侧，丰饶符文/效率精通在线不生效（硬核 P0-1）
+    const E = effectiveEfficiency(state, now)
     if (E > 0) {
       act.procMisses += 1
       const need = Math.ceil(1 / E)

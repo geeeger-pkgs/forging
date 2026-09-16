@@ -155,3 +155,42 @@ export function speedFor(state: GameState, ref: ActionRef, now: number = Date.no
   bonus += perkBonuses(state).speed
   return bonus
 }
+
+// ---------------- v3.4 A1：有效属性（面板与结算同源） ----------------
+export interface EffectiveStats {
+  efficiency: number
+  rareFind: number
+  wisdom: number
+  /** 三技能的动作速度（已含 allSpeed + 符文 + 精通） */
+  toolSpeed: { mining: number; smelting: number; forging: number }
+}
+
+/**
+ * **面板与结算共用的有效属性**。
+ * 起因（v3.0 硬核评审 P0-1，挂了 v3.2/v3.3 两版）：在线效率 proc 只读装备侧
+ * （`aggregateEquipment(state).efficiency`），而面板同样只显示装备侧 —— 结果是
+ * **丰饶符文/效率精通"看得见、挖不动"**（激活后产量与节奏毫无变化，只在深渊战力里体现）。
+ * 本函数把三处口径统一为：装备 + 符文（临时，离线期间为 0）+ 精通（永久）。
+ * 结算侧（settle.ts 的在线 proc / 离线期望）与展示侧（RightPanel）都必须走这里。
+ */
+export function effectiveStats(state: GameState, now: number = Date.now()): EffectiveStats {
+  const agg = aggregateEquipment(state)
+  const buff = buffBonuses(state, now)
+  const perk = perkBonuses(state)
+  const allSpeed = agg.allSpeed + buff.speed + perk.speed
+  return {
+    efficiency: agg.efficiency + buff.efficiency + perk.efficiency,
+    rareFind: agg.rareFind + buff.rareFind + perk.rareFind,
+    wisdom: agg.wisdom + perk.wisdom,
+    toolSpeed: {
+      mining: agg.toolSpeed.mining + allSpeed,
+      smelting: agg.toolSpeed.smelting + allSpeed,
+      forging: agg.toolSpeed.forging + allSpeed,
+    },
+  }
+}
+
+/** 有效效率（在线 proc 与面板共用；单独暴露便于测试与调用点可读） */
+export function effectiveEfficiency(state: GameState, now: number = Date.now()): number {
+  return effectiveStats(state, now).efficiency
+}

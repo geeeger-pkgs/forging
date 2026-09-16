@@ -5,6 +5,7 @@ import { perfectScore } from '../../game/affixes'
 import { recycleGain } from '../../game/economy'
 import { fmtPct } from '../format'
 import { CONTENT, itemDef } from '../../game/content'
+import { effectiveStats } from '../../game/stats'
 import { instanceById } from '../../game/state'
 import { SLOT_IDS, aggregateEquipment } from '../../game/stats'
 import type { ItemDef, SlotId } from '../../game/types'
@@ -71,6 +72,8 @@ const bagItems = computed(() => {
 })
 
 const agg = computed(() => aggregateEquipment(store.state))
+/** v3.4 A1：有效属性（与结算同源；随 store.now 走，符文到期即时反映） */
+const eff = computed(() => effectiveStats(store.state, store.now))
 
 const setText = computed(() => {
   const { setTier, setCount } = agg.value
@@ -449,13 +452,14 @@ function isTop(score: number): boolean {
         </div>
       </div>
       <div class="stats-line">
-        <span :class="{ hot: isMineView }">效率 {{ pct(agg.efficiency) }}</span> ·
+        <!-- v3.4 A1：面板与结算同源（装备 + 符文 + 精通）—— 此前只显示装备侧，符文激活后数值不动 -->
+        <span :class="{ hot: isMineView }">效率 {{ pct(eff.efficiency) }}</span> ·
         <span :class="{ hot: isMineView }">产量 {{ pct(agg.quantity) }}</span> ·
-        <span :class="{ hot: isMineView || isEnhanceView }">经验 {{ pct(agg.wisdom) }}</span> ·
-        <span :class="{ hot: isMineView }">稀有 {{ pct(agg.rareFind) }}</span><br />
-        <span :class="{ hot: isMineView }">挖速 {{ pct(agg.toolSpeed.mining + agg.allSpeed) }}</span> ·
-        <span :class="{ hot: store.ui.view === 'smelting' }">熔速 {{ pct(agg.toolSpeed.smelting + agg.allSpeed) }}</span> ·
-        <span :class="{ hot: store.ui.view === 'forging' }">锻速 {{ pct(agg.toolSpeed.forging + agg.allSpeed) }}</span><br />
+        <span :class="{ hot: isMineView || isEnhanceView }">经验 {{ pct(eff.wisdom) }}</span> ·
+        <span :class="{ hot: isMineView }">稀有 {{ pct(eff.rareFind) }}</span><br />
+        <span :class="{ hot: isMineView }">挖速 {{ pct(eff.toolSpeed.mining) }}</span> ·
+        <span :class="{ hot: store.ui.view === 'smelting' }">熔速 {{ pct(eff.toolSpeed.smelting) }}</span> ·
+        <span :class="{ hot: store.ui.view === 'forging' }">锻速 {{ pct(eff.toolSpeed.forging) }}</span><br />
         <span :class="{ hot: isEnhanceView }">强化成功率 {{ pct(agg.enhanceRate) }}</span> · 套装 {{ setText }}
       </div>
     </section>

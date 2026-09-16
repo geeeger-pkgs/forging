@@ -1,0 +1,14 @@
+{
+  "version": "3.4.0",
+  "a": {
+    "efficiency": {
+      "online": 1.3849999999999998,
+      "equipOnly": 0.8349999999999997,
+      "procRateOnline": 1,
+      "procRateEquipOnly": 0.8583690987124462
+    },
+    "speedMaxAll": 3.2835,
+    "rareMax": 1.84,
+    "minActionFloorMs": 250
+  }
+}
