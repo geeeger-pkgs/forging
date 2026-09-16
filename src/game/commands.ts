@@ -21,8 +21,8 @@ import {
   recruit,
   rerollTrait,
   routeDef,
+  squadOf,
   supplyCost,
-  teamSize,
   upgradeBanner,
 } from './expeditions'
 import { buyAbyssItem, challengeAbyss, consumeTicket, sweepAbyss, ticketUsable } from './abyss'
@@ -380,13 +380,24 @@ function deleteLoadout(state: GameState, loadoutId: string): GameEvent[] {
 // ---------------- 重铸（v2.1） ----------------
 
 /** 重铸前置校验：返回阻塞原因或 null（UI 预检复用，不改变状态） */
-export function reforgeBlockReason(state: GameState, instanceId: number, locks: readonly number[]): string | null {
+export function reforgeBlockReason(
+  state: GameState,
+  instanceId: number,
+  locks: readonly number[],
+  ticketAffixId?: string,
+): string | null {
   const inst = instanceById(state, instanceId)
   if (!inst) return '装备不存在'
   const cost = reforgeCost(inst.itemId, locks.length)
   if (!cost) return '该物品没有词缀，无法重铸'
   const issue = lockIssue(inst.affixes.length, locks)
   if (issue) return issue
+  // v3.0 C1（评审 m1）：券类错误也必须进预检 —— 否则按钮不置灰，只能点了看 toast
+  if (ticketAffixId !== undefined) {
+    const lockedIds = locks.map((i) => inst.affixes[i]?.id).filter((x): x is string => !!x)
+    const ticketIssue = ticketUsable(state, inst.itemId, ticketAffixId, lockedIds)
+    if (ticketIssue) return ticketIssue
+  }
   if (state.gold < cost.gold) return `金币不足（需要 ${cost.gold}）`
   if (cost.essence > 0 && materialCount(state, 'essence') < cost.essence) {
     return `${itemDef('essence').name}不足（需要 ${cost.essence}）`
@@ -497,14 +508,13 @@ function dispatchExpedition(
   team: readonly string[],
   now: number,
 ): GameEvent[] {
-  const reason = dispatchBlockReason(state, routeId, hours)
+  const reason = dispatchBlockReason(state, routeId, hours, team)
   if (reason) return [{ type: 'blocked', reason }]
-  const busy = busyCompanions(state)
-  const ids = team.filter((id) => state.companions[id] && !busy.has(id))
+  // v3.0 C5：提交与预检共用 squadOf（同一份截断/剔除规则，杜绝"预览与提交不一致"）
+  const ids = squadOf(state, team)
   if (ids.length === 0) {
-    return [{ type: 'blocked', reason: team.some((id) => busy.has(id)) ? '所选伙伴都在远征中' : '队伍里没有伙伴' }]
+    return [{ type: 'blocked', reason: team.some((id) => busyCompanions(state).has(id)) ? '所选伙伴都在远征中' : '队伍里没有伙伴' }]
   }
-  if (ids.length > teamSize(state)) return [{ type: 'blocked', reason: `队伍上限 ${teamSize(state)} 人` }]
   const route = routeDef(routeId)
   const supply = supplyCost(state, route, hours, ids)
   if (!removeMaterial(state, supply.itemId, supply.qty)) {

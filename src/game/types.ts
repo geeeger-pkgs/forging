@@ -330,6 +330,8 @@ export type AffixEffect =
   | 'stoneFind'
 
 export interface AffixDef {
+  /** v3.0 L1：最低适用档位（缺省 = 全档可用）；用于按档位过滤词缀池 */
+  tierMin?: number
   id: string
   name: string
   effect: AffixEffect

@@ -62,7 +62,8 @@ const cost = computed(() => {
 const blockReason = computed(() => {
   const i = inst.value
   if (!i) return '装备不存在'
-  return reforgeBlockReason(store.state, i.instanceId, locks.value)
+  // v3.0 C1：券也参与预检（券不合法/不在池/与锁定冲突 → 按钮置灰 + 原因）
+  return reforgeBlockReason(store.state, i.instanceId, locks.value, ticketAffixId.value ?? undefined)
 })
 
 function quality(i: number): number {

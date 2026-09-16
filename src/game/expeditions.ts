@@ -52,6 +52,17 @@ export function bannerPowerMultiplier(banner: number): number {
 }
 
 /** 队伍战力（ids 缺省 = 全部伙伴） */
+/**
+ * v3.0 C5（评审 m12/m13）：**唯一编队口径** —— 预检、补给估算、UI 预览、实际提交全走这里。
+ * 规则：显式选中优先；否则全体伙伴；剔除远征中/不存在的；按队伍上限截断。
+ * 这样"预览虚高"（按全员算补给/折扣）与"提交时才截断"的分叉被彻底消除。
+ */
+export function squadOf(state: GameState, picked?: readonly string[]): string[] {
+  const busy = busyCompanions(state)
+  const base = picked && picked.length > 0 ? [...picked] : Object.keys(state.companions)
+  return base.filter((id) => state.companions[id] && !busy.has(id)).slice(0, teamSize(state))
+}
+
 export function teamPower(state: GameState, ids?: readonly string[]): number {
   const list = ids ? ids.map((id) => ({ def: companionDef(id), st: state.companions[id] })) : ownedCompanions(state)
   let sum = 0
@@ -100,7 +111,7 @@ export function routeDef(id: string): ExpeditionRouteDef {
 }
 
 /** 派往前置校验：返回阻塞原因（null = 可派遣）。战力不足**不是**阻塞项。 */
-export function dispatchBlockReason(state: GameState, routeId: string, hours: number): string | null {
+export function dispatchBlockReason(state: GameState, routeId: string, hours: number, picked?: readonly string[]): string | null {
   const route = ROUTE_BY_ID.get(routeId)
   if (!route) return '未知路线'
   if (!DEF.hours.includes(hours)) return '时长档非法'
@@ -110,7 +121,10 @@ export function dispatchBlockReason(state: GameState, routeId: string, hours: nu
   if (state.meta.expeditions.runs.some((r) => r.routeId === routeId)) return `${route.name}已有远征在进行`
   const busy = busyCompanions(state)
   if (busy.size >= Object.keys(state.companions).length) return '所有伙伴都在远征中（先领取已完成的远征）'
-  const supply = supplyCost(state, route, hours, Object.keys(state.companions))
+  // v3.0 C5：补给按**实际编队**估算（不再是全员）
+  const squad = squadOf(state, picked)
+  if (squad.length === 0) return '可派出的伙伴都已在外远征'
+  const supply = supplyCost(state, route, hours, squad)
   if (materialCount(state, supply.itemId) < supply.qty) {
     return `补给不足：${itemDef(supply.itemId).name} ×${supply.qty}`
   }
@@ -345,9 +359,14 @@ export function recruit(state: GameState, rng: Rng, events: GameEvent[]): void {
   events.push({ type: 'companionRecruited', name: pick.name, duplicate: true })
 }
 
-function randomTrait(rng: Rng): string {
-  const pool = DEF.traits
-  return pool[randInt(rng, 0, pool.length - 1)].id
+/**
+ * 随机特质。v3.0 C4（评审 m11）：**排除当前特质** —— 否则花 1 徽记 + 2,000 金
+ * 有 1/6 概率毫无变化（玩家无法感知这是"重掷成功但抽到同一条"）。
+ */
+function randomTrait(rng: Rng, exclude?: string): string {
+  const pool = exclude ? DEF.traits.filter((t) => t.id !== exclude) : DEF.traits
+  const use = pool.length > 0 ? pool : DEF.traits
+  return use[randInt(rng, 0, use.length - 1)].id
 }
 
 /** 特质重掷（消耗徽记 + 金币） */
@@ -368,7 +387,7 @@ export function rerollTrait(state: GameState, companionId: string, rng: Rng, eve
   }
   removeMaterial(state, 'expedition_token', cost.tokens)
   addGold(state, -cost.gold)
-  st.trait = randomTrait(rng)
+  st.trait = randomTrait(rng, st.trait)
   events.push({ type: 'traitRerolled', name: companionDef(companionId).name, trait: st.trait })
 }
 

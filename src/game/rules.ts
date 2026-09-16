@@ -29,8 +29,8 @@ export function baseTimeOf(ref: ActionRef): number {
 }
 
 /** 实际单次时长（含速度加成与下限保护；每次结算按当前装备重算 → 换装下一轮生效） */
-export function durationOf(state: GameState, ref: ActionRef): number {
-  const t = baseTimeOf(ref) / (1 + speedFor(state, ref))
+export function durationOf(state: GameState, ref: ActionRef, now?: number): number {
+  const t = baseTimeOf(ref) / (1 + speedFor(state, ref, now))
   return Math.max(CONTENT.config.minActionTimeMs, Math.round(t))
 }
 

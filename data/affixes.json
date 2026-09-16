@@ -70,7 +70,8 @@
       "effect": "stoneFind",
       "base": 0.05,
       "perTier": 0.025,
-      "desc": "重铸石掉落率（仅 T4 以上矿脉；小箱不受加成）"
+      "desc": "重铸石掉落率（仅 T4 以上矿脉；小箱不受加成）",
+      "tierMin": 4
     }
   ],
   "pools": {

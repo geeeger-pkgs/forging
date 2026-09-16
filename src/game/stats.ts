@@ -139,15 +139,19 @@ export function aggregateEquipment(state: GameState): AggregatedStats {
   return agg
 }
 
-/** 某动作的技能速度加成合计（0.15 = +15%；含 v1.4 符文增益） */
-export function speedFor(state: GameState, ref: ActionRef): number {
+/**
+ * 某动作的技能速度加成合计（0.15 = +15%；含 v1.4 符文增益）。
+ * v3.0 C12：`now` 可注入（缺省 Date.now()）—— 符文增益是时间函数，
+ * 注入后可写出"同一存档同一时刻必得同一结果"的确定性断言（与 abyssScore 同口径）。
+ */
+export function speedFor(state: GameState, ref: ActionRef, now: number = Date.now()): number {
   const agg = aggregateEquipment(state)
   const skill = skillOf(ref)
   let bonus = agg.allSpeed
   if (skill === 'mining') bonus += agg.toolSpeed.mining
   else if (skill === 'smelting') bonus += agg.toolSpeed.smelting
   else if (skill === 'forging') bonus += agg.toolSpeed.forging
-  bonus += buffBonuses(state, Date.now()).speed
+  bonus += buffBonuses(state, now).speed
   bonus += perkBonuses(state).speed
   return bonus
 }

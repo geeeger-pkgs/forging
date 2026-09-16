@@ -28,9 +28,24 @@ export function archetypeOf(def: ItemDef): AffixArchetype | null {
   return null
 }
 
+/**
+ * 该物品的词缀池（原型池 − 档位不适用的词缀）。
+ *
+ * v3.0 L1（承诺清算）：`prospect`（勘探，重铸石掉落）只对 **T4+ 矿脉**有效，
+ * 却在 T1~T3 装备上有抽取权重 → 低档装备会摇到"数值为 0 的死词缀"。
+ * 现在按档位过滤：`tierMin` 声明了最低档位的词缀，只在达标装备的池里出现。
+ * 输入为空池时返回原型池（防御：内容表若漏配 tierMin 不会把池清空）。
+ */
 export function poolOf(def: ItemDef): readonly string[] {
   const arch = archetypeOf(def)
-  return arch ? DEF.pools[arch] ?? [] : []
+  if (!arch) return []
+  const pool = DEF.pools[arch] ?? []
+  const tier = def.tier ?? 0
+  const filtered = pool.filter((id) => {
+    const min = DEF.affixes.find((x) => x.id === id)?.tierMin
+    return min === undefined || tier >= min
+  })
+  return filtered.length > 0 ? filtered : pool
 }
 
 /** 该档位应有的词缀条数（非装备 / 无档位 → 0；并受池大小限制） */

@@ -8,6 +8,7 @@ import { CONTENT, ROUTE_BY_ID, TRAIT_BY_ID, itemDef } from '../../game/content'
 import {
   HOUR_MS,
   bannerUpgradeCost,
+  squadOf,
   bannerPowerMultiplier,
   companionPower,
   ownedCompanions,
@@ -50,7 +51,9 @@ const companions = computed(() =>
 
 const locked = computed(() => CONTENT.companions.companions.filter((c) => !store.state.companions[c.id]))
 
-const teamPowerNow = computed(() => teamPower(store.state, picked.value.length ? picked.value : undefined))
+// v3.0 C5：预览与提交同口径（剔除远征中 + 按上限截断）
+const squad = computed(() => squadOf(store.state, picked.value))
+const teamPowerNow = computed(() => teamPower(store.state, squad.value))
 const bannerMult = computed(() => bannerPowerMultiplier(banner.value))
 
 /** 每条路线的展示数据 */
@@ -66,7 +69,7 @@ const routes = computed<RouteView[]>(() =>
   CONTENT.expeditions.routes.map((def) => {
     const lockReason = routeUnlockReason(store.state, def)
     const running = store.state.meta.expeditions.runs.some((r) => r.routeId === def.id)
-    const team = picked.value.length ? picked.value : Object.keys(store.state.companions)
+    const team = squad.value
     return {
       def,
       lockReason,
