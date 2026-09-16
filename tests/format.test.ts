@@ -96,11 +96,13 @@ describe('窄屏默认状态（DoD §3：抽屉/右栏默认收起）', () => {
     expect(mq).toContain('.tools.collapsed')
   })
 
-  it('RightPanel：窄屏右栏默认收起、默认分区为装备，Tab 具备 aria 状态', () => {
+  it('RightPanel：默认分区为装备、窄屏默认收起，Tab 具备 aria 状态（v3.7.6 桌面常显）', () => {
     expect(right).toContain("const rightTab = ref<RightTab>('gear')")
     expect(right).toContain('const rightOpen = ref(false)')
     expect(right).toContain('role="tablist"')
-    expect(right).toContain(':aria-selected="rightOpen && rightTab === t.id"')
+    // v3.7.6：桌面 Tab 常显（点击不收起）→ 选中态判定加窄屏分支
+    expect(right).toContain(':aria-selected="(!narrow || rightOpen) && rightTab === t.id"')
+    expect(right, '窄屏语义标志').toContain('const narrow = ref(false)')
   })
 })
 

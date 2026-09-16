@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { MAX_GEAR_SETS } from '../../game/commands'
@@ -188,6 +188,19 @@ const RIGHT_TABS = [
 ] as const satisfies readonly { id: RightTab; label: string }[]
 const rightTab = ref<RightTab>('gear')
 const rightOpen = ref(false)
+/**
+ * v3.7.6（用户提议：桌面也按分区展示，替代三块纵向长滚动）：
+ * 窄屏语义 = 底部 Tab 条 + "再点收起"（rightOpen 才有意义）；
+ * 桌面语义 = 顶部 Tab 条常显、点击只切换分区。用 responsive 标志统一分支，
+ * 避免桌面点击把 rightOpen 置 false 导致切回窄屏时状态错乱。
+ */
+const narrow = ref(false)
+function syncNarrow(): void {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    narrow.value = window.matchMedia('(max-width: 900px)').matches
+  }
+}
+syncNarrow()
 /** v3.4.4：外部（如教程「前往」）请求切到某个分区并展开 */
 watch(
   () => store.ui.rightTabWanted,
@@ -202,10 +215,15 @@ watch(
  * 这里补一次，避免"点了前往但右栏没反应"。应用里 RightPanel 常驻（App.vue），该路径主要用于健壮性。
  */
 onMounted(() => {
+  syncNarrow()
+  window.addEventListener('resize', syncNarrow)
   const t = store.ui.rightTabWanted
   if (!t) return
   void selectRightTab(t as RightTab)
   store.ui.rightTabWanted = null
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncNarrow)
 })
 
 /**
@@ -213,7 +231,8 @@ onMounted(() => {
  * 收起（无选中）时把「装备」留在 Tab 序列里，保证键盘能进得来；
  * ←/→ 在三个分区之间切换，Home/End 跳到首/尾（APG tab 模式）。
  */
-const rovingTabId = computed<RightTab>(() => (rightOpen.value ? rightTab.value : 'gear'))
+/** v3.7.6：桌面下 Tab 恒"选中"（narrow=false → 始终跟随 rightTab） */
+const rovingTabId = computed<RightTab>(() => (!narrow.value || rightOpen.value ? rightTab.value : 'gear'))
 function onTabKeydown(e: KeyboardEvent): void {
   const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
   if (!keys.includes(e.key)) return
@@ -244,6 +263,8 @@ function onTabKeydown(e: KeyboardEvent): void {
  * 唯一变化是按钮变蓝 → 新手判定"这个按钮是坏的"。故窄屏展开后滚动到该分区。
  */
 async function toggleRightTab(t: RightTab): Promise<void> {
+  // v3.7.6：桌面 Tab 常显 → 点击只切换分区（"再点收起"是窄屏底栏的语义）
+  if (!narrow.value) return selectRightTab(t)
   if (rightOpen.value && rightTab.value === t) {
     rightOpen.value = false // 再点一次收起（仅**点击**语义；键盘选中走下文的 selectRightTab）
     return
@@ -401,8 +422,8 @@ function isTop(score: number): boolean {
         role="tab"
         :id="`rtab-${t.id}`"
         :aria-controls="`rtabpanel-${t.id}`"
-        :aria-selected="rightOpen && rightTab === t.id"
-        :class="{ active: rightOpen && rightTab === t.id }"
+        :aria-selected="(!narrow || rightOpen) && rightTab === t.id"
+        :class="{ active: (!narrow || rightOpen) && rightTab === t.id }"
         :tabindex="rovingTabId === t.id ? 0 : -1"
         @click="toggleRightTab(t.id)"
       >
@@ -620,10 +641,17 @@ function isTop(score: number): boolean {
   gap: 6px;
   margin: 4px 0 6px;
 }
-/* v3.2 A2：Tab 条（桌面隐藏） */
+/* v3.2 A2：Tab 条（v3.7.6 起桌面也显示：顶部吸顶，替代三块纵向长滚动） */
 .rtabs {
   display: none;
   gap: 6px;
+}
+/*
+ * v3.7.6：无 data-sec 的 section（检视面板）不受分区显隐控制 ——
+ * 此前窄屏规则 `.right > section { display: none }` 会把它一并隐藏（点装备看不到详情）。
+ */
+.right > section:not([data-sec]) {
+  display: block;
 }
 .rtab {
   flex: 1;
@@ -884,6 +912,30 @@ h3 {
   }
   .slots {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+/*
+ * v3.7.6（用户提议"装备/资源/行囊分 tab 更好"）：桌面右栏同样分区展示。
+ * 此前三块（装备+属性明细 / 资源 / 行囊）纵向堆在一条 300px 长滚动里，找东西要滚很久；
+ * 现在 Tab 条吸顶在右栏内、只渲染当前分区，与移动端同一套交互模型（点击切换）。
+ */
+@media (min-width: 901px) {
+  .rtabs {
+    display: flex;
+    position: sticky;
+    top: -10px; /* 抵消 .right 的 padding-top，滚动时贴住右栏顶 */
+    z-index: 5;
+    padding: 10px 0 8px;
+    background: var(--c-panel);
+  }
+  .right > section {
+    display: none;
+  }
+  .right[data-tab='gear'] > section[data-sec='gear'],
+  .right[data-tab='mats'] > section[data-sec='mats'],
+  .right[data-tab='bag'] > section[data-sec='bag'] {
+    display: block;
   }
 }
 </style>

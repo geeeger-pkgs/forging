@@ -109,16 +109,32 @@ describe('A2 操作矩阵：v3.2 出过事故的路径逐条走通', () => {
     expect(s.gold).toBeGreaterThan(before)
   })
 
-  it('④ 右栏 Tab 开合：点「资源」打开、再点收起（aria-selected 同步）', async () => {
+  it('④ 右栏 Tab 开合（窄屏语义）：点「资源」打开、再点收起（aria-selected 同步）', async () => {
     boot()
-    const rp = mount(RightPanel)
-    const mats = rp.findAll('.rtab').find((t) => t.text() === '资源')!
-    expect(mats.attributes('aria-selected')).toBe('false')
-    await mats.trigger('click')
-    expect(mats.attributes('aria-selected')).toBe('true')
-    expect(rp.find('#rtabpanel-mats').isVisible()).toBe(true)
-    await mats.trigger('click')
-    expect(mats.attributes('aria-selected')).toBe('false')
+    // v3.7.6：桌面下 Tab 常显、点击只切换分区（不收起）→ 本用例模拟窄屏以验证"再点收起"语义
+    const orig = window.matchMedia
+    window.matchMedia = ((q: string) => ({
+      matches: q.includes('max-width: 900px'),
+      media: q,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia
+    try {
+      const rp = mount(RightPanel)
+      const mats = rp.findAll('.rtab').find((t) => t.text() === '资源')!
+      expect(mats.attributes('aria-selected')).toBe('false')
+      await mats.trigger('click')
+      expect(mats.attributes('aria-selected')).toBe('true')
+      expect(rp.find('#rtabpanel-mats').isVisible()).toBe(true)
+      await mats.trigger('click')
+      expect(mats.attributes('aria-selected')).toBe('false')
+    } finally {
+      window.matchMedia = orig
+    }
   })
 
   it('⑤ 材料「…」菜单：在被点行内展开；空输入时「应用」置灰（v3.2 误设 0 的坑）', async () => {

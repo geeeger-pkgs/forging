@@ -160,10 +160,32 @@ describe('Major 处置：D2 强化路径不再读墙钟', () => {
 describe('Major 处置：窄屏可达性', () => {
   it('右栏 Tab 条在窄屏是 fixed 常驻视口底部（sticky 会因包含块在页面末尾而"不滚到底就看不见"）', () => {
     const rp = ui('RightPanel.vue')
-    const mq = rp.slice(rp.indexOf('@media (max-width: 900px)'))
-    expect(mq).toContain('position: fixed')
-    expect(mq).toContain('bottom: 0')
-    expect(mq).not.toContain('position: sticky')
+    // v3.7.6：桌面新增了 sticky 吸顶 Tab 条（在右栏自身滚动容器内有效）→
+    // 断言必须限定在**窄屏块内**（此前 slice 到文件尾，会把桌面规则误判为窄屏规则）
+    // RightPanel 有多个 900px 块 → 逐个配平提取，取**含 .rtabs 的那个**
+    const blocks: string[] = []
+    let idx = rp.indexOf('@media (max-width: 900px)')
+    while (idx !== -1) {
+      let depth = 0
+      let end = rp.length
+      for (let i = rp.indexOf('{', idx); i < rp.length; i++) {
+        if (rp[i] === '{') depth++
+        else if (rp[i] === '}') {
+          depth--
+          if (depth === 0) {
+            end = i
+            break
+          }
+        }
+      }
+      blocks.push(rp.slice(idx, end))
+      idx = rp.indexOf('@media (max-width: 900px)', end)
+    }
+    const mq = blocks.find((b) => b.includes('.rtabs'))
+    expect(mq, '应有含 .rtabs 的窄屏块').toBeTruthy()
+    expect(mq!).toContain('position: fixed')
+    expect(mq!).toContain('bottom: 0')
+    expect(mq!).not.toContain('position: sticky')
   })
 
   it('主滚动容器为常驻底栏留出内边距（否则遮住最后一行）', () => {
