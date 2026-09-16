@@ -269,12 +269,15 @@ describe('Minor 处置：交互收口', () => {
 
   // ---- 复审（第二轮）新增：两名评审共同要求的放行条件 + 复审新发现问题 ----
 
-  it('N1 底栏点开后必须把玩家带到面板（scrollIntoView，仅窄屏）', () => {
+  it('N1 底栏点开后必须能看到面板（v3.7.7：改底部抽屉浮层，不再滚动页面）', () => {
     const rp = ui('RightPanel.vue')
     expect(rp).toMatch(/async function toggleRightTab\(/)
-    expect(rp).toContain('scrollIntoView(')
-    expect(rp).toContain("window.matchMedia('(max-width: 900px)').matches")
-    expect(rp).toContain('await nextTick()')
+    // 抽屉化：展开态 fixed 定位在 Tab 条之上；不再 scrollIntoView
+    // （用户反馈：原实现把页面拽到文档末尾、打断后续操作，看完还要滚回顶部）
+    expect(rp).toContain('position: fixed')
+    expect(rp).toContain("bottom: calc(53px + env(safe-area-inset-bottom, 0px))")
+    expect(rp).toContain('.right.tab-open')
+    expect(rp).not.toContain('scrollIntoView(')
   })
 
   it('N2 卸下有反馈：命令返回 notice（此前返回空事件，弹窗里按钮静默消失）', () => {

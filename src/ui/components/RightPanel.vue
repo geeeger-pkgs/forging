@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { MAX_GEAR_SETS } from '../../game/commands'
@@ -278,15 +278,14 @@ async function toggleRightTab(t: RightTab): Promise<void> {
  * （End 停在资源、再按 End 就关掉整个面板），与 APG 选中语义不符。
  */
 async function selectRightTab(t: RightTab): Promise<void> {
-  const wasOpen = rightOpen.value
   rightTab.value = t
   rightOpen.value = true
-  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 900px)').matches) return
-  await nextTick()
-  const panel = document.getElementById(`rtabpanel-${t}`)
-  if (!panel) return
-  // 收起→展开时滚动到面板起始处；分区间切换时只保证面板在视口内（避免"跳一下"）
-  panel.scrollIntoView({ block: wasOpen ? 'nearest' : 'start', behavior: 'smooth' })
+  /**
+   * v3.7.7（用户反馈"点 tab 滑到底部很怪、打断后续操作"）：
+   * 此前的 scrollIntoView 会把页面拽到文档末尾（右栏在文档流末端）——玩家看完材料
+   * 想继续挖矿还得滚回顶部。自本版起窄屏分区改为**底部抽屉浮层**（CSS fixed），
+   * 点 tab 不移动页面滚动位置，关掉即回原处，故不再需要任何滚动补偿。
+   */
 }
 
 /** v3.2 B1：材料「…」菜单与自动保留量内联输入（替代系统 prompt） */
@@ -430,6 +429,13 @@ function isTop(score: number): boolean {
         {{ t.label }}
       </button>
     </nav>
+    <!-- v3.7.7：窄屏抽屉的"抓手"（视觉提示可收起 + 明确的点击出口） -->
+    <button
+      v-if="narrow && rightOpen"
+      class="sheet-grip"
+      aria-label="收起面板"
+      @click="rightOpen = false"
+    />
     <section id="rtabpanel-gear" role="tabpanel" aria-labelledby="rtab-gear" data-sec="gear">
       <h3>装备</h3>
       <div class="gearsets">
@@ -897,6 +903,53 @@ h3 {
   }
   .rtab {
     min-height: 40px;
+  }
+  /*
+   * v3.7.7（用户反馈）：展开的分区从"文档流末尾"改为**底部抽屉浮层**——
+   * 点 tab 不滚动页面（此前 scrollIntoView 会把玩家拽到底部、打断操作流），
+   * 关掉即刻回到原滚动位置；上方主区仍可见可点（非模态，不打断后续操作）。
+   */
+  .right.tab-open {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* 53px = 底部 Tab 条高度（下方 .rtabs 的实测值） */
+    bottom: calc(53px + env(safe-area-inset-bottom, 0px));
+    max-height: min(68vh, 560px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 7;
+    background: var(--c-panel);
+    border-top: 1px solid var(--c-border);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    box-shadow: 0 -14px 44px rgba(0, 0, 0, 0.55);
+    padding: 14px 12px 10px;
+    animation: sheet-in 0.18s var(--ease);
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(16px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  /* 抓手：视觉提示"可收起"+ 明确的点击出口 */
+  .sheet-grip {
+    display: block;
+    width: 46px;
+    height: 4px;
+    margin: -4px auto 10px;
+    padding: 0;
+    border: none;
+    border-radius: 2px;
+    background: var(--c-border);
+    cursor: pointer;
+  }
+  .sheet-grip:hover {
+    background: var(--c-accent-2);
   }
   .right > section {
     display: none;
