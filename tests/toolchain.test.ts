@@ -86,4 +86,21 @@ describe('证据与实现同源（防"宣称≠实现"）', () => {
     const tpl = CONTENT.season.templates[0]
     expect(seasonTargetsFor(s, tpl.id)).toEqual(scaleTargets(tpl.targets, coef))
   })
+
+  /**
+   * v3.7.13（用户两次提醒"版本号又忘了"）：版本号四处必须同步 ——
+   * package.json / README「当前 **x.y.z**」/ 三个审计产物 version。
+   * 用用例拦住漂移（此前 v3.7.1~v3.7.12 的提交信息编号与 package.json 长期不一致）。
+   */
+  it('版本号同步：package.json == README == 审计产物 ×3（bump 后跑 npm run bump 会自动同步）', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }
+    const readme = readFileSync('README.md', 'utf8')
+    const m = readme.match(/当前 \*\*(\d+\.\d+\.\d+)\*\*/)
+    expect(m, 'README 应有「当前 **x.y.z**」标注').toBeTruthy()
+    expect(m![1], 'README 版本 == package.json').toBe(pkg.version)
+    for (const f of ['audit-content-output', 'sim-audit-output', 'sim-season-output']) {
+      const j = JSON.parse(readFileSync(`docs/${f}.json`, 'utf8')) as { version: string }
+      expect(j.version, `${f}.version == package.json`).toBe(pkg.version)
+    }
+  })
 })
