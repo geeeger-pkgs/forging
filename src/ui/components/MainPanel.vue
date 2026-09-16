@@ -272,8 +272,19 @@ h2 {
     flex: none;
     overflow-y: visible;
   }
+  /*
+   * v3.7.11（用户反馈"分区按钮感觉好大"）：5 个 pill 各自 padding 4/14 + 大圆角，
+   * 窄屏下体量笨重。改**等分分段控件**：一行铺满 5 等分、小圆角、去横向 padding，
+   * 视觉紧凑整齐；命中区仍 ≥40px（theme.css 兜底）。桌面保持 pill 不变。
+   */
   .tabs {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .tab {
+    padding: 4px 2px;
+    border-radius: var(--r-sm);
   }
   .search,
   .search-inline {
