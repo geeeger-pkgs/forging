@@ -36,10 +36,16 @@ npm run audit:fx      # 特效/事件覆盖审计（audit:fx:check 为校验模�
 ### 方式一：GitHub Actions（推荐，开箱即用）
 
 1. 把仓库推到 GitHub；
-2. 打开 **Settings → Pages**，把 **Source** 设为 **GitHub Actions**；
-3. 推送到 `main`（或 `master`）——工作流会自动：**跑测试（532 用例门禁）→ 构建
+2. 推送到 `main`（或 `master`）——工作流会自动：**跑测试（门禁）→ 构建
    （按仓库名自动计算 `VITE_BASE=/<repo>/`）→ 发布**到 `https://<user>.github.io/<repo>/`。
 
+> **Pages 开关**：工作流用 `actions/configure-pages@v5` 的 `enablement: true` 自动启用 Pages，
+> 正常无需任何手动设置。若组织策略禁止 Action 自动启用，则在 **Settings → Pages** 把
+> **Source** 手动设为 **GitHub Actions**，然后重跑失败的 job。
+>
+> **常见报错**：`Get Pages site failed … Not Found` = Pages 尚未启用（同上处理）；
+> 首次部署后站点生效需要 1~2 分钟。
+>
 > 仓库名为 `<user>.github.io`（用户主页仓库）时，工作流自动改用根路径 base，无需改动。
 
 ### 方式二：手动构建 + gh-pages 分支
@@ -161,7 +167,7 @@ reference/ # Milky Way Idle 参考研究（截图与机制速记）
 
 ## 版本
 
-当前 **3.7.14**（v3.5.0 封板后转入 UI/UX 打磨线，版本号逐次跟随迭代：全局视觉升级、移动端交互修复、桌面右栏分区）。
+当前 **3.7.15**（v3.5.0 封板后转入 UI/UX 打磨线，版本号逐次跟随迭代：全局视觉升级、移动端交互修复、桌面右栏分区）。
 历史版本与门禁记录见 `docs/08-roadmap-v3.md`；下一批候选（v3.5.1 backlog）见其 §五之二。
 
 ## 许可与来源
