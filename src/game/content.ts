@@ -138,9 +138,18 @@ export function validateContent(t: ContentTables): string[] {
   // 教程：步骤连续
   const steps = t.tutorial.map((s) => s.step).sort((a, b) => a - b)
   for (let i = 1; i <= t.tutorial.length; i++) if (steps[i - 1] !== i) errs.push(`教程步骤不连续: ${i}`)
+  // v3.1：教程目标类型白名单 + 新类型必填字段（章节二）
+  const TUTORIAL_GOAL_TYPES = ['mineItem', 'craftItem', 'equipSlot', 'enhanceInstance', 'totalLevel', 'stat', 'abyssFloor', 'codexPct', 'seasonLevel']
   for (const s of t.tutorial) {
-    if (s.goal.itemId && !hasItem(s.goal.itemId)) errs.push(`教程目标物品不存在: 步骤 ${s.step}`)
-    if (s.goal.slotId && !SLOT_IDS.includes(s.goal.slotId)) errs.push(`教程目标槽位非法: 步骤 ${s.step}`)
+    const g = s.goal as { type: string; itemId?: string; slotId?: string; counter?: string; target: number }
+    if (!TUTORIAL_GOAL_TYPES.includes(g.type)) errs.push(`教程目标类型非法: 步骤 ${s.step} -> ${g.type}`)
+    if (!(g.target > 0)) errs.push(`教程目标数值非法: 步骤 ${s.step}`)
+    if (g.itemId && !hasItem(g.itemId)) errs.push(`教程目标物品不存在: 步骤 ${s.step}`)
+    if (g.slotId && !(SLOT_IDS as readonly string[]).includes(g.slotId)) errs.push(`教程目标槽位非法: 步骤 ${s.step}`)
+    if (g.type === 'stat' && !TASK_COUNTERS.includes(g.counter as never)) {
+      errs.push(`教程 stat 计数器非法: 步骤 ${s.step} -> ${g.counter}`)
+    }
+    if (g.type === 'codexPct' && !(g.target > 0 && g.target <= 1)) errs.push(`教程图鉴比例越界: 步骤 ${s.step}`)
     for (const rw of s.rewards) if (rw.itemId && !hasItem(rw.itemId)) errs.push(`教程奖励物品不存在: 步骤 ${s.step}`)
   }
 

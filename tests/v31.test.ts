@@ -310,3 +310,69 @@ describe('C2 首小时体验（内容与文案级改动）', () => {
     expect(gain).toBe(itemDef('ore_copper').value * 10)
   })
 })
+
+// ---------------- D：章节二教程（第二小时引导） ----------------
+
+describe('D1 教程章节二（符文/重铸/远征/图鉴/深渊/赛季）', async () => {
+  it('新增 8 步且目标类型都在白名单内（数据完整性）', async () => {
+    const { CONTENT } = await import('../src/game/content')
+    expect(CONTENT.tutorial.length).toBe(16)
+    const types = new Set(CONTENT.tutorial.map((s) => (s.goal as { type: string }).type))
+    for (const t of types) {
+      expect(['mineItem', 'craftItem', 'equipSlot', 'enhanceInstance', 'totalLevel', 'stat', 'abyssFloor', 'codexPct', 'seasonLevel']).toContain(t)
+    }
+  })
+
+  it('统计类目标按条件推进：深渊层数 / T4 强化 / 重铸 / 图鉴比例', async () => {
+    const { checkTutorialStats } = await import('../src/game/tutorial')
+    const mk = (step: number) => {
+      const s = newGame('T', 0)
+      s.flags.tutorial.current = step
+      s.flags.tutorial.completed = []
+      s.flags.tutorial.claimed = []
+      s.flags.tutorial.progress = 0
+      return s
+    }
+    // 步骤 13 = 深渊通关 1 层
+    const a = mk(13)
+    expect(checkTutorialStats(a).length).toBe(0) // 未通关 → 不触发
+    a.abyss.bestFloor = 1
+    expect(checkTutorialStats(a).some((e) => e.type === 'tutorialGoalMet' && e.step === 13)).toBe(true)
+    expect(checkTutorialStats(a).length).toBe(0) // 幂等（completed 后不再触发）
+
+    // 步骤 14 = T4+ 强化 1 次
+    const b = mk(14)
+    expect(checkTutorialStats(b).length).toBe(0)
+    b.stats.totalEnhancesT4 = 1
+    expect(checkTutorialStats(b).some((e) => e.type === 'tutorialGoalMet' && e.step === 14)).toBe(true)
+
+    // 步骤 10 = 重铸一次
+    const c = mk(10)
+    c.stats.totalReforges = 1
+    expect(checkTutorialStats(c).some((e) => e.type === 'tutorialGoalMet' && e.step === 10)).toBe(true)
+
+    // 步骤 11 = 完成一次远征
+    const d = mk(11)
+    d.stats.totalExpeditions = 1
+    expect(checkTutorialStats(d).some((e) => e.type === 'tutorialGoalMet' && e.step === 11)).toBe(true)
+
+    // 步骤 12 = 图鉴 5%
+    const e = mk(12)
+    // 用真实登记 API（与内核一致）
+    const { recordItem } = await import('../src/game/codex')
+    for (const id of Object.keys(CONTENT.items).slice(0, 14)) recordItem(e, id)
+    const pct = (await import('../src/game/codex')).codexProgress(e).pct
+    expect(pct).toBeGreaterThanOrEqual(0.05)
+    expect(checkTutorialStats(e).some((x) => x.type === 'tutorialGoalMet' && x.step === 12)).toBe(true)
+  })
+
+  it('章节二步骤的奖励都合法（金或物品，物品存在）', async () => {
+    const { CONTENT } = await import('../src/game/content')
+    for (const s of CONTENT.tutorial.filter((x) => x.step > 8)) {
+      for (const rw of s.rewards) {
+        expect(rw.gold || rw.itemId || rw.queueSlot).toBeTruthy()
+        if (rw.itemId) expect(CONTENT.items[rw.itemId]).toBeTruthy()
+      }
+    }
+  })
+})

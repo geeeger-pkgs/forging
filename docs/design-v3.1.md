@@ -37,8 +37,10 @@
 
 - 装备预设 ×3（一键换装）：`meta.gearSets` + `saveGearSet/applyGearSet/deleteGearSet` + 行囊顶部操作行；
   装备已回收则跳过并如实提示；**不主动卸下**未在预设中的槽位。
-- 未做（记入 v3.2）：二段教程（符文/远征/图鉴/深渊引导）、行囊折叠进主面板、工具抽屉、
-  成就按接近度排序、强化列表过滤、赛季目标动态缩放、`acceptTutorial` 死命令清理、`settle.ts` 用 `Date.now()` 取符文增益。
+- 章节二教程（8 步）：符文制作 / 重铸 / 远征 / 图鉴 5% / 深渊首战 / T4+ 强化 / 赛季等级 / 总等级 40；
+  `checkTutorialStats`（主循环 + cmd 后检查）覆盖 stat/abyssFloor/codexPct/seasonLevel 四类目标，卡面文案与「前往」落点同步。
+- 未做（记入 v3.2）：行囊折叠进主面板、工具抽屉、成就按接近度排序、强化列表过滤、赛季目标动态缩放、
+  `acceptTutorial` 死命令清理、`settle.ts` 用 `Date.now()` 取符文增益。
 
 ## 5. 门禁与证据
 

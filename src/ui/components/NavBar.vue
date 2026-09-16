@@ -22,18 +22,9 @@ const tutorial = computed(() => {
   const t = store.state.flags.tutorial
   const step = TUTORIAL_BY_STEP.get(t.current)
   if (!step) return null
-  const g = step.goal as { type: string; itemId?: string; slotId?: string; target: number }
+  const g = step.goal as { type: string; itemId?: string; slotId?: string; counter?: string; target: number }
   const itemName = g.itemId ? (CONTENT.items[g.itemId]?.name ?? g.itemId) : null
-  const goalText =
-    g.type === 'mineItem'
-      ? `挖掘 ${itemName} ×${g.target}`
-      : g.type === 'craftItem'
-        ? `制作 ${itemName} ×${g.target}`
-        : g.type === 'equipSlot'
-          ? '装备一件工具/武器'
-          : g.type === 'enhanceInstance'
-            ? `强化装备 ×${g.target}`
-            : `总等级达到 ${g.target}`
+  const goalText = goalLabel(g, itemName)
   return {
     step,
     goalText,
@@ -45,11 +36,58 @@ const tutorial = computed(() => {
   }
 })
 
+/** v3.1：章节二目标的计数器可读名（面板文案用） */
+const COUNTER_LABEL: Record<string, string> = {
+  totalReforges: '重铸词缀',
+  totalExpeditions: '完成远征',
+  totalEnhancesT4: '强化 T4+ 装备',
+  totalEnhances: '强化装备',
+  totalMines: '挖掘',
+  totalCrafts: '制作',
+  totalGoldEarned: '累计获得金币',
+}
+
+function goalLabel(g: { type: string; itemId?: string; counter?: string; target: number }, itemName: string | null): string {
+  switch (g.type) {
+    case 'mineItem':
+      return `挖掘 ${itemName} ×${g.target}`
+    case 'craftItem':
+      return `制作 ${itemName} ×${g.target}`
+    case 'equipSlot':
+      return '装备一件工具/武器'
+    case 'enhanceInstance':
+      return `强化装备 ×${g.target}`
+    case 'stat':
+      return `${COUNTER_LABEL[g.counter ?? ''] ?? g.counter ?? '目标'} ×${g.target}`
+    case 'abyssFloor':
+      return `深渊回廊通关 ${g.target} 层`
+    case 'codexPct':
+      return `图鉴收集达到 ${Math.round(g.target * 100)}%`
+    case 'seasonLevel':
+      return `赛季声望等级达到 ${g.target}`
+    default:
+      return `总等级达到 ${g.target}`
+  }
+}
+
+/** 统计类目标的落点（按计数器推导；缺省去任务页看进度） */
+const STAT_VIEW: Record<string, string> = {
+  totalReforges: 'forging',
+  totalExpeditions: 'expedition',
+  totalEnhancesT4: 'enhancing',
+  totalEnhances: 'enhancing',
+}
+
 /** 教程目标 → 该去哪个视图（craftItem 按配方所属技能推导：熔炼/锻造） */
-function goalView(g: { type: string; itemId?: string }): string {
+function goalView(g: { type: string; itemId?: string; counter?: string }): string {
   if (g.type === 'mineItem') return 'mining'
   if (g.type === 'equipSlot' || g.type === 'enhanceInstance') return 'enhancing'
   if (g.type === 'totalLevel') return 'mining'
+  // v3.1 章节二落点
+  if (g.type === 'stat') return STAT_VIEW[g.counter ?? ''] ?? 'tasks'
+  if (g.type === 'abyssFloor') return 'abyss'
+  if (g.type === 'codexPct') return 'codex'
+  if (g.type === 'seasonLevel') return 'codex'
   if (g.type === 'craftItem' && g.itemId) {
     const r = CONTENT.recipes.find((x) => x.outputs.some((o) => o.itemId === g.itemId))
     if (r) return r.skill === 'smelting' ? 'smelting' : 'forging'

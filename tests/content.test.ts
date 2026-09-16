@@ -13,7 +13,8 @@ describe('内容表', () => {
     expect(Object.keys(CONTENT.items).length).toBe(107)
     expect(CONTENT.recipes.length).toBe(92)
     expect(CONTENT.enhance.length).toBe(10)
-    expect(CONTENT.tutorial.length).toBe(8)
+    // v3.1：教程扩为两章（8 步四技能 + 8 步章节二：符文/重铸/远征/图鉴/深渊/T4强化/赛季/总等级）
+    expect(CONTENT.tutorial.length).toBe(16)
     expect(CONTENT.ores.length).toBe(8)
   })
 

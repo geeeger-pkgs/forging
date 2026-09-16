@@ -22,6 +22,7 @@ import { systemRng } from '../game/rng'
 import { simulate } from '../game/settle'
 import { newGame } from '../game/state'
 import { checkTasks, refreshTasks } from '../game/tasks'
+import { checkTutorialStats } from '../game/tutorial'
 import type { ForgeCategory } from '../ui/types'
 import { exportSave, loadGame, saveGame } from './persist'
 import type { ActionRef, Command, GameEvent, GameState, OfflineSummary, SkillId } from '../game/types'
@@ -348,6 +349,7 @@ export function cmd(command: Command): void {
   events.push(...checkCodexMilestones(store.state))
   events.push(...refreshTasks(store.state, Date.now()))
   events.push(...checkTasks(store.state))
+  events.push(...checkTutorialStats(store.state))
   handleEvents(events)
   saveNow()
 }
@@ -439,6 +441,8 @@ export function startLoop(): void {
     events.push(...checkCodexMilestones(store.state))
     events.push(...refreshTasks(store.state, store.now))
     events.push(...checkTasks(store.state))
+    // v3.1：教程章节二（统计类目标：符文/重铸/远征/图鉴/深渊/赛季）
+    events.push(...checkTutorialStats(store.state))
     pruneBuffs(store.state, store.now)
     events.push(...sweepAutoRecycle(store.state))
     // v3.0 L2：实例级自动回收（仅在线；离线不结算 —— 见 automation.ts 规则 4）
