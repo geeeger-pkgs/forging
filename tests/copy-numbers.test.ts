@@ -132,8 +132,10 @@ describe('文案数字守卫（防硬编码；评审探针证明过这类漂移�
       // 必须用 raw（保留插值）；用 text 会得到空体，pass 空跑（探针证明过）
       for (const { line, raw } of templateTextLines(f)) {
         for (const interp of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
-          for (const lit of interp[1].matchAll(/'([^']*)'|"([^"]*)"/g)) {
-            const body = lit[1] ?? lit[2] ?? ''
+          // v3.4.6：补反引号分支（B 评审探针：`{{ \`×1.7\` }}` 此前仍绿）；${…} 先换占位
+          const expr = interp[1].replace(/\$\{[^}]*\}/g, '${}')
+          for (const lit of expr.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)) {
+            const body = lit[1] ?? lit[2] ?? lit[3] ?? ''
             for (const { name, re } of PATTERNS) {
               for (const m of body.matchAll(re)) {
                 offenders.push(`${f.replace(process.cwd(), '')}:${line} [${name}] 插值字面量 "…${m[0]}…"`)

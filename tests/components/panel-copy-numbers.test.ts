@@ -13,6 +13,7 @@ import { addInstance, newGame } from '../../src/game/state'
 import type { GameState } from '../../src/game/types'
 import AbyssPanel from '../../src/ui/components/AbyssPanel.vue'
 import CodexPanel from '../../src/ui/components/CodexPanel.vue'
+import EnhancePanel from '../../src/ui/components/EnhancePanel.vue'
 import ExpeditionPanel from '../../src/ui/components/ExpeditionPanel.vue'
 import PrestigePanel from '../../src/ui/components/PrestigePanel.vue'
 import ShopPanel from '../../src/ui/components/ShopPanel.vue'
@@ -67,6 +68,10 @@ describe('AbyssPanel 文案值级断言（守卫盲区：空括号 / 公式数�
   it('离线回体：每日可打满 24 次 = staminaMax + offlineCapExtra（同源表达式）', () => {
     expect(mountPanel().text()).toContain('每日可打满 24 次')
   })
+
+  it('入门提示层数：入门 3 层之一（introReqs.length）', () => {
+    expect(mountPanel().text()).toContain('入门 3 层之一')
+  })
 })
 
 describe('v3.4.6：其余面板的公式/计数型文案值级断言（B 评审漏网清单）', () => {
@@ -116,6 +121,22 @@ describe('v3.4.6：其余面板的公式/计数型文案值级断言（B 评审�
     await nextTick()
     expect(w.text(), '「翻倍」二字无数字可查，应显示 ×N').toContain('成功经验 ×2')
     store.ui.dialogRef = null
+  })
+
+  it('EnhancePanel 降级分界：+1 ~ +4 不掉级 / +5 起降级 / 上限 +10（enhance.json 推导）', () => {
+    boot()
+    const w = mountTracked(mount(EnhancePanel))
+    const text = w.text()
+    expect(text, 'noDowngradeMax').toContain('+1 ~ +4 失败不掉级')
+    expect(text, 'noDowngradeMax+1').toContain('+5 起失败降 1 级')
+    expect(text, 'MAX_ENHANCE').toContain('逐级锤到 +10')
+  })
+
+  it('ShopPanel 词缀条数区间与池大小（affixes.json 推导）', () => {
+    boot()
+    const w = mountTracked(mount(ShopPanel))
+    expect(w.text(), 'countByTier 1..7 的 min~max').toContain('1~4 条词缀')
+    expect(w.text(), 'pools 各原型条数').toContain('工具/武器/护甲/饰品各 5 条')
   })
 
   it('RightPanel 存配装 title：最多 3 套（MAX_GEAR_SETS）', async () => {

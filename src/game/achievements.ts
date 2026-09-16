@@ -78,12 +78,16 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
       // v2.2：招募到的伙伴数（v2.1 前无此字段的旧档按 0 计）
       return Object.keys(state.companions ?? {}).length >= def.target
     case 'companionRarity': {
+      // v3.4.6：与 achievementValue 同式（计数比较）——此前用 some(≥1)，
+      // 未来若出现 target>1 的 def 会「进度未达标却已解锁」（A 评审 P3）
       const want = def.rarity
       if (!want) return false
-      return Object.keys(state.companions ?? {}).some((id) => {
+      let n = 0
+      for (const id of Object.keys(state.companions ?? {})) {
         const c = CONTENT.companions.companions.find((x) => x.id === id)
-        return c?.rarity === want
-      })
+        if (c?.rarity === want) n += 1
+      }
+      return n >= def.target
     }
     case 'relicCount': {
       // 持有遗物总数（value 0，不构成金币通道）

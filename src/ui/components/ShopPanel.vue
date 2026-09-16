@@ -52,6 +52,16 @@ const minToolSpeed = computed(() => {
 /** v3.4.4：下一个队列位的价格（内核同源，供标价与置灰） */
 const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
 
+/**
+ * v3.4.6：词缀条数区间与池大小从 affixes.json 推导。
+ * B 评审探针：把 countByTier["7"] 由 4 改 3，UI 仍显示「1~4 条词缀」且无断言变红。
+ */
+const affixCountRange = computed(() => {
+  const v = Object.values(CONTENT.affixes.countByTier)
+  return `${Math.min(...v)}~${Math.max(...v)}`
+})
+const affixPoolSize = computed(() => Math.min(...Object.values(CONTENT.affixes.pools).map((p) => p.length)))
+
 /** v3.4.5：金币商店增长率从内容表插值（此前写死 ×1.02） */
 const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
 </script>
@@ -112,7 +122,7 @@ const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
     <section class="card">
       <h3>词缀与重铸</h3>
       <p class="dim">
-        每件装备天生带 <b>1~4 条词缀</b>（档位越高条数越多），数值随机 → 同档装备也各有优劣；
+        每件装备天生带 <b>{{ affixCountRange }} 条词缀</b>（档位越高条数越多），数值随机 → 同档装备也各有优劣；
         在右侧点击任意装备即可查看词缀与<b>完美度</b>，并可消耗金币 / 精华 / 重铸石 <b>重铸</b>（不满意可锁定个别词缀再重摇，锁定越多越贵）。
       </p>
       <p class="dim">
@@ -120,7 +130,7 @@ const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
       </p>
       <p class="dim">
         加成范围：<b>稀有掉落</b>（腿甲 / 幸运符文 / 幸运词缀）提高矿脉与小箱的稀有产出；
-        <b>勘探词缀</b> 只提高矿脉的重铸石掉落（小箱不受其加成）。词缀池按部位不同（工具/武器/护甲/饰品各 5 条）。
+        <b>勘探词缀</b> 只提高矿脉的重铸石掉落（小箱不受其加成）。词缀池按部位不同（工具/武器/护甲/饰品各 {{ affixPoolSize }} 条）。
       </p>
     </section>
   </div>

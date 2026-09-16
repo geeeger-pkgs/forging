@@ -225,7 +225,7 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
       <p v-if="view.gap > 0" class="bad small">
         ⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。
         <template v-if="view.bestFloor === 0">
-          <br />入门提示：第 1 层只需 {{ view.nextRequirement.toFixed(2) }}（入门三层之一），
+          <br />入门提示：第 1 层只需 {{ view.nextRequirement.toFixed(2) }}（入门 {{ DEF.introReqs?.length ?? 3 }} 层之一），
           一件 T3+ 强化装备 + 少量速度/稀有词缀即可起步；再往上才需要整套 build。
         </template>
         <template v-else>

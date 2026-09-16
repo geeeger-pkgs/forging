@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pickAction, store } from '../../app/store'
-import { MAX_ENHANCE, itemDef } from '../../game/content'
+import { CONTENT, MAX_ENHANCE, itemDef } from '../../game/content'
 import { enhanceCostFor } from '../../game/rules'
 import { materialCount } from '../../game/state'
 import ItemIcon from './ItemIcon.vue'
+
+/**
+ * v3.4.6：降级分界从 enhance.json 推导（此前写死「+1~+4 不掉级；+5 起降级」；
+ * B 评审探针：把表中 T4 的 downgrade 改 true，UI 仍显示旧文案且无断言变红）。
+ */
+const noDowngradeMax = computed(() => {
+  let m = 0
+  for (const e of CONTENT.enhance) if (!e.downgrade) m = Math.max(m, e.targetLevel)
+  return m
+})
 
 /**
  * v3.2 B7：强化列表此前按行囊顺序平铺（找可强化件费眼，测评 B-C3）。
@@ -43,8 +53,8 @@ function enhance(instanceId: number, level: number): void {
 <template>
   <div class="enhance">
     <p class="hint">
-      选择要强化的装备（+1 ~ +4 失败不掉级；+5 起失败降 1 级，永不销毁）。<br />
-      提示：使用 <b>∞ 无限模式</b>将自动连续强化——逐级锤到 +10 或材料耗尽（降级自动跟随当前等级）。
+      选择要强化的装备（+1 ~ +{{ noDowngradeMax }} 失败不掉级；+{{ noDowngradeMax + 1 }} 起失败降 1 级，永不销毁）。<br />
+      提示：使用 <b>∞ 无限模式</b>将自动连续强化——逐级锤到 +{{ MAX_ENHANCE }} 或材料耗尽（降级自动跟随当前等级）。
     </p>
     <p v-if="rows.length === 0" class="hint">尚无装备，先去锻造吧。</p>
     <div v-for="r in rows" :key="r.inst.instanceId" class="row">

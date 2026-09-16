@@ -466,6 +466,8 @@ describe('v3.4.6：成就进度与判定同源（双人确认评审 A/B 各实�
     s.companions[legend.id] = { level: 1, xp: 0, trait: CONTENT.expeditions.traits[0].id }
     expect(achievementValue(s, def), '招募到目标稀有度 → 进度 1').toBe(1)
     expect(isMet(s, def), '与进度一致（1 ≥ 1）').toBe(true)
+    // A 评审 P3：isMet 与 value 同式（计数比较）——假设将来出现 target>1 的 def 也不会提前解锁
+    expect(isMet(s, { ...def, target: 2 }), 'value=1 < target=2 → 不应解锁（旧的 some 语义会错判 true）').toBe(false)
   })
 
   it('codexPercent：取整窗口（面板 24.8% 也解锁）与 value 同源 —— A 评审探针⑦c 的补课', async () => {
