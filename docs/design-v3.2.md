@@ -44,12 +44,31 @@
 - 行囊/动作预设的拖拽排序、图鉴搜索全文检索
 
 ## 3. 验收标准（DoD）
-- [ ] 390/375px：无横向溢出；工具抽屉可开合；右栏 Tab 可切换且默认不遮挡主内容
-- [ ] 键盘：Tab 可见焦点；工具抽屉与右栏 Tab 可键盘操作（aria-expanded / aria-selected）
-- [ ] B1~B7/C1~C3 全部落地，且**没有任何系统 prompt/confirm 用于日常操作**（确认框仅保留破坏性操作）
-- [ ] 时长/百分比格式统一（新增 `fmtDur`/`fmtPct` 并在测试中断言边界：59s/60s/60m/1h）
-- [x] `npm test` 全绿（379）｜typecheck｜build｜实机烟测（桌面 + 390/375 + 键盘路径）
 
-> **体积预算修订（如实登记）**：设计时定 ≤105KB，实测 105.6KB（本版新增抽屉/Tab/格式化/成就进度等 UI 代码约 +1.3KB gzip）。
+> 逐条核验记录（实机 iframe 375/390/1200px + 源码契约测试，391 项全绿）。核验中发现并修复 3 处不达标，见文末「核验发现」。
+
+- [x] 390/375px：无横向溢出；工具抽屉可开合；右栏 Tab 可切换且默认不遮挡主内容
+  - 实测（375px）：`scrollWidth == innerWidth`（无横向溢出）；抽屉默认收起（`#nav-tools` display:none、aria-expanded=false），点「更多」展开出 8 个工具入口、再点收起
+  - 实测（390px）：同上，无溢出；右栏默认**零 section 可见**（不占高度、不遮挡），底部 Tab 条可见
+  - 实测（1200px 桌面）：工具区始终全展示（collapsed class 存在但媒体查询不生效，8 个入口可见、开关隐藏）；右栏三分区同时展示、Tab 条隐藏
+- [x] 键盘：Tab 可见焦点；工具抽屉与右栏 Tab 可键盘操作（aria-expanded / aria-selected）
+  - 焦点环：`theme.css` 的 `:focus-visible { outline: 2px solid var(--c-accent) }` 生效（实测聚焦后 `outline-style: solid`），并有源码断言
+  - 键盘激活（实测 Space）：抽屉「更多」与右栏三个 Tab 均可聚焦 + 空格开合/切换，`aria-expanded` / `aria-selected` 同步翻转
+  - **如实登记**：本机自动化通道（Playwright `press('Enter')` 与 CUA 原始按键）注入的 Enter 不触发原生 button 的 click 默认动作，**只测到 Space 路径**；两处控件均为原生 `<button>`（无 tabindex=-1、无 preventDefault），真实浏览器按平台语义 Enter/Space 均可激活
+- [x] B1~B7/C1~C3 全部落地，且**没有任何系统 prompt/confirm 用于日常操作**（确认框仅保留破坏性操作）
+  - 源码守卫（`tests/format.test.ts`）：`src/ui` 全量扫描无 `window.prompt(`；`window.confirm(` 仅允许出现在 PrestigePanel / SettingsPanel / RightPanel，且 RightPanel ≤2 处
+  - 装备套装命名（日常操作）已从 prompt 改为内联输入（`showGearNameInput` + Enter 保存）
+- [x] 时长/百分比格式统一（新增 `fmtDur`/`fmtPct` 并在测试中断言边界：59s/60s/60m/1h）
+  - `tests/format.test.ts` 断言：0/负数/NaN/∞ 兜底、<10s 一位小数、59s、**59.9s → "1m 0s"（进位修正）**、60s → "1m 0s"、3599s → "59m 59s"、3600s → "1h 0m"；`fmtPct` 一位小数与 `—` 兜底；`fmtHours` 与内容表小时档位一致
+- [x] `npm test` 全绿（391，DoD 原定 ≥390）｜typecheck｜build｜实机烟测（桌面 + 390/375 + 键盘路径）
+  - 391 项 / 23 文件全绿；`vue-tsc --noEmit` 无错；`vite build` 成功，gzip 105.85KB（在下方修订预算内）
+  - 实机烟测：375/390/1200 三档布局、抽屉开合、右栏 Tab 切换、键盘聚焦/激活、首屏截图（抽屉收起后第一屏即内容）
+
+### 核验发现（本轮 DoD 复核实际改动）
+1. **窄屏抽屉默认态写反**（`NavBar.vue`）：初值 `!TOOL_VIEWS.includes(view)` 在技能页为 true → 窄屏默认展开，首屏被工具区占满，与设计相反。修为 `TOOL_VIEWS.includes(store.ui.view)`（技能页收起；初始即工具页才展开），并新增源码契约回归测试（node 环境无法渲染组件，行为侧由实机烟测覆盖）
+2. **`audit:content` 误报长期挂账**：T4 计数器用 `X = (X ?? 0) + 1` 写法，而静态规则只认 `X++` / `X +=`，v3.1 起把两个真实累加的计数器报成「从未累加」。已扩展规则识别三种写法，并把 toolchain 测试从「只拦 Blocker」收紧为「零发现」，误报不再可能静默留存
+3. **审计报告版本号硬编码 `3.0.0`**：改为读 `package.json`，产物随版本走
+
+> **体积预算修订（如实登记）**：设计时定 ≤105KB，实测 105.85KB（本版新增抽屉/Tab/格式化/成就进度等 UI 代码约 +1.3KB gzip）。
 > 按项目纪律这属**预算变更**，故在此显式登记：**v3.2 起预算调整为 gzip ≤110KB**，理由是本版为 UI/UX 专版且新增项均有明确玩家可感知收益；
 > 若 v3.3 无同类申诉，预算不再上调。

@@ -111,7 +111,9 @@ function claim(): void {
  * 桌面端（>900px）始终展开，窄屏默认收起，点「更多」展开；当前视图在工具区时自动展开。
  */
 const TOOL_VIEWS = ['prestige', 'tasks', 'expedition', 'codex', 'abyss', 'shop', 'achievements', 'settings']
-const toolsOpen = ref(!TOOL_VIEWS.includes(store.ui.view))
+// v3.2 修正：默认**收起**——仅当初始视图本身就是工具页时才展开（刷新后导航能反映当前分区）；
+// 桌面端 CSS 无视该 class 始终全展示。此前初始值写反（`!TOOL_VIEWS.includes`），窄屏反而是默认展开
+const toolsOpen = ref(TOOL_VIEWS.includes(store.ui.view))
 watch(
   () => store.ui.view,
   (v) => {
@@ -344,11 +346,10 @@ function toggleMute(): void {
     flex-wrap: wrap;
     flex: 1 1 100%;
   }
-  /* v3.2 A1：抽屉收起（默认） */
+  /* v3.2 A1：抽屉收起（默认）。教程卡独占整行，抽屉开关留在「更多」按钮行 */
   .tools.collapsed {
     display: none;
   }
-  .tools.collapsed + .tools-toggle,
   .tools.collapsed ~ .tutorial {
     flex: 1 1 100%;
   }

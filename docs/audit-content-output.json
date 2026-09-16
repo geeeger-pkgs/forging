@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.2.0",
   "counts": {
     "items": 107,
     "recipes": 92,
@@ -17,14 +17,6 @@
   "badRecipes": [],
   "badAchievements": [],
   "missingCounters": [],
-  "neverIncremented": [
-    "totalEnhancesT4",
-    "totalReforgesT4"
-  ],
-  "findings": [
-    {
-      "sev": "Major",
-      "msg": "计数器从未被累加（任务永远做不完）：totalEnhancesT4, totalReforgesT4"
-    }
-  ]
+  "neverIncremented": [],
+  "findings": []
 }

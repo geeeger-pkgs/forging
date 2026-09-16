@@ -9,9 +9,13 @@
 export function fmtDur(ms: number): string {
   if (!Number.isFinite(ms) || ms <= 0) return '0s'
   const s = ms / 1000
-  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)}s`
-  const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m ${Math.round(s % 60)}s`
+  // 先按目标单位取整、再判进位：否则 59.9s 会输出 '60s' 这种越界写法
+  if (s < 10) return `${s.toFixed(1)}s`
+  const sec = Math.round(s)
+  if (sec < 60) return `${sec}s`
+  const m = Math.floor(sec / 60)
+  const r = sec % 60
+  if (m < 60) return `${m}m ${r}s`
   const h = Math.floor(m / 60)
   return `${h}h ${m % 60}m`
 }

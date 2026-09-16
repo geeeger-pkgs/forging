@@ -151,11 +151,18 @@ const seasonCounters = SEASON.templates.map((t) => t.counter)
 const taskCounters = (TASKS.daily ?? []).map((t) => t.counter)
 const missingCounters = [...new Set([...seasonCounters, ...taskCounters])].filter((c) => !counters.has(c))
 if (missingCounters.length) note('Blocker', `任务/赛季计数器不存在于 stats：${missingCounters.join(', ')}`)
-// 计数器是否真的被累加（源码里出现 `stats.X +=` 或 `totalX++`）
+// 计数器是否真的被累加。识别三种写法：
+//   ① `X++` / `X += n`    ② `X = (X ?? 0) + 1`（可空字段的初始化累加）    ③ `X = X + 1`
+// 此前只认 ①，导致 v3.1 新增的 T4 计数器（用写法 ②，见 settle.ts / commands.ts）被误报为"从未累加"
 const allSrc = ['src/game/settle.ts', 'src/game/state.ts', 'src/game/crates.ts', 'src/game/abyss.ts', 'src/game/expeditions.ts', 'src/game/prestige.ts', 'src/game/commands.ts', 'src/game/affixes.ts', 'src/game/buffs.ts', 'src/game/tasks.ts'].map(src).join('\n')
-const neverIncremented = [...new Set([...seasonCounters, ...taskCounters])].filter(
-  (c) => !new RegExp(`${c}\\s*(\\+\\+|\\+=)`).test(allSrc),
-)
+const srcLines = allSrc.split(/\r?\n/)
+const isIncremented = (c) =>
+  new RegExp(`\\b${c}\\s*(\\+\\+|\\+=)`).test(allSrc) ||
+  srcLines.some((line) => {
+    const hits = line.match(new RegExp(`\\b${c}\\b`, 'g'))?.length ?? 0
+    return hits >= 2 && /[+]\s*1\b|\+\s*amount\b/.test(line)
+  })
+const neverIncremented = [...new Set([...seasonCounters, ...taskCounters])].filter((c) => !isIncremented(c))
 if (neverIncremented.length) note('Major', `计数器从未被累加（任务永远做不完）：${neverIncremented.join(', ')}`)
 
 // ── 7. 图鉴 100% 可达 ─────────────────────────────────────
@@ -173,7 +180,7 @@ for (const s of tutSteps) {
 
 // ── 报告 ───────────────────────────────────────────────────
 const out = {
-  version: '3.0.0',
+  version: JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version,
   counts: {
     items: Object.keys(ITEMS).length,
     recipes: RECIPES.length,

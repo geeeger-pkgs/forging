@@ -208,10 +208,20 @@ function applyKeep(): void {
 
 /** v3.1 装备预设：3 套一键换装（深渊层词条要求为某层重配装；此前约 20 击/轮） */
 const gearSets = computed(() => store.state.meta.gearSets ?? [])
+/**
+ * v3.2 B1 收尾：保存配装改用**内联输入**（此前是 window.prompt —— 日常操作里最后一个系统弹窗，
+ * 违反本版 DoD"仅破坏性操作才用 confirm"）。
+ */
+const gearNameDraft = ref('')
+const showGearNameInput = ref(false)
 function saveGearSet(): void {
-  const input = window.prompt('保存当前着装为配装（最多 3 套，超出挤掉最旧的）：名称', `配装${gearSets.value.length + 1}`)
-  if (input === null) return
-  cmd({ type: 'saveGearSet', name: input })
+  if (!showGearNameInput.value) {
+    showGearNameInput.value = true
+    return
+  }
+  cmd({ type: 'saveGearSet', name: gearNameDraft.value })
+  gearNameDraft.value = ''
+  showGearNameInput.value = false
 }
 
 /** v3.0：是否可回收（0 收益的遗物/徽记不可回收，避免误删图鉴进度） */
@@ -286,7 +296,17 @@ function isTop(score: number): boolean {
         >
           {{ g.name }}
         </button>
-        <button class="btn sm" title="保存当前着装（最多 3 套）" @click="saveGearSet">存配装</button>
+        <template v-if="showGearNameInput">
+          <input
+            v-model="gearNameDraft"
+            class="num-input"
+            :placeholder="`配装${gearSets.length + 1}`"
+            maxlength="10"
+            @keyup.enter="saveGearSet"
+          />
+          <button class="btn sm primary" title="确认保存" @click="saveGearSet">保存</button>
+        </template>
+        <button v-else class="btn sm" title="保存当前着装（最多 3 套）" @click="saveGearSet">存配装</button>
         <button
           v-for="g in gearSets"
           :key="'del-' + g.id"

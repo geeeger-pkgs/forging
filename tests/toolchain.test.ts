@@ -21,18 +21,23 @@ describe('toolchain', () => {
   }, 30000)
 
   /**
-   * 内容可达性守卫（v3.0）：内容表里每一条内容都必须有产出路径。
-   * 脚本本身只做静态判定；这里断言"无 Blocker 级发现"，防止新增内容时漏接产出路径。
+   * 内容可达性守卫（v3.0 / v3.2 收紧）：内容表里每一条内容都必须有产出路径。
+   * v3.2 起 Major 级发现也一并拦截——此前 `X = (X ?? 0) + 1` 写法（T4 计数器）被静态规则误报，
+   * 而测试只拦 Blocker，误报长期挂在审计输出里没人管；现在要求审计输出**零发现**。
    */
-  it('内容可达性审计无 Blocker（npm run audit:content）', () => {
+  it('内容可达性审计零发现（npm run audit:content，含 Major）', () => {
     const out = execFileSync('node', ['scripts/audit-content.mjs', '--json'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
-    const json = JSON.parse(out) as { findings: { sev: string; msg: string }[]; unreachableItems: string[] }
-    const blockers = json.findings.filter((f) => f.sev === 'Blocker')
-    expect(blockers, blockers.map((f) => f.msg).join('; ')).toEqual([])
+    const json = JSON.parse(out) as {
+      findings: { sev: string; msg: string }[]
+      unreachableItems: string[]
+      neverIncremented: string[]
+    }
+    expect(json.findings, json.findings.map((f) => f.msg).join('; ')).toEqual([])
     expect(json.unreachableItems).toEqual([])
+    expect(json.neverIncremented).toEqual([])
   }, 60000)
 
   /**
