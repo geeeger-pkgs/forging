@@ -200,7 +200,8 @@ const buffs = computed(() =>
 @media (max-width: 640px) {
   .ms {
     display: inline;
-    font-size: 11px;
+    /* v3.6.1（评审 A-m1/B-m6）：里程碑是阅读文本（曾窄屏被降到 11px，比桌面还小）→ 用字号 token */
+    font-size: var(--fs-note);
   }
 }
 

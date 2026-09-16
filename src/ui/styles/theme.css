@@ -43,6 +43,37 @@ body {
   }
 }
 
+/*
+ * v3.6.1（评审实测处置）：窄屏触摸目标统一兜底。
+ * `.btn/.btn.sm` 的 40px 兜底覆盖不到这些自定义控件——实机实测：
+ * .tab 27px（锻造分区）/ .search 29px / .sel 23px（定向重铸券）/ .num-input 22px（自动保留量）/
+ * .num 26px / .slot-item 20px（右栏换装主路径）。
+ * 输入类同时提到 16px：iOS Safari 对 <16px 的输入控件聚焦会强制放大页面（F3 只到 14px 差 2px）。
+ */
+@media (max-width: 900px) {
+  .tab,
+  .search,
+  .sel,
+  .num,
+  .num-input,
+  .slot-item,
+  .slider,
+  .select,
+  .text-input,
+  .opt,
+  .opt-row {
+    min-height: 40px;
+  }
+  .search,
+  .sel,
+  .num,
+  .num-input,
+  .select,
+  .text-input {
+    font-size: 16px;
+  }
+}
+
 #app {
   min-height: 100vh;
 }
@@ -107,6 +138,8 @@ body {
   min-width: 380px;
   max-width: 560px;
   max-height: 84vh;
+  /* v3.6.1（评审 B-m3）：iOS Safari 工具栏下 vh 是"大视口"，吸底按钮可能被工具栏盖住 → dvh 优先 */
+  max-height: 84dvh;
   overflow: auto;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   color: var(--c-text);

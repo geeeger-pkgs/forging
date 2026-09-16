@@ -676,7 +676,7 @@ h3 {
 }
 .slot-label {
   color: var(--c-text-dim);
-  font-size: var(--fs-note); /* v3.6 F5 */ /* v3.6 F5 */
+  font-size: var(--fs-note); /* v3.6 F5 */
 }
 .slot-item {
   display: flex;
@@ -833,6 +833,15 @@ h3 {
     border-left: none;
     border-top: 1px solid var(--c-border);
     overflow-y: visible;
+  }
+  /* v3.6.1（评审 B-M4）：自动保留量输入 ≥16px（防 iOS 聚焦放大；scoped 覆盖全局兜底） */
+  .num-input {
+    font-size: 16px;
+  }
+  /* v3.6.1（评审 B-m5）：右栏换装/切分区补按压反馈 */
+  .rtab:active,
+  .slot-item:active {
+    transform: translateY(1px);
   }
   /* v3.2 A2 修正：Tab 条**常驻视口底部**（fixed，而非 sticky——sticky 的包含块是页面末尾的 aside，
      不滚到底就看不见，等于没有入口）。主内容留出等高的底部内边距，避免遮住最后一行。

@@ -47,9 +47,17 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
   font-family: var(--font);
   transition: border-color 0.15s, transform 0.1s;
 }
-.cell:hover:not(.locked) {
+/* v3.6.1（评审 B-m5）：hover 效果只在真 hover 设备生效（触屏点完不残留高亮） */
+@media (hover: hover) {
+  .cell:hover:not(.locked) {
+    border-color: var(--c-accent);
+    transform: translateY(-1px);
+  }
+}
+/* v3.6.1：触屏按压反馈（点按瞬间的位移，替代 hover 残留） */
+.cell:active:not(.locked) {
+  transform: translateY(1px);
   border-color: var(--c-accent);
-  transform: translateY(-1px);
 }
 .cell.hint {
   border-color: var(--c-accent);

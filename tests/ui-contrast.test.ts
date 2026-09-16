@@ -11,6 +11,30 @@ import { describe, expect, it } from 'vitest'
 const read = (p: string): string => readFileSync(join(process.cwd(), ...p.split('/')), 'utf8')
 const theme = read('src/ui/styles/theme.css')
 
+/** 剥 CSS 注释（评审 A-m3：把声明写进注释不应满足断言） */
+const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, '')
+/** 取 `@media (max-width: 900px)` 块体（评审 A-m4：规则必须真在媒体查询内） */
+function mediaBlock(css: string): string {
+  const clean = stripComments(css)
+  const start = clean.indexOf('@media (max-width: 900px)')
+  if (start < 0) return ''
+  let depth = 0
+  let out = ''
+  for (let i = start; i < clean.length; i++) {
+    const c = clean[i]
+    if (c === '{') {
+      depth++
+      if (depth === 1) continue
+    }
+    if (c === '}') {
+      depth--
+      if (depth === 0) break
+    }
+    if (depth >= 1) out += c
+  }
+  return out
+}
+
 function token(name: string): string {
   const m = theme.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`))
   if (!m) throw new Error(`theme.css 缺少 token --${name}`)
@@ -35,8 +59,8 @@ describe('v3.6 UI 契约：对比度 / 触屏 / 字号 / 触摸目标', () => {
     }
   })
 
-  it('touch-action: manipulation 全局生效（触屏双击缩放误触防护）', () => {
-    expect(theme).toMatch(/touch-action:\s*manipulation/)
+  it('touch-action: manipulation 全局生效（触屏双击缩放误触防护；剥注释后判定）', () => {
+    expect(stripComments(theme)).toMatch(/touch-action:\s*manipulation/)
   })
 
   it('阅读型字号 token：默认 11px、窄屏（≤900px）提到 12px', () => {
@@ -44,13 +68,12 @@ describe('v3.6 UI 契约：对比度 / 触屏 / 字号 / 触摸目标', () => {
     expect(theme, '窄屏覆盖').toMatch(/@media \(max-width: 900px\)[\s\S]{0,140}--fs-note:\s*12px/)
   })
 
-  it('设置页窄屏控件触摸目标规则存在（F3 源码契约）', () => {
-    const s = read('src/ui/components/SettingsPanel.vue')
-    expect(s, '应有窄屏媒体查询').toMatch(/@media \(max-width: 900px\)/)
-    expect(s, '.opt-row 最小高度').toMatch(/\.opt-row\s*\{[^}]*min-height:\s*40px/)
-    expect(s, '.slider 命中区').toMatch(/\.slider\s*\{[^}]*height:\s*36px/)
-    expect(s, '.select 最小高度').toMatch(/\.select\s*\{[^}]*min-height:\s*40px/)
-    expect(s, '.text-input 最小高度').toMatch(/\.text-input\s*\{[^}]*min-height:\s*40px/)
+  it('设置页窄屏控件规则：滑杆 40px 命中区 + select 可收缩（媒体查询块内，v3.6.1 修订）', () => {
+    const block = mediaBlock(read('src/ui/components/SettingsPanel.vue'))
+    expect(block, '应有窄屏媒体查询').toBeTruthy()
+    expect(block, '.slider 命中区 40px（评审 A-m5：36 与标准不一致）').toMatch(/\.slider\s*\{[^}]*height:\s*40px/)
+    expect(block, '.select 可收缩（评审 B-M6）').toMatch(/\.select\s*\{[^}]*min-width:\s*0/)
+    // min-height 兜底统一在 theme.css（见 tests/ui-mobile.test.ts）
   })
 
   it('阅读型小字已改用 --fs-note token（防回退成硬编码 11px）', () => {

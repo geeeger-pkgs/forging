@@ -184,4 +184,12 @@ footer {
   display: flex;
   gap: 8px;
 }
+
+/* v3.6.1（评审 B-M3/M4）：窄屏数量输入 ≥16px + 40px 命中区（theme.css 全局兜底够不到 scoped 细节） */
+@media (max-width: 900px) {
+  .num {
+    font-size: 16px;
+    min-height: 40px;
+  }
+}
 </style>

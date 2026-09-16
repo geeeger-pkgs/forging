@@ -9,6 +9,11 @@
 
 审计环境：dev server（:5173）+ iPhone 14 视口（390×844）+ Chromium；脚本遍历全部可见文本节点与可点元素。
 
+> **口径订正（v3.6.1，评审实测证伪）**：下表的"横向溢出"与"触摸目标"两行口径过宽——
+> ① 溢出当时只查 `documentElement`，**漏了内层滚动容器 `.body`**（设置页实际溢出 75px，v3.6.1 已修）；
+> ② 触摸目标当时只覆盖主区/图鉴/…面板按钮，**漏了 `.tab/.search/.sel/.num-input/.slot-item`**（v3.6.1 已修）。
+> 修复与复测见 §5。
+
 | # | 维度 | 实测结果 |
 |---|---|---|
 | 1 | 横向溢出 | `scrollWidth == clientWidth`（375/390/1280 三档）✅ 无问题 |
@@ -55,3 +60,27 @@
 | 触摸目标放大导致窄屏拥挤 | 仅设置页表单行加高（信息密度低）；其余面板按钮已有 40px 规则，不动 |
 | 字号提升引发换行/溢出 | 只在 ≤900px 生效且只提 1px；改后跑 375/390 溢出检查 |
 | 无证据改动引入回归 | 每项改动绑定断言或实机复测证据；无证据的美化不做 |
+
+## 5. v3.6.1 评审处置（双人评审 → 实机证实 → 修复）
+
+### 5.1 评审发现与处置
+
+| 严重度 | 发现（评审视角） | 实机证实 | 处置 |
+|---|---|---|---|
+| Major | **窄屏导航不可达**（B）：NavBar 在滚动容器内，成就页 82 卡 ≈ 9000px | ✅ 滚到底 nav top=**-8132px** | **已修**：窄屏 `.nav { position: sticky; top: 0; z-index: 15 }` + 教程卡折叠开关（`.t-title` 变按钮，实测导航 233→**139px**，复测滚到底 nav 仍可见） |
+| Major | **内层滚动容器溢出**（B）：设置页 select 固有宽度撑破 `.body`；旧审计只查 documentElement 漏报 | ✅ `.body` 溢出 **75px** | **已修**：`.select { min-width: 0; flex: 1 }`，复测溢出 **0** |
+| Major | **非 .btn 控件漏兜底**（B）：.tab 27px / .search 29px / .sel 23px / .num-input 22px / .slot-item 20px | ✅ 全部复现 | **已修**：theme.css 窄屏统一 min-height 40px；复测 .tab=40 / .search=40 / .slot-item=40 |
+| Major | **白字压 accent-2 仅 3.24**（A/B）：本轮提亮 token 反而恶化 | 计算验证（旧 3.71 → 3.24） | **已修**：`.tab.active` 改深色文字（5.45） |
+| Major | **iOS 输入 <16px 聚焦放大**（B）：F3 只到 14px 差 2px | 实机实测 select/text-input 仍 **13px**（全局兜底被 scoped 特异性压过） | **已修**：5 个组件 scoped 窄屏 16px（MainPanel/ItemDetailModal/SettingsPanel/ActionDialog/RightPanel）；复测 `.search`=16px |
+| Major | **对比度盲区**（A/B）：opacity 合成（成就 0.5 → 2.26）、token 当背景 | 计算验证 | **部分修**（.tab.active）；opacity 合成面（成就/深渊/远征禁用态）**登记 v3.6.2** |
+| Minor | 断言可被注释/移出媒体查询骗过（A-m3/m4） | worktree 探针复现 | **已修**：`ui-mobile.test.ts` 与 `ui-contrast.test.ts` 增加剥注释 + 媒体查询配平提取 |
+| Minor | `.ms` 窄屏被降 11px（A-m1/B-m6） | 计算+源码 | **已修**：改用 `--fs-note` |
+| Minor | 长文本无换行兜底 / overscroll 链式 / iOS vh / 自定义控件无按压反馈 / hover 触屏残留（B-m1/m2/m3/m5） | 源码审查 | **已做**：overscroll-behavior: contain、dialog 84dvh、`.cell:hover` 包 `@media (hover:hover)` + `:active`、`.tab/.rtab/.slot-item:active`；长文本兜底**登记** |
+| Minor | 硬编码色残留（ActionGrid `#868b9e` 4.76 勉强过线等，A-m2） | 计算 | **登记 v3.6.2**（当前达标，属 token 纪律） |
+
+### 5.2 探针与回归
+
+- **探针（8 处篡改实测全红）**：sticky 删除 / `.slot-item` 从兜底移除 / `.tab.active` 回退 #fff / select 收缩删除 / overscroll 删除 / `tutOpen` 去响应式 / `.ms` 回退 11px / 组件 16px 删除。
+- **回归**：559 passed / 34 文件 ｜ typecheck ｜ build（gzip 110.47KB）｜ 实机复测（导航 sticky、溢出 0、.tab/.slot-item 40px、搜索框 16px、深色 active 字）。
+- **版本**：3.6.0（package.json + 审计产物）。
+

@@ -158,6 +158,8 @@ const TOOL_LABEL: Record<string, string> = {
 /** 当前是否停在某个工具分区（收起时用它显示"更多 · 图鉴"） */
 const currentToolLabel = computed(() => TOOL_LABEL[store.ui.view] ?? null)
 const toolsOpen = ref(currentToolLabel.value !== null)
+/** v3.6.1：教程卡折叠（窄屏 sticky 导航下教程卡占 ~140px，可收起；桌面同样可用） */
+const tutOpen = ref(true)
 function pickTool(v: string): void {
   setView(v as never)
   toolsOpen.value = false
@@ -278,9 +280,18 @@ function toggleMute(): void {
       <span class="body"><span class="name">{{ soundOn ? '音效开' : '已静音' }}</span></span>
     </button>
 
-    <div v-if="tutorial" class="tutorial">
+    <div v-if="tutorial" class="tutorial" :class="{ folded: !tutOpen }">
       <!-- v3.5 终审 B（n1）：给教程卡加步序，长线目标不再像"卡住" -->
-      <div class="t-title">📘 教程 · {{ tutorial.step.title }}<span class="dim small">（第 {{ tutorial.step.step }} / {{ CONTENT.tutorial.length }} 步）</span></div>
+      <!-- v3.6.1（评审 B-M1）：标题改为可折叠按钮——窄屏 sticky 导航下省 ~140px 屏高 -->
+      <button
+        class="t-title"
+        :aria-expanded="tutOpen"
+        :title="tutOpen ? '收起教程卡（省屏幕高度）' : '展开教程卡'"
+        @click="tutOpen = !tutOpen"
+      >
+        <span>📘 教程 · {{ tutorial.step.title }}<span class="dim small">（第 {{ tutorial.step.step }} / {{ CONTENT.tutorial.length }} 步）</span></span>
+        <span class="chev" aria-hidden="true">{{ tutOpen ? '▾' : '▸' }}</span>
+      </button>
       <div class="t-goal">{{ tutorial.goalText }}</div>
       <div class="t-progress">
         {{ tutorial.done ? '目标已达成' : `进度 ${tutorial.progress} / ${tutorial.target}（还差 ${tutorial.remain}）` }}
@@ -395,6 +406,28 @@ function toggleMute(): void {
 }
 .t-title {
   font-weight: 600;
+  /* v3.6.1：标题是折叠开关（按钮 reset：外观与文本一致，但键盘/读屏可达） */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--c-text);
+  font-family: var(--font);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.chev {
+  color: var(--c-text-dim);
+}
+.tutorial.folded .t-goal,
+.tutorial.folded .t-progress,
+.tutorial.folded .t-actions {
+  display: none;
 }
 .t-goal {
   font-size: 12px;
@@ -421,6 +454,15 @@ function toggleMute(): void {
     border-bottom: 1px solid var(--c-border);
     overflow-y: visible;
     max-height: none;
+    /*
+     * v3.6.1（评审 B-M1，实机证实）：导航此前随内容一起滚走——成就页 82 张卡在 375px 下
+     * 约 9000px（8+ 屏），滚到底后导航 top=-8132px 完全不可达，且内层滚动容器让 iOS
+     * 点状态栏回顶也失效。窄屏把整条导航（含教程卡）粘在滚动容器顶部。
+     */
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    align-content: flex-start;
   }
   .item {
     flex: 0 0 auto;

@@ -438,16 +438,21 @@ function onClear(): void {
     height: 18px;
   }
   .slider {
-    height: 36px;
+    /* v3.6.1：与 theme.css 的 40px 兜底统一（评审 A-m5：36px 与文档/标准不一致） */
+    height: 40px;
   }
   .select {
-    min-height: 40px;
     padding: 8px 10px;
-    font-size: 14px;
+    /* v3.6.1（评审 B-M6）：select 固有宽度（长 option）会撑破 .opt-row → 允许收缩 */
+    min-width: 0;
+    flex: 1;
+    max-width: 100%;
   }
+  /* v3.6.1（评审 B-M4）：输入控件 ≥16px 防 iOS 聚焦放大——必须写在 scoped 块内
+     （theme.css 的全局兜底会被这里的 13px 按特异性压过，实机实测过） */
+  .select,
   .text-input {
-    min-height: 40px;
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 </style>

@@ -240,7 +240,13 @@ h2 {
 .tab.active {
   background: var(--c-accent-2);
   border-color: var(--c-accent-2);
-  color: #fff;
+  /* v3.6.1（评审 A-M1/B-M5）：白字压蓝底仅 3.24（13px 正文需 4.5）→ 深色文字（#131829 on #6288ff = 5.45） */
+  color: #131829;
+  font-weight: 600;
+}
+/* v3.6.1（评审 B-m5）：自定义控件补按压反馈（此前只有 .btn 有） */
+.tab:active {
+  transform: translateY(1px);
 }
 .search {
   display: block;
@@ -273,6 +279,9 @@ h2 {
   .search-inline {
     width: 100%;
     margin: 0 0 8px;
+    /* v3.6.1（评审 B-M4）：iOS 对 <16px 输入控件聚焦会强制放大页面；
+       theme.css 的全局兜底会被 scoped 的 13px 按特异性压过——必须写在这里 */
+    font-size: 16px;
   }
 }
 </style>

@@ -386,5 +386,9 @@ footer {
   .detail-dialog {
     width: 100%;
   }
+  /* v3.6.1（评审 B-M4）：定向重铸券下拉等输入控件 ≥16px（防 iOS 聚焦放大；scoped 覆盖全局兜底） */
+  .sel {
+    font-size: 16px;
+  }
 }
 </style>

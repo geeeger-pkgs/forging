@@ -103,4 +103,20 @@ describe('教程「前往」落点（效果级）', () => {
     // v3.5 终审 B（n1）：步序标签（长线步骤不再像"卡住"）
     expect(nav.text(), '应显示"第 N / 总步数 步"').toContain(`第 ${eqStep.step} / ${steps.length} 步`)
   })
+
+  it('教程卡可折叠：点标题收起内容、aria-expanded 同步（v3.6.1：窄屏 sticky 导航省屏）', async () => {
+    const eqStep = steps.find((t) => t.goal.type === 'equipSlot')!
+    store.state.flags.tutorial = { current: eqStep.step, completed: [], claimed: [], progress: 0 }
+    const nav = mountTracked(mount(NavBar))
+    const title = nav.find('.t-title')
+    expect(title.exists(), '教程标题应是可折叠按钮').toBe(true)
+    expect(nav.find('.tutorial').exists()).toBe(true)
+    expect(title.attributes('aria-expanded')).toBe('true')
+    expect(nav.find('.tutorial').classes()).not.toContain('folded')
+    await title.trigger('click')
+    expect(nav.find('.tutorial').classes(), '点一次应折叠').toContain('folded')
+    expect(nav.find('.t-title').attributes('aria-expanded')).toBe('false')
+    await title.trigger('click')
+    expect(nav.find('.tutorial').classes(), '再点应展开').not.toContain('folded')
+  })
 })
