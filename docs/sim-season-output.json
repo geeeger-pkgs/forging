@@ -270,6 +270,16 @@
         "orePerSmelt": 3,
         "enhancePerHour": 40
       },
+      "t2": {
+        "loginsPerDay": 1,
+        "expRoutes": 1,
+        "name": "T2 段(60~85)",
+        "mineRounds": 515,
+        "goldPerRound": 18.78252427184466,
+        "smeltRounds": 629,
+        "orePerSmelt": 3,
+        "enhancePerHour": 60
+      },
       "mid": {
         "loginsPerDay": 2,
         "expRoutes": 2,
@@ -293,177 +303,178 @@
     },
     "stageDerivation": {
       "early": "每小时金币取 sim-audit B 段 T1 基线 2812；轮/时沿用中期；强化次数取中期一半",
+      "t2": "每小时金币取 sim-audit B 段 T2 基线 9673（赛季解锁线附近的保守模型）",
       "mid": "stages.mid（T3，v2.3 既有口径）",
       "end": "stages.end（T7，v2.3 既有口径）"
     },
     "promises": [
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "always",
         "scenario": "bronze3",
-        "hoursMid": 164.8994259822358,
+        "hoursMid": 321.2602037830985,
         "budget": 336,
-        "ratio": 0.4907721011376066,
-        "requiredCoef": 2.0376056374883706,
+        "ratio": 0.9561315588782694,
+        "requiredCoef": 1.045881176825914,
         "promised": true,
-        "ratioAfter": 0.3288173077621964
+        "ratioAfter": 0.3250847300186116
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "always",
         "scenario": "silver3",
-        "hoursMid": 284.764879099545,
+        "hoursMid": 549.4864347012705,
         "budget": 336,
-        "ratio": 0.8475145211295982,
-        "requiredCoef": 1.1799207860971674,
+        "ratio": 1.6353762937537812,
+        "requiredCoef": 0.611480063529989,
         "promised": true,
-        "ratioAfter": 0.5678347291568309
+        "ratioAfter": 0.5560279398762856
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "always",
         "scenario": "full",
-        "hoursMid": 302.56104190998536,
+        "hoursMid": 568.0377683586615,
         "budget": 336,
-        "ratio": 0.9004792913987659,
-        "requiredCoef": 1.1105197082840659,
+        "ratio": 1.6905885963055403,
+        "requiredCoef": 0.591509964154088,
         "promised": true,
-        "ratioAfter": 0.6033211252371732
+        "ratioAfter": 0.5748001227438837
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "always",
         "scenario": "gold2",
-        "hoursMid": 379.14994606256744,
+        "hoursMid": 754.7044350253283,
         "budget": 336,
-        "ratio": 1.128422458519546,
-        "requiredCoef": 0.8861929257522647,
+        "ratio": 2.2461441518610963,
+        "requiredCoef": 0.4452074009459394,
         "promised": false,
-        "ratioAfter": 0.7560430472080958
+        "ratioAfter": 0.7636890116327728
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "twice",
         "scenario": "bronze3",
-        "hoursMid": 164.8994259822358,
+        "hoursMid": 321.2602037830985,
         "budget": 224,
-        "ratio": 0.7361581517064099,
-        "requiredCoef": 1.3584037583255804,
+        "ratio": 1.434197338317404,
+        "requiredCoef": 0.6972541178839426,
         "promised": true,
-        "ratioAfter": 0.49322596164329463
+        "ratioAfter": 0.4876270950279174
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "twice",
         "scenario": "silver3",
-        "hoursMid": 284.764879099545,
+        "hoursMid": 549.4864347012705,
         "budget": 224,
-        "ratio": 1.2712717816943973,
-        "requiredCoef": 0.7866138573981116,
+        "ratio": 2.453064440630672,
+        "requiredCoef": 0.4076533756866593,
         "promised": true,
-        "ratioAfter": 0.8517520937352463
+        "ratioAfter": 0.8340419098144284
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "twice",
         "scenario": "full",
-        "hoursMid": 302.56104190998536,
+        "hoursMid": 568.0377683586615,
         "budget": 224,
-        "ratio": 1.350718937098149,
-        "requiredCoef": 0.7403464721893773,
+        "ratio": 2.5358828944583105,
+        "requiredCoef": 0.3943399761027253,
         "promised": true,
-        "ratioAfter": 0.9049816878557598
+        "ratioAfter": 0.8622001841158256
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "twice",
         "scenario": "gold2",
-        "hoursMid": 379.14994606256744,
+        "hoursMid": 754.7044350253283,
         "budget": 224,
-        "ratio": 1.6926336877793189,
-        "requiredCoef": 0.5907952838348431,
+        "ratio": 3.369216227791644,
+        "requiredCoef": 0.2968049339639596,
         "promised": false,
-        "ratioAfter": 1.1340645708121437
+        "ratioAfter": 1.1455335174491592
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "once",
         "scenario": "bronze3",
-        "hoursMid": 164.8994259822358,
+        "hoursMid": 321.2602037830985,
         "budget": 112,
-        "ratio": 1.4723163034128197,
-        "requiredCoef": 0.6792018791627902,
+        "ratio": 2.868394676634808,
+        "requiredCoef": 0.3486270589419713,
         "promised": true,
-        "ratioAfter": 0.9864519232865893
+        "ratioAfter": 0.9752541900558348
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "once",
         "scenario": "silver3",
-        "hoursMid": 284.764879099545,
+        "hoursMid": 549.4864347012705,
         "budget": 112,
-        "ratio": 2.5425435633887945,
-        "requiredCoef": 0.3933069286990558,
+        "ratio": 4.906128881261344,
+        "requiredCoef": 0.20382668784332966,
         "promised": false,
-        "ratioAfter": 1.7035041874704926
+        "ratioAfter": 1.6680838196288568
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "once",
         "scenario": "full",
-        "hoursMid": 302.56104190998536,
+        "hoursMid": 568.0377683586615,
         "budget": 112,
-        "ratio": 2.701437874196298,
-        "requiredCoef": 0.37017323609468866,
+        "ratio": 5.071765788916621,
+        "requiredCoef": 0.19716998805136265,
         "promised": false,
-        "ratioAfter": 1.8099633757115197
+        "ratioAfter": 1.724400368231651
       },
       {
         "cls": "junior",
-        "stage": "mid",
-        "stageName": "中期 T3",
+        "stage": "t2",
+        "stageName": "T2 段(60~85)",
         "eligible": true,
         "offline": "once",
         "scenario": "gold2",
-        "hoursMid": 379.14994606256744,
+        "hoursMid": 754.7044350253283,
         "budget": 112,
-        "ratio": 3.3852673755586378,
-        "requiredCoef": 0.29539764191742157,
+        "ratio": 6.738432455583288,
+        "requiredCoef": 0.1484024669819798,
         "promised": false,
-        "ratioAfter": 2.2681291416242875
+        "ratioAfter": 2.2910670348983184
       },
       {
         "cls": "veteran",
@@ -925,41 +936,41 @@
       }
     ],
     "scaleByMaturity": {
-      "junior": 0.67,
+      "junior": 0.34,
       "veteran": 0.66
     },
-    "coefFloor": 0.35,
+    "coefFloor": 0.3,
     "scaledTargets": {
       "junior": {
         "totalMines": [
-          2680,
-          6030,
-          12060
+          1360,
+          3060,
+          6120
         ],
         "totalCrafts": [
-          670,
-          1608,
-          3216
+          340,
+          817,
+          1633
         ],
         "totalGoldEarned": [
-          167500,
-          335000,
-          536000
+          85000,
+          170000,
+          272000
         ],
         "totalEnhancesT4": [
-          81,
-          215,
-          402
+          41,
+          109,
+          205
         ],
         "totalExpeditions": [
-          9,
-          14,
-          19
+          5,
+          7,
+          10
         ],
         "totalReforgesT4": [
-          11,
-          24,
-          41
+          6,
+          12,
+          21
         ]
       },
       "veteran": {

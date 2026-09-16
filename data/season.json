@@ -155,10 +155,10 @@
     }
   ],
   "scaleByMaturity": {
-    "junior": 0.67,
+    "junior": 0.34,
     "veteran": 0.66
   },
-  "coefFloor": 0.35,
+  "coefFloor": 0.3,
   "maturityBands": {
     "juniorMaxTotalLevel": 119
   }

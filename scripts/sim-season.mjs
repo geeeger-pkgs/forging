@@ -285,11 +285,22 @@ const EARLY = {
 
 const INELIGIBLE_NOTE = '赛季未解锁（总等级<60），仅作对照'
 const CLASSES = {
-  junior: { name: '新晋(60~119)', stage: 'mid', eligible: true },
+  junior: { name: '新晋(60~119)', stage: 't2', eligible: true }, // v3.4 A3：T3 → T2（保守，覆盖 60~85 段）
   veteran: { name: '老手(≥120)', stage: 'end', eligible: true },
   fresh: { name: '新号(T1,对照)', stage: 'early', eligible: false },
 }
-const STAGES = { early: EARLY, mid: STAGE.mid, end: STAGE.end }
+/** v3.4 A3：T2 段（赛季解锁线 60~85 的保守模型）——评审指出新晋档此前按 T3 建模、下沿无证据 */
+const T2 = {
+  loginsPerDay: 1,
+  expRoutes: 1,
+  name: 'T2 段(60~85)',
+  mineRounds: STAGE.mid.mineRounds,
+  goldPerRound: 9673 / STAGE.mid.mineRounds, // sim-audit B 段 T2 基线
+  smeltRounds: STAGE.mid.smeltRounds,
+  orePerSmelt: 3,
+  enhancePerHour: 60,
+}
+const STAGES = { early: EARLY, t2: T2, mid: STAGE.mid, end: STAGE.end }
 const goldPerHour = (st) => st.goldPerRound * st.mineRounds
 const REFORGE_GOLD_BY_CLASS = { early: 400, mid: 1100, end: 9500 } // affixes.reforge.goldByTier 的 T2/T3/T7
 
@@ -323,7 +334,7 @@ for (const [cls, def] of Object.entries(CLASSES)) {
   }
 }
 /** 系数下限（登记在 data/season.json.coefFloor，测试断言一致）：再低会让赛季奖励"奖杯化" */
-const COEF_FLOOR = 0.35
+const COEF_FLOOR = 0.30 // v3.4 A3：T2 模型下新晋档需 0.34，下限调到 0.30 让证据说话（仍防奖杯化）
 const scaleByMaturity = {}
 for (const cls of Object.keys(CLASSES)) {
   if (!CLASSES[cls].eligible) continue
@@ -406,6 +417,7 @@ const summary = {
     stageParams: STAGES,
     stageDerivation: {
       early: '每小时金币取 sim-audit B 段 T1 基线 2812；轮/时沿用中期；强化次数取中期一半',
+      t2: '每小时金币取 sim-audit B 段 T2 基线 9673（赛季解锁线附近的保守模型）',
       mid: 'stages.mid（T3，v2.3 既有口径）',
       end: 'stages.end（T7，v2.3 既有口径）',
     },
