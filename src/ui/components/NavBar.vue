@@ -465,21 +465,28 @@ function toggleMute(): void {
   color: var(--c-text-dim);
 }
 
-/* v1.8：窄屏横向滚动条 */
+/*
+ * v1.8：窄屏横向导航
+ * v3.7.3（用户反馈"排布很怪"）：原 flex 自然宽度换行 → 每行宽度参差、
+ * 右侧各空 90~116px，且"强化（技能）"与"更多/音效（开关）"混排断行。
+ * 改为 **4 列等宽网格**：技能 4 项一行整齐；「更多 / 音效」各占半行；
+ * 抽屉展开与教程卡整行跨列。触控目标 ≥40px 保持。
+ */
 @media (max-width: 900px) {
   .nav {
     width: auto;
     min-width: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
     border-right: none;
     border-bottom: 1px solid var(--c-border);
     overflow-y: visible;
     max-height: none;
     /*
      * v3.6.1（评审 B-M1，实机证实）：导航此前随内容一起滚走——成就页 82 张卡在 375px 下
-     * 约 9000px（8+ 屏），滚到底后导航 top=-8132px 完全不可达，且内层滚动容器让 iOS
-     * 点状态栏回顶也失效。窄屏把整条导航（含教程卡）粘在滚动容器顶部。
+     * 约 9000px（8+ 屏），滚到底后 nav top=-8132px 完全不可达。窄屏粘在滚动容器顶部。
      */
     position: sticky;
     top: 0;
@@ -487,41 +494,43 @@ function toggleMute(): void {
     align-content: flex-start;
   }
   .item {
-    flex: 0 0 auto;
-    padding: 6px 10px;
+    justify-content: center;
+    padding: 6px 6px;
+    min-width: 0;
     /* v3.2 修正：窄屏触控目标 ≥40px（评审 Major） */
     min-height: 40px;
   }
   .xpbar {
     display: none;
   }
+  /* 「更多 / 音效」各占半行（第二行两端对齐，不再悬在左侧） */
   .tools-toggle {
-    display: flex;
-    flex: 0 0 auto;
+    display: flex; /* 桌面为 display:none（仅窄屏出现）—— v3.7.3 改网格时必须保留这行 */
+    grid-column: span 2;
   }
+  .mute {
+    grid-column: span 2;
+  }
+  /* 抽屉展开：整行跨列，内部同样 4 列网格（8 个工具整齐两行） */
   .tools {
+    grid-column: 1 / -1;
     margin-top: 0;
     border-top: none;
     padding-top: 0;
-    flex-direction: row;
-    /* v2.2 测评 M5：6 个工具按钮在 390px 下会溢出（设置不可达）→ 允许换行 */
-    flex-wrap: wrap;
-    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
-  /* v3.2 A1：抽屉收起（默认）。教程卡独占整行，抽屉开关留在「更多」按钮行 */
+  /* v3.2 A1：抽屉收起（默认） */
   .tools.collapsed {
     display: none;
   }
-  .tools.collapsed ~ .tutorial {
-    flex: 1 1 100%;
-  }
   .tools .item {
-    flex: 1 1 auto;
     min-width: 0;
   }
   .tutorial {
+    grid-column: 1 / -1;
     margin-top: 0;
-    flex: 1 1 100%;
   }
 }
 </style>
