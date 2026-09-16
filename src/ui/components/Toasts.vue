@@ -41,14 +41,17 @@ const ICON: Record<string, string> = { info: '•', good: '✔', bad: '✖' }
   display: flex;
   align-items: center;
   gap: 7px;
-  background: var(--c-panel);
+  /* v3.7：玻璃感（半透明 + 轻微模糊）+ 大圆角 + 深投影；左侧 3px 语义色条保留 */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 44%),
+    color-mix(in srgb, var(--c-panel) 90%, transparent);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--c-border);
   border-left: 3px solid var(--c-accent-2);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: var(--r-md);
+  padding: 9px 13px;
   font-size: 13px;
   max-width: 320px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 .toast.good {
   border-left-color: var(--c-success);
