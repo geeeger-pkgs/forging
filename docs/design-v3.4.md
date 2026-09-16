@@ -2,7 +2,7 @@
 
 > 阶段：① 创意 → ② 计划 → ③ 评审（**初稿 10 项事实错误 + 2 项遗漏**，见 `docs/review-v3.4-plan.md`）→ **修订（本文档）** → ④ 开发 → ⑤ 测试（含实机烟测）→ ⑥ 资深玩家评审
 > 上游：`docs/review-v3.3.md` §4、`docs/design-v3.3.md` §2、`docs/09-release-v3.0.md`、`docs/review-v3.0-*.md`
-> 依赖：v3.3.0（存档 v13）→ **本版升存档 v14**（A2 需要粘性字段，评审 #5 已裁定）
+> 依赖：v3.3.0（存档 v13）→ **本版升存档 v14→v15**（A2 需要粘性字段，评审 #5 已裁定）
 > 原则：**先模拟后定档**；**证据链**（文档数字 = 脚本输出 = 内容表 = 测试断言 = 面板显示）
 
 ## 0. 动机与总目标
@@ -36,6 +36,15 @@ v3.4 是**清账版**：把 2026-09-16 全量盘点出的 **26 条未处置项**
 | 赛季"新晋/老手"标签简化（A5）、回收阈值再校准（A4） | 如实标注优于隐藏；阈值刚由 v3.3 评审校准，无新证据不动 |
 | automation craft-only（C3）、实例回收 60%（C4） | 设计如此，注释/设置页已说明作用域 |
 | iOS 真机/软键盘（E1/E2）、Enter 自动化路径（E3）、后台静音（E4）、时间前拨上限（E5）、离线上限（E6）、性能口径降级（E7）、词缀盐（E8） | 既有客观边界与已登记取舍，逐条汇总进发布说明 |
+
+## 1.5 传承经济终稿（三审/四审/五审裁定）
+
+| 量 | 值 | 证据 |
+|---|---|---|
+| 首点门槛 | 最低技能 Lv50 = **2763.6h**（旧口径总等级 120 ≈ 321.7h，**8.59×**） | sim-audit-output.json 的 capped 口径 |
+| 每轮点数 | 满级 36 点（min 100 → steps 6 → steps²） | `prestigePointsFor` 与 D 段 stretchScan 同式 |
+| perk 树 | 基础 78 点 → **2.17 轮**；含深造 234 点 → **6.50 轮** | perks.json Σcost×max；过载 = 2×Σ |
+| 理性策略 | 四项均衡练满再传承（点/h 随最低技能单调升 0.00036→0.00115） | stretchScan ratio **1.000**（非满级 ≤1.00×） |
 
 ## 2. 封板（v3.5）判据 —— 用户要求：**必须清光**
 
@@ -83,7 +92,7 @@ v3.4 结束时未处置清单归零（完成 / 正式裁定二选一）。v3.5 �
 | 3 | `src/ui/components/RightPanel.vue` | A1：面板/详情同源显示 |
 | 4 | `src/game/prestige.ts` | A6：点数公式（依据 D 段证据；不改则记录裁定） |
 | 5 | `src/app/persist.ts` | **SAVE_VERSION 14→15** + 迁移：v14 补 `meta.bestSkillLevel`（按当前技能等级回填）、v15 补赛季档位快照 `season.scale` |
-| 6 | `src/game/types.ts` / `content.ts` | `meta.bestTotalLevel`；`levelCurve` 校验（milestones 递增/上限/条数）、`cue` 类型闭合 |
+| 6 | `src/game/types.ts` / `content.ts` | `meta.bestSkillLevel`；`levelCurve` 校验（milestones 递增/上限/条数）、`cue` 类型闭合 |
 | 7 | `data/levelCurve.json` | 里程碑表（手写；校验在 content.ts，**不由生成器管**） |
 | 8 | `scripts/sim-audit.mjs` | A 段 procRate 口径修正；D 段快轮回模型；F 段里程碑时长对照；**新增落盘 `docs/sim-audit-output.json`** |
 | 9 | `scripts/sim-abyss.mjs` | 聚合规则复制处同步复核（堆叠结论） |

@@ -53,7 +53,7 @@ function confirmPrestige(): void {
       <!-- v3.4 处置 V5：0 点时直接禁用并说明（此前先弹破坏性确认、确认后才被内核拦下） -->
       <p v-if="unlocked && willGain === 0" class="dim small">
         当前 0 点：<b>最低技能</b>需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有第 1 点（现 Lv{{ minSkill }}）
-        ——精通要求四项技能均衡（点数随最低技能提升：50/60/70/80/90/100 → 1/4/9/16/25/36 点）
+        ——精通要求四项技能均衡（档位表见上）
       </p>
       <button class="btn primary" :disabled="!unlocked || willGain === 0" @click="confirmPrestige">
         {{ unlocked ? '立即传承' : `总等级 ${PRESTIGE_MIN_LEVEL} 解锁` }}

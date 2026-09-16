@@ -171,7 +171,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         <!-- v3.3 B1：目标已按账号分档缩放，如实标注（否则玩家会以为表里数字变了） -->
         <p class="dim small">
           目标已按你的账号进度调整：{{ season.maturity === 'junior' ? '新晋' : '老手' }}档 ×{{ season.scale.toFixed(2) }}
-          （同一模板对不同阶段的账号给不同数量的目标，精力投入对齐 14 天窗口）
+          （同一模板对不同阶段的账号给不同数量的目标，精力投入对齐 14 天窗口；<b>本季目标已冻结至轮换，下赛季按届时进度重算</b>）
         </p>
         <div class="tasks">
           <div v-for="t in season.tasks" :key="t.defId" class="task">

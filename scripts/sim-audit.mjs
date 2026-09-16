@@ -217,7 +217,7 @@ const sink = perks.reduce((s, p) => s + p.cost * p.max, 0)
 console.log(`满级一次传承获得 ${perPrestige} 点；全精通买满需 ${sink} 点 → 约 ${f(sink / perPrestige, 2)} 次满级传承即毕业（溢出风险：研究生效）`)
 
 
-console.log(`过载提案（上限×2、超出部分成本×2）追加消耗：${perks.reduce((s, p) => s + p.cost * p.max, 0)} 点 → 总计 ${sink * 2} 点 ≈ ${f((sink * 2) / perPrestige, 1)} 次`)
+console.log(`过载提案（上限×2、超出部分成本×2）：追加 ${sink * 2} 点 → 总计 ${sink * 3} 点 ≈ ${f((sink * 3) / perPrestige, 2)} 次（与 design-v3.4 §1.5 的 234/6.50 轮一致）`)
 
 console.log('')
 console.log('═'.repeat(72))
@@ -397,7 +397,7 @@ for (let t = 50; t <= 100; t += 10) {
 const MIXES = [
   { name: '挖100+其余60', levels: [100, 60, 60, 60] },
   { name: '挖100+熔40+锻/强20', levels: [100, 40, 20, 20] },
-  { name: '挖100+锤80+其余60', levels: [100, 60, 60, 80].sort((x, y) => y - x) },
+  { name: '挖100+锤80+其余60', levels: [100, 60, 60, 80] }, // 不排序：levels 与 SKILL_KEYS 一一对应
 ]
 for (const m of MIXES) {
   m.hours = m.levels.reduce((sum, t, i) => sum + capped(SKILL_KEYS[i], t), 0)
@@ -406,8 +406,8 @@ for (const m of MIXES) {
 const maxedRow = { name: '均衡 100（满级）', levels: [100, 100, 100, 100], hours: SKILL_KEYS.reduce((s, k) => s + capped(k, 100), 0) }
 const scanRows = [...strategies, maxedRow].map((x) => ({ ...x, points: scanPoints(x.levels), perHour: scanPoints(x.levels) / x.hours }))
 const maxedRate = maxedRow.hours > 0 ? scanPoints(maxedRow.levels) / maxedRow.hours : 0
-const worst = scanRows.reduce((a, b) => (a.perHour > b.perHour ? a : b))
-const scanRatio = maxedRate > 0 ? worst.perHour / maxedRate : 0
+const bestRate = scanRows.reduce((a, b) => (a.perHour > b.perHour ? a : b))
+const scanRatio = maxedRate > 0 ? bestRate.perHour / maxedRate : 0
 console.log('')
 console.log('V1 停点扫描（点数 = f(最低技能)，与 src/game/prestige.ts 同式）')
 for (const x of scanRows) console.log('  ' + x.name.padEnd(20) + f(x.hours, 0).padStart(8) + 'h → ' + String(x.points).padStart(3) + ' 点 → ' + f(x.perHour, 5) + ' 点/h')
