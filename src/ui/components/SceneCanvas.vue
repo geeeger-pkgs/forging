@@ -20,9 +20,30 @@ import { skillOf } from '../../game/refs'
 import type { SkillId } from '../../game/types'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const W = 760
 const H = 120
+/**
+ * v3.7.4（用户反馈"canvas 拉伸以后怪怪的"）：
+ * 此前内部分辨率写死 760×120、CSS 宽度 100% —— 容器比 760 窄时整幅被**横向压缩**
+ * （手机 366px 时压掉一半，镐子/矿堆明显变形），且未处理 DPR（高分屏发虚）。
+ * 现在逻辑宽度 W 跟随 CSS 尺寸（绘制代码本就是 W*0.56 这类相对坐标，自动适配），
+ * 内部分辨率 = W×DPR，并用 setTransform 还原逻辑坐标。
+ */
+let W = 760
+let dpr = 1
+let ro: ResizeObserver | null = null
 let raf = 0
+
+function resize(): void {
+  const c = canvasRef.value
+  if (!c) return
+  const rect = c.getBoundingClientRect()
+  W = Math.max(320, Math.round(rect.width))
+  dpr = Math.min(2, (globalThis.devicePixelRatio ?? 1) || 1)
+  c.width = Math.round(W * dpr)
+  c.height = Math.round(H * dpr)
+  // 赋值 width/height 会重置变换 → 必须在其后重设
+  c.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0)
+}
 /** v2.5：预算与上限一律取自内容表（单一来源；评审 M5 修掉 MAX_P 双真值） */
 const BUDGET = CONTENT.fx.budget
 const MAX_P = BUDGET.maxParticles
@@ -145,30 +166,59 @@ function frame(): void {
 }
 
 function drawMining(ctx: CanvasRenderingContext2D, progress: number): void {
+  const base = H - 20
+  // 矿堆：山形 + 顶面高光（此前是纯色三角，扁平）
+  const cx = W * 0.66
   ctx.fillStyle = '#2a3352'
   ctx.beginPath()
-  ctx.moveTo(W * 0.56, H - 20)
-  ctx.lineTo(W * 0.64, H - 62)
-  ctx.lineTo(W * 0.72, H - 42)
-  ctx.lineTo(W * 0.78, H - 20)
+  ctx.moveTo(cx - 46, base)
+  ctx.lineTo(cx - 12, base - 44)
+  ctx.lineTo(cx + 14, base - 34)
+  ctx.lineTo(cx + 48, base)
   ctx.closePath()
   ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.055)'
+  ctx.beginPath()
+  ctx.moveTo(cx - 12, base - 44)
+  ctx.lineTo(cx + 14, base - 34)
+  ctx.lineTo(cx + 6, base - 23)
+  ctx.lineTo(cx - 14, base - 32)
+  ctx.closePath()
+  ctx.fill()
+
+  // 镐子（在左侧挥向矿堆；此前画在矿堆正上方、且镐头是一条 6px 半圆弧——像钩子）
   const phase = Math.sin(progress * Math.PI)
-  const ang = -0.9 + phase * 1.5
+  const ang = -0.8 + phase * 1.15
   ctx.save()
-  ctx.translate(W * 0.6, H - 28)
+  ctx.translate(W * 0.4, base - 4)
   ctx.rotate(ang)
+  ctx.lineCap = 'round'
+  // 木柄 + 侧高光
   ctx.strokeStyle = '#b98a5b'
-  ctx.lineWidth = 4
+  ctx.lineWidth = 4.5
   ctx.beginPath()
   ctx.moveTo(0, 0)
   ctx.lineTo(0, -46)
   ctx.stroke()
-  ctx.strokeStyle = '#cfd6e4'
-  ctx.lineWidth = 6
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
+  ctx.lineWidth = 1.4
   ctx.beginPath()
-  ctx.arc(0, -46, 14, Math.PI * 0.15, Math.PI * 0.85, false)
+  ctx.moveTo(-1.2, -5)
+  ctx.lineTo(-1.2, -43)
   ctx.stroke()
+  // 镐头：实心弯月条（两端收尖）+ 金属渐变
+  const grad = ctx.createLinearGradient(0, -55, 0, -36)
+  grad.addColorStop(0, '#e6ebf7')
+  grad.addColorStop(1, '#98a4c2')
+  ctx.fillStyle = grad
+  ctx.beginPath()
+  ctx.moveTo(-18, -38)
+  ctx.quadraticCurveTo(-9, -54, 0, -53)
+  ctx.quadraticCurveTo(9, -54, 18, -38)
+  ctx.quadraticCurveTo(9, -46, 0, -45)
+  ctx.quadraticCurveTo(-9, -46, -18, -38)
+  ctx.closePath()
+  ctx.fill()
   ctx.restore()
 }
 
@@ -200,18 +250,36 @@ function drawAnvil(ctx: CanvasRenderingContext2D, progress: number): void {
   ctx.fillRect(x + 12, base - 26, 32, 10)
   ctx.fillRect(x - 6, base - 34, 68, 8)
   const phase = Math.sin(progress * Math.PI)
-  const ang = -1.1 + phase * 1.8
+  const ang = -1.0 + phase * 1.5
   ctx.save()
   ctx.translate(x + 28, base - 40)
   ctx.rotate(ang)
+  // 木柄 + 高光（与镐子同语言）
+  ctx.lineCap = 'round'
   ctx.strokeStyle = '#8a6a4a'
   ctx.lineWidth = 4
   ctx.beginPath()
   ctx.moveTo(0, 0)
   ctx.lineTo(0, -34)
   ctx.stroke()
-  ctx.fillStyle = '#9aa4b0'
-  ctx.fillRect(-10, -44, 20, 10)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+  ctx.lineWidth = 1.2
+  ctx.beginPath()
+  ctx.moveTo(-1, -4)
+  ctx.lineTo(-1, -31)
+  ctx.stroke()
+  // 锤头：金属渐变 + 圆角（此前是纯色方块）
+  const g2 = ctx.createLinearGradient(0, -46, 0, -34)
+  g2.addColorStop(0, '#c9d0df')
+  g2.addColorStop(1, '#7e89a4')
+  ctx.fillStyle = g2
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath()
+    ctx.roundRect(-11, -45, 22, 11, 2.5)
+    ctx.fill()
+  } else {
+    ctx.fillRect(-11, -45, 22, 11)
+  }
   ctx.restore()
 }
 
@@ -252,15 +320,23 @@ function drawIdle(ctx: CanvasRenderingContext2D, t: number): void {
 
 // 场景本体：只画动作动画与浮尘。**不订阅总线**（表现由常驻的 FxLayer 承担，测评 B1）
 onMounted(() => {
+  resize()
+  // 容器尺寸变化（窗口缩放 / 侧栏布局变化）时重设内部分辨率；jsdom 无 ResizeObserver → 跳过
+  if (typeof ResizeObserver !== 'undefined' && canvasRef.value) {
+    ro = new ResizeObserver(() => resize())
+    ro.observe(canvasRef.value)
+  }
   raf = requestAnimationFrame(frame)
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
+  ro?.disconnect()
 })
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="scene" :width="W" :height="H" />
+  <!-- v3.7.4：尺寸由 resize() 接管（DPR 感知），不再用 :width/:height 绑定 -->
+  <canvas ref="canvasRef" class="scene" />
 </template>
 
 <style scoped>
