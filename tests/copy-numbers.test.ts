@@ -66,4 +66,29 @@ describe('文案数字守卫（防硬编码；评审探针证明过这类漂移�
     }
     expect(offenders, `以下位置的数字应改为从内容表插值（或标注豁免理由）：\n${offenders.join('\n')}`).toEqual([])
   })
+
+  /**
+   * v3.4.5：第二个 pass —— **插值内部的字符串字面量**。
+   * 起因：AbyssPanel 曾把"（墙：门槛 ×1.06、首通结晶 ×1.5）"写在三元表达式的字符串里，
+   * 上面那个 pass 会把整段 `{{ ... }}` 剥掉，于是这些玩家可见的数字**扫不到**。
+   * 规则：`{{ }}` 里出现的**带引号字符串**若含 `×N` / `N 天` / `vN.N`，视为硬编码。
+   */
+  it('插值内的字符串字面量同样不得写死数字（防"藏在 {{ }} 里"的孔洞）', () => {
+    const offenders: string[] = []
+    for (const f of walk(uiRoot)) {
+      for (const { line, text } of templateTextLines(f)) {
+        for (const interp of text.matchAll(/\{\{([^}]*)\}\}/g)) {
+          for (const lit of interp[1].matchAll(/'([^']*)'|"([^"]*)"/g)) {
+            const body = lit[1] ?? lit[2] ?? ''
+            for (const { name, re } of PATTERNS) {
+              for (const m of body.matchAll(re)) {
+                offenders.push(`${f.replace(process.cwd(), '')}:${line} [${name}] 插值字面量 "…${m[0]}…"`)
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(offenders, `插值内的字符串字面量也要从内容表推导：\n${offenders.join('\n')}`).toEqual([])
+  })
 })

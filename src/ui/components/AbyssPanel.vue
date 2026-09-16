@@ -98,6 +98,20 @@ const modifierMulText = computed(() => {
     .map((m) => `${m.name} ×${m.crystalMul}`)
     .join(" / ")
 })
+
+/**
+ * v3.4.5：**当前层的门槛/结晶倍率说明**从内容表推导。
+ * 此前是三元表达式里的字符串字面量（'（墙：门槛 ×1.06、首通结晶 ×1.5）'），
+ * 改内容表不会反映到界面，且守卫也扫不到（数字藏在插值的字符串里）。
+ */
+function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
+  const isDefault = mod.reqMul === 1 && mod.crystalMul === 1
+  if (isDefault) return '（该层权重倾斜，重配装有利）'
+  const parts: string[] = []
+  if (mod.reqMul !== 1) parts.push(`门槛 ×${mod.reqMul}`)
+  if (mod.crystalMul !== 1) parts.push(`首通结晶 ×${mod.crystalMul}`)
+  return `（${parts.join('、')}）`
+}
 </script>
 
 <template>
@@ -201,7 +215,7 @@ const modifierMulText = computed(() => {
       </div>
       <p class="dim small">
         连打 = 从下一层起逐层判定：通过就继续，遇到第一个不达标的层停下（首通奖励逐层照发；战力不足不消耗体力）。
-        层词条每 5 层一循环：{{ mod.name }}{{ mod.id === 'rich' ? '（墙：门槛 ×1.06、首通结晶 ×1.5）' : mod.id === 'rift' ? '（喘息：门槛 ×0.94、首通结晶 ×0.8）' : '（该层权重倾斜，重配装有利）' }}。
+        层词条每 5 层一循环：{{ mod.name }}{{ modDesc(mod) }}。
       </p>
       <p v-if="view.gap > 0" class="bad small">
         ⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。
