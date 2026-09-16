@@ -166,3 +166,27 @@ describe('A2 自愈：bestSkillLevel 不因旧值永久停留', () => {
     expect(back.meta.bestSkillLevel).toBe(95)
   })
 })
+
+describe('v3.4 处置回归（评审 V2~V5）', () => {
+  const src = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
+
+  it('V4：传承面板文案与公式一致（满级技能 ×4，不是 +1）', () => {
+    const p = src('src/ui/components/PrestigePanel.vue')
+    expect(p).toContain('满级技能 ×4')
+    expect(p).not.toContain('满级技能 +1')
+  })
+
+  it('V5：0 点时按钮禁用且直写解锁条件（不再先确认后被拦）', () => {
+    const p = src('src/ui/components/PrestigePanel.vue')
+    expect(p).toContain('willGain === 0')
+    expect(p).toContain('PRESTIGE_MIN_LEVEL + 10')
+  })
+
+  it('V2/V3：里程碑用独立 class（不被窄屏 .tl 隐藏）且文案写明技能与解锁条件', () => {
+    const top = src('src/ui/components/TopBar.vue')
+    expect(top).toContain('class="dim ms"')
+    expect(top).toContain('技能里程碑')
+    expect(top).toContain('任一技能 Lv')
+    expect(top).toMatch(/\.ms \{[\s\S]{0,100}display: inline/)
+  })
+})

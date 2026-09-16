@@ -79,11 +79,11 @@ const buffs = computed(() =>
       <!-- v3.4 A2：Lv76~100 里程碑（回答满级段还有什么；下一档悬停可见说明） -->
       <span
         v-if="milestones.length"
-        class="dim tl"
-        :title="nextMilestone ? `下一档 Lv${nextMilestone.level}：${nextMilestone.desc}` : '里程碑已全部达成'"
+        class="dim ms"
+         :title="nextMilestone ? `任一技能达到 Lv${nextMilestone.level} 解锁：${nextMilestone.desc}` : '技能里程碑已全部达成'"
       >
-        🏅 里程碑 {{ milestones.filter((m) => m.unlocked).length }}/{{ milestones.length }}
-        <template v-if="nextMilestone"> · 下一档 Lv{{ nextMilestone.level }}</template>
+        🏅 技能里程碑 {{ milestones.filter((m) => m.unlocked).length }}/{{ milestones.length }}
+        <template v-if="nextMilestone"> · 任一技能 Lv{{ nextMilestone.level }}</template>
       </span>
     </div>
   </header>
@@ -190,6 +190,18 @@ const buffs = computed(() =>
 .dim {
   color: var(--c-text-dim);
   font-size: 12px;
+}
+
+/* v3.4 处置 V2/V3：技能里程碑用**独立 class**，不随 .tl 被窄屏隐藏（手机上必须可见） */
+.ms {
+  color: var(--c-text-dim);
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .ms {
+    display: inline;
+    font-size: 11px;
+  }
 }
 
 /* v3.2 A4：窄屏精简——总价值/总等级移出（信息在设置页与成就页可取） */

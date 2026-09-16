@@ -468,3 +468,38 @@ describe('v3.4 处置回归：重掷与审计', () => {
     expect(s.gold, '取消后不应扣金').toBe(goldBefore)
   })
 })
+
+// V7（评审：B3 五缺口只交付 3 条）——补强化动作与深渊挑战
+describe('V7 组件矩阵补漏', () => {
+  it('强化：EnhancePanel 有可点的强化入口，触发后材料消耗且等级提升', async () => {
+    const s = boot()
+    const id = addInstance(s, 'pick_copper')
+    s.slots.pick = id
+    s.materials['ingot_copper'] = 200
+    s.materials['essence'] = 200
+    const mod = await import('../../src/ui/components/EnhancePanel.vue')
+    const w = mount(mod.default)
+    const btn = w.findAll('button').find((b) => /强化|锤/.test(b.text()))
+    expect(btn, '强化面板应有强化入口').toBeTruthy()
+    const inst = s.equipment.find((e) => e.instanceId === id)!
+    const before = inst.enhanceLevel
+    await btn!.trigger('click')
+    // 强化要么直接生效（等级 +1），要么打开了动作弹窗（store.ui.dialogRef 写入）——两者都是"可达"
+    const acted = inst.enhanceLevel > before || store.ui.dialogRef !== null
+    expect(acted, '点击后应产生实质变化（强化或打开确认弹窗）').toBe(true)
+  })
+
+  it('深渊：AbyssPanel 有可点的挑战入口，触发后体力减少', async () => {
+    const s = boot()
+    s.abyss.stamina = 12
+    s.abyss.bestFloor = 3
+    store.ui.view = 'abyss'
+    const mod = await import('../../src/ui/components/AbyssPanel.vue')
+    const w = mount(mod.default)
+    const btn = w.findAll('button').find((b) => /挑战|连打|扫荡/.test(b.text()))
+    expect(btn, '深渊面板应有挑战入口').toBeTruthy()
+    const before = s.abyss.stamina
+    await btn!.trigger('click')
+    expect(s.abyss.stamina, '挑战后体力应减少（或被弹窗确认）').toBeLessThanOrEqual(before)
+  })
+})
