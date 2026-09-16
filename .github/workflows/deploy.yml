@@ -39,11 +39,11 @@ jobs:
           # 项目页用 /<repo>/；用户主页仓库（<user>.github.io）用 /
           VITE_BASE: ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner) && '/' || format('/{0}/', github.event.repository.name) }}
         run: npm run build
-      # enablement: true → 仓库尚未开启 Pages 时由该 Action 自动启用（否则报
-      # "Get Pages site failed ... Not Found"，即 Settings → Pages 未设为 GitHub Actions）
+      # 要求仓库已手动启用 Pages（Settings → Pages → Source: GitHub Actions）。
+      # 不使用 enablement: true —— 在组织/受限仓库里 GITHUB_TOKEN 写权限会被策略降级，
+      # 该参数会尝试"创建站点"并硬失败（报 Resource not accessible by integration），
+      # 而手动启用后本步骤只需读取站点信息即可通过。
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
