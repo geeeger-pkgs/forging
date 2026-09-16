@@ -423,4 +423,31 @@ function onClear(): void {
   font-size: 13px;
   cursor: pointer;
 }
+
+/* v3.6 F3：窄屏表单控件触摸目标（实机审计：滑杆 16px 高、checkbox 行 21px、select 28px）
+   —— 触屏上拖滑杆/勾选/开下拉都太细；提到 ≥40px 命中区（原生 range 的命中区随高度增大） */
+@media (max-width: 900px) {
+  .opt-row {
+    min-height: 40px;
+  }
+  .opt {
+    min-height: 40px;
+  }
+  .opt input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+  }
+  .slider {
+    height: 36px;
+  }
+  .select {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .text-input {
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
 </style>

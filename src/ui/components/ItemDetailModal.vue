@@ -291,7 +291,7 @@ header h3 {
   font-size: 12px;
 }
 .small {
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */
 }
 .affix-head {
   display: flex;
@@ -333,7 +333,7 @@ header h3 {
 }
 .adesc {
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */
   color: var(--c-text-dim);
 }
 .aval {

@@ -676,7 +676,7 @@ h3 {
 }
 .slot-label {
   color: var(--c-text-dim);
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */ /* v3.6 F5 */
 }
 .slot-item {
   display: flex;
@@ -770,7 +770,7 @@ h3 {
 .price {
   color: var(--c-text-dim);
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */
   margin-left: 4px;
 }
 .qty {

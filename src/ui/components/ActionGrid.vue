@@ -84,7 +84,7 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
   font-weight: 600;
 }
 .note {
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */
   color: var(--c-text-dim);
 }
 </style>

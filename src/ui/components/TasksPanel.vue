@@ -188,7 +188,7 @@ function reroll(index: number): void {
   background: linear-gradient(90deg, var(--c-accent-2), var(--c-accent));
 }
 .prog {
-  font-size: 11px;
+  font-size: var(--fs-note); /* v3.6 F5 */
   color: var(--c-text-dim);
   text-align: right;
 }
