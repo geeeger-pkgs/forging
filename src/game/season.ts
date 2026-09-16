@@ -257,7 +257,7 @@ export interface SeasonView {
   maxRenown: number
   level: number
   maxLevel: number
-  /** v3.3 B1：目标缩放系数（新晋 0.67 / 老手 0.66）与档位名 */
+  /** v3.3 B1：目标缩放系数（新晋 0.34 / 老手 0.66）与档位名 */
   scale: number
   maturity: 'junior' | 'veteran'
   pct: number

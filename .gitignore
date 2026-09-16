@@ -6,3 +6,4 @@ dist/
 .vite-dev.log
 .claude
 .zcode
+.agents

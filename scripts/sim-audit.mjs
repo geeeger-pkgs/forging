@@ -414,7 +414,7 @@ for (const x of scanRows) console.log('  ' + x.name.padEnd(20) + f(x.hours, 0).p
 console.log('  最优点/满级 比 ' + f(scanRatio, 2) + '× → ' + (scanRatio <= 1.25 ? '✅ 无倒挂' : '⚠ 仍有倒挂'))
 
 // ── v3.4 A6：传承「快轮回 vs 满级轮回」每小时点数（需 F 段的 capped，故置于文件末尾）
-// 模型：总等级 = 四技能等级之和；快轮回 = 每技能练到 30（总 120，刚过门槛），满级轮回 = 每技能 100（总 400）。
+// 模型（终稿口径见 D 段 stretchScan：点数 = f(最低技能)）：快轮回 = 每技能 30（min 30 < 50 → 0 点），满级 = 每技能 100（min 100 → 36 点）。
 // 时长复用 F 段的供应链口径（capped = 基线/投资两档取较慢，保守）；点数公式与实现同源（⌊总等级/10⌋ + 满级技能数）。
 const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduce((sum, k) => sum + capped(k, target), 0)
 const fastHours = hoursPerSkill(30)
