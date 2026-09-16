@@ -14,6 +14,9 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { store } from '../../src/app/store'
+import { applyCommand } from '../../src/game/commands'
+import { HOUR_MS, advanceExpeditions } from '../../src/game/expeditions'
+import { mulberry32 } from '../../src/game/rng'
 import { CONTENT } from '../../src/game/content'
 import { addInstance, materialCount, newGame } from '../../src/game/state'
 import type { GameState } from '../../src/game/types'
@@ -371,5 +374,97 @@ describe('评审处置回归（v3.3 复审）', () => {
     const rp = uiFile('RightPanel.vue')
     const mq = rp.slice(rp.indexOf('v3.3 评审：窄屏触控高度'))
     expect(mq).toMatch(/@media \(max-width: 900px\) \{[\s\S]{0,200}?min-height: 40px/)
+  })
+})
+
+// ============================================================
+// v3.4 B3：组件矩阵 5 缺口（v3.3 评审 M6：这些路径仍可能重演"死按钮"事故）
+// 配装应用/删除 · 材料回收 10 / 全部回收 · 强化动作 · 深渊挑战 · 远征领取
+// ============================================================
+describe('B3 操作矩阵扩面', () => {
+  it('配装：应用（一键穿戴）与删除（✕）都可达', async () => {
+    const s = boot()
+    const a = addInstance(s, 'pick_copper')
+    s.slots.pick = a
+    s.meta.gearSets = [{ id: 'gs1', name: '挖矿套', slots: { pick: a } }]
+    const rp = mount(RightPanel)
+    // 应用：卸下后再一键穿回
+    delete s.slots.pick
+    const apply = rp.findAll('.gearsets button').find((b) => b.text().includes('挖矿套'))!
+    await apply.trigger('click')
+    expect(s.slots.pick, '应用配装应把装备穿回').toBe(a)
+    // 删除
+    const del = rp.findAll('.gearsets button').find((b) => b.text() === '✕')!
+    await del.trigger('click')
+    expect(s.meta.gearSets.length, '删除后配装应消失').toBe(0)
+  })
+
+  it('材料：回收 10 与全部回收都可达（全部回收走确认）', async () => {
+    const s = boot()
+    s.materials['ore_copper'] = 25
+    ;(window as unknown as { confirm: unknown }).confirm = () => true
+    const rp = mount(RightPanel)
+    const row = rp.findAll('#rtabpanel-mats .mat-item').find((r) => r.text().includes('铜矿石'))!
+    await row.find('.menu-btn').trigger('click')
+    await row.findAll('button').find((b) => b.text() === '回收 10')!.trigger('click')
+    expect(materialCount(s, 'ore_copper')).toBe(15)
+    await row.find('.menu-btn').trigger('click')
+    await row.findAll('button').find((b) => b.text() === '全部回收')!.trigger('click')
+    expect(materialCount(s, 'ore_copper') ?? 0).toBe(0)
+  })
+
+  it('远征：待领取的 run 有「领取」入口且可点（徽标导流的目标操作）', async () => {
+    const s = boot()
+    // 走真实流程造一个可领取的 run（内核路径，避免手搓 outcome 形状）
+    s.materials['ingot_copper'] = 999
+    const team = Object.keys(s.companions) // newGame 已给初始伙伴
+    applyCommand(s, { type: 'dispatchExpedition', routeId: 'outskirts', hours: 8, team }, 0, mulberry32(1))
+    const run = s.meta.expeditions.runs[0]
+    if (!run) throw new Error('未派出远征（路由/队伍前提不满足）')
+    advanceExpeditions(s, 9 * HOUR_MS, 'expectation', null)
+    expect(s.meta.expeditions.runs[0].done, '推进后应变为待领取').toBe(true)
+    store.ui.view = 'expedition'
+    const mod = await import('../../src/ui/components/ExpeditionPanel.vue')
+    const w = mount(mod.default)
+    const claim = w.findAll('button').find((b) => b.text().includes('领取'))
+    expect(claim, '待领取远征应有领取按钮').toBeTruthy()
+    await claim!.trigger('click')
+    expect(s.meta.expeditions.runs.length, '领取后 run 应移除').toBe(0)
+  })
+})
+
+describe('v3.4 处置回归：重掷与审计', () => {
+  it('B4 付费重掷：确认框出现且取消不扣金（免费档不打扰）', async () => {
+    const s = boot()
+    const t = s.meta.tasks
+    if (!t.daily.length) {
+      const { refreshTasks } = await import('../../src/game/tasks')
+      refreshTasks(s, 0)
+    }
+    store.ui.view = 'tasks'
+    const mod = await import('../../src/ui/components/TasksPanel.vue')
+    // 免费档：不应弹确认
+    t.rerollsLeft = 1
+    let calls: string[] = []
+    ;(window as unknown as { confirm: unknown }).confirm = (m: string) => { calls.push(String(m)); return true }
+    const w1 = mount(mod.default)
+    const rerollBtn1 = w1.findAll('button').find((b) => b.text() === '重掷')
+    if (rerollBtn1) {
+      await rerollBtn1.trigger('click')
+      expect(calls.length, '免费重掷不应弹确认').toBe(0)
+    }
+    // 付费档：应弹确认，取消则金币不变
+    t.rerollsLeft = 0
+    t.paidRerollsLeft = 3
+    const goldBefore = s.gold
+    calls = []
+    ;(window as unknown as { confirm: unknown }).confirm = (m: string) => { calls.push(String(m)); return false }
+    const w2 = mount(mod.default)
+    const rerollBtn2 = w2.findAll('button').find((b) => b.text() === '重掷')
+    expect(rerollBtn2, '应有重掷入口').toBeTruthy()
+    await rerollBtn2!.trigger('click')
+    expect(calls.length, '付费重掷应弹确认').toBe(1)
+    expect(calls[0]).toContain('花费 100 金')
+    expect(s.gold, '取消后不应扣金').toBe(goldBefore)
   })
 })

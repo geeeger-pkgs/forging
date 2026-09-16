@@ -57,7 +57,16 @@ function rewardText(slot: TaskSlot): string {
 function pct(r: Row): number {
   return Math.min(100, (r.progress / Math.max(1, r.slot.target)) * 100)
 }
+/**
+ * v3.4 B4：重掷。免费次数用完后是**付费**动作（100 金/次，每日 3 次）——
+ * 此前点击即扣，误触代价无声；现在付费档先确认（免费档不打扰）。
+ */
 function reroll(index: number): void {
+  const t = store.state.meta.tasks
+  if (t.rerollsLeft <= 0 && t.paidRerollsLeft > 0) {
+    const msg = `免费重掷已用完：花费 ${PAID_REROLL_COST} 金重掷本条？\n（今日还剩 ${t.paidRerollsLeft} 次付费重掷）`
+    if (!window.confirm(msg)) return
+  }
   cmd({ type: 'rerollTask', index })
 }
 </script>

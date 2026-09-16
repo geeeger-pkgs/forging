@@ -57,6 +57,29 @@ const unknown = [...used].filter((u) => !cueIds.has(u))
 // 未被任何事件引用的 cue（允许：试听/预留，但需在报告里列出以便复核）
 const unusedCues = [...cueIds].filter((c) => !used.has(c))
 ok(unknown.length === 0, `实现中引用了不存在的 cue: ${unknown.join(', ')}`)
+// v3.4 C5：E3 同时覆盖 **burst 名**（此前只扫 cue）。
+// burst 的"定义"在 src/ui/fx-map.ts 的 BurstKind 联合里（表现层类型，不在内容表）；
+// 契约：实现里的 burst 字面量必须 ⊆ BurstKind 成员。
+const fxMapSrc = readText('src/ui/fx-map.ts')
+const burstKindMatch = fxMapSrc.match(/type\s+BurstKind\s*=([^\n]+(?:\n[^\n]*)*?)\n/)
+const burstDefined = new Set(
+  [...(burstKindMatch?.[1] ?? '').matchAll(/'([A-Za-z0-9_]+)'/g)].map((m) => m[1]),
+)
+const burstUsed = new Set()
+for (const f of scanFiles) {
+  if (!existsSync(join(root, f))) continue
+  const src = readText(f)
+  for (const m of src.matchAll(/\bburst:\s*'([A-Za-z0-9_]+)'/g)) burstUsed.add(m[1])
+}
+const unknownBurst = [...burstUsed].filter((b) => !burstDefined.has(b))
+ok(burstDefined.size > 0, '未能从 fx-map.ts 解析出 BurstKind（扫描失效）')
+ok(unknownBurst.length === 0, '实现中引用了未定义的 burst: ' + unknownBurst.join(', '))
+const E3b = {
+  usedBursts: [...burstUsed].sort(),
+  definedBursts: [...burstDefined].sort(),
+  unknown: unknownBurst,
+  pass: unknownBurst.length === 0 && burstDefined.size > 0,
+}
 const E3 = { usedCues: [...used].sort(), unusedCues: unusedCues.sort(), unknown, pass: unknown.length === 0 }
 
 // ── E4 预算常量 ─────────────────────────────────────────────

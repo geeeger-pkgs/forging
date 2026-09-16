@@ -122,7 +122,8 @@ describe('UI 卫生（DoD：日常操作不得用系统弹窗）', () => {
   })
 
   it('window.confirm 只允许出现在"破坏性操作"（传承 / 存档 / 整理与批量回收）', () => {
-    const allowed = ['PrestigePanel.vue', 'SettingsPanel.vue', 'RightPanel.vue']
+    // v3.4 B4：TasksPanel 加入白名单（付费重掷是**花金币的破坏性动作**，100 金/次）
+    const allowed = ['PrestigePanel.vue', 'SettingsPanel.vue', 'RightPanel.vue', 'TasksPanel.vue']
     const hits = files.filter((f) => readFileSync(f, 'utf8').includes('window.confirm('))
     for (const f of hits) {
       expect(allowed.some((a) => f.endsWith(a)), `${f} 不应使用 confirm`).toBe(true)
