@@ -36,15 +36,21 @@ export function prestigeUnlocked(state: GameState): boolean {
 }
 
 /** 本次传承可获得的精通点 */
+/**
+ * v3.4 V1：点数要求**均衡**——任一技能等级 < PRESTIGE_MIN_SKILL 则本次得 0 点。
+ * 起因（评审）：旧式让"单技能冲到 100"成为刷点最优（混合策略实测 13.1× 倒挂）。
+ * 现式：均衡门槛（60）+ ⌊(总等级 − 传承门槛)/10⌋ + 满级技能 ×4。
+ */
+export const PRESTIGE_MIN_SKILL_RATIO = 0.9 // 最低技能 ≥ 0.85×平均（堵偏科刷点）
+
 export function prestigePointsFor(state: GameState): number {
+  const ids = Object.keys(state.skills) as SkillId[]
+  const levels = ids.map((id) => levelInfo(state.skills[id]).level)
+  const avg = levels.reduce((a, b) => a + b, 0) / levels.length
+  if (Math.min(...levels) < avg * PRESTIGE_MIN_SKILL_RATIO) return 0
   const total = totalLevel(state.skills)
-  // v3.4 A6：点数**从门槛之后起算**。旧式 ⌊总等级/10⌋ 使"刚过门槛就轮回"成为反直觉最优解
-  // （sim 实测 0.0373 点/h vs 满级轮回 0.0014 点/h = 26.6× 倒挂）。
-  // 新式：⌊(总等级 − 门槛)/10⌋ + 满级技能 ×4 —— 满级轮回总量不变（28+16=44），门槛处为 0。
   let points = Math.floor(Math.max(0, total - PRESTIGE_MIN_LEVEL) / 10)
-  for (const id of Object.keys(state.skills) as SkillId[]) {
-    if (levelInfo(state.skills[id]).level >= MAX_LEVEL) points += 4
-  }
+  for (const lv of levels) if (lv >= MAX_LEVEL) points += 6 // v3.4 V1：满级技能 ×6（扫描定档：最优/满级 = 1.20×）
   return points
 }
 

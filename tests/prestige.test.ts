@@ -21,12 +21,16 @@ describe('传承系统（v1.5）', () => {
     expect(prestigeUnlocked(s)).toBe(true)
   })
 
-  it('精通点结算（v3.4 A6 改）：⌊(总等级−门槛)÷10⌋ + 满级技能×4', () => {
+  it('精通点结算（v3.4 V1 改）：⌊(总等级−门槛)÷10⌋ + 满级技能×6（均衡门槛）', () => {
     const s = newGame('T', 0)
     setSkillLevel(s, 30) // 总等级 120 = 门槛 → 0 点（旧式给 12 点，是"快轮回最优"的根源）
+    expect(prestigePointsFor(s)).toBe(0) // v3.4 V1：门槛处（总 120）为 0
+    setSkillLevel(s, 40) // 均衡 40×4 → 总 160 → ⌊40/10⌋ = 4
+    expect(prestigePointsFor(s)).toBe(4)
+    setSkillLevel(s, 100) // 均衡满级 → ⌊280/10⌋ + 6×4 = 52
+    expect(prestigePointsFor(s)).toBe(52)
+    s.skills.smelting = xpForLevel(20) // 偏科（20 < 0.9×平均）→ 门槛拦截
     expect(prestigePointsFor(s)).toBe(0)
-    s.skills.mining = xpForLevel(100) // 总 190 → ⌊70/10⌋ + 4 = 11
-    expect(prestigePointsFor(s)).toBe(11)
   })
 
   it('0 点时传承被拦下并给出可执行提示（门槛处不白轮回）', () => {

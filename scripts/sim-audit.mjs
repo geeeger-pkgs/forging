@@ -378,14 +378,44 @@ console.log(
     `Lv50 ≈ ${f(capped('锻造', 50), 0)}h（所有技能 50 档之后进入长尾）`,
 )
 console.log('（强化非主要经验来源，由富余材料自然驱动；未计精通智慧经验加成/符文/自动回收加速，保守上界）')
+// ── v3.4 V1：**停点扫描**（评审：单点对比是自证；改扫"每技能停在 t 级"与两类混合策略）
+const MIN_RATIO = 0.9 // 与 prestige.ts 的 PRESTIGE_MIN_SKILL_RATIO 同值
+const scanPoints = (levels) => {
+  const total = levels.reduce((a, b) => a + b, 0)
+  if (Math.min(...levels) < (total / levels.length) * MIN_RATIO) return 0
+  return Math.floor(Math.max(0, total - 120) / 10) + 6 * levels.filter((lv) => lv >= 100).length
+}
+const SKILL_KEYS = ['挖掘', '熔炼', '锻造', '强化']
+const strategies = []
+for (const t of [60, 70, 80, 90, 100]) {
+  strategies.push({ name: '均衡 ' + t, levels: [t, t, t, t], hours: SKILL_KEYS.reduce((s, k) => s + capped(k, t), 0) })
+}
+const MIXES = [
+  { name: '挖100+其余60', levels: [100, 60, 60, 60] },
+  { name: '挖100+熔40+锻/强20', levels: [100, 40, 20, 20] },
+]
+for (const m of MIXES) {
+  m.hours = m.levels.reduce((s, t, i) => s + capped(SKILL_KEYS[i], t), 0)
+  strategies.push(m)
+}
+const maxedRow = { name: '均衡 100（满级）', levels: [100, 100, 100, 100], hours: SKILL_KEYS.reduce((s, k) => s + capped(k, 100), 0) }
+const scanRows = [...strategies, maxedRow].map((x) => ({ ...x, points: scanPoints(x.levels), perHour: scanPoints(x.levels) / x.hours }))
+const maxedRate = maxedRow.hours > 0 ? scanPoints(maxedRow.levels) / maxedRow.hours : 0
+const worst = scanRows.reduce((a, b) => (a.perHour > b.perHour ? a : b))
+const scanRatio = maxedRate > 0 ? worst.perHour / maxedRate : 0
+console.log('')
+console.log('V1 停点扫描（均衡门槛 = 最低技能 ≥ '+MIN_RATIO+'×平均）')
+for (const x of scanRows) console.log('  ' + x.name.padEnd(20) + f(x.hours, 0).padStart(8) + 'h → ' + String(x.points).padStart(3) + ' 点 → ' + f(x.perHour, 5) + ' 点/h')
+console.log('  最优点/满级 比 ' + f(scanRatio, 2) + '× → ' + (scanRatio <= 1.25 ? '✅ 无倒挂' : '⚠ 仍有倒挂'))
+
 // ── v3.4 A6：传承「快轮回 vs 满级轮回」每小时点数（需 F 段的 capped，故置于文件末尾）
 // 模型：总等级 = 四技能等级之和；快轮回 = 每技能练到 30（总 120，刚过门槛），满级轮回 = 每技能 100（总 400）。
 // 时长复用 F 段的供应链口径（capped = 基线/投资两档取较慢，保守）；点数公式与实现同源（⌊总等级/10⌋ + 满级技能数）。
 const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduce((sum, k) => sum + capped(k, target), 0)
 const fastHours = hoursPerSkill(30)
 const maxHours = hoursPerSkill(100)
-const fastPoints = Math.floor(Math.max(0, 120 - 120) / 10) // v3.4 A6：门槛处为 0 点
-const maxPoints = Math.floor(Math.max(0, 400 - 120) / 10) + 4 * 4
+const fastPoints = 0 // 门槛处：均衡门槛（最低 ≥0.9×平均）下 30 级不达标 → 0 点
+const maxPoints = Math.floor(Math.max(0, 400 - 120) / 10) + 6 * 4
 const fastPerHour = fastPoints / fastHours
 const maxPerHour = maxPoints / maxHours
 const fastRatio = fastPerHour / maxPerHour
@@ -395,6 +425,7 @@ console.log(`满级轮回（总 400，每技能 100）: ${f(maxHours, 1)}h → $
 console.log(`快/满 效率比 ${f(fastRatio, 2)}× → ${fastRatio > 1.25 ? '⚠ 快轮回仍是反直觉最优，需改点数公式' : '✅ 无显著倒挂（≤1.25× 视为可接受）'}`)
 
 AUDIT_EVIDENCE.d = {
+  stretchScan: { rows: scanRows, ratio: scanRatio, acceptable: scanRatio <= 1.25, minSkillRatio: MIN_RATIO },
   prestige: {
     fast: { totalLevel: 120, hours: fastHours, points: fastPoints, perHour: fastPerHour },
     maxed: { totalLevel: 400, hours: maxHours, points: maxPoints, perHour: maxPerHour },

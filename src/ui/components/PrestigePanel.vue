@@ -46,7 +46,7 @@ function confirmPrestige(): void {
         重置：技能等级与经验 ｜ 当前动作与队列<br />
         保留：材料 / 装备 / 金币 / 成就 / 任务 / 队列位 / 符文增益
       </p>
-      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（含满级技能 ×4 奖励）</p>
+      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（含满级技能 ×6 奖励）</p>
       <!-- v3.4 处置 V5：0 点时直接禁用并说明（此前先弹破坏性确认、确认后才被内核拦下） -->
       <p v-if="unlocked && willGain === 0" class="dim small">
         当前 0 点：总等级达到 {{ PRESTIGE_MIN_LEVEL + 10 }} 才有第 1 点（现 {{ total }}）——点数从传承门槛之后起算

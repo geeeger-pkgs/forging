@@ -122,24 +122,26 @@ describe('A6 传承点数：消除反直觉最优解', () => {
   }
 
   it('证据：快轮回/满级轮回的每小时点数比 ≤1.25（改前实测 26.6× 倒挂）', () => {
-    expect(simD.d.prestige.ratio).toBeLessThanOrEqual(1.25)
-    expect(simD.d.prestige.acceptable).toBe(true)
+    // v3.4 V1：改为**停点扫描**口径（旧 d.prestige 是单点对比，评审指出属自证）
+    const scan = (simD.d as unknown as { stretchScan: { ratio: number; acceptable: boolean } }).stretchScan
+    expect(scan.ratio).toBeLessThanOrEqual(1.25)
+    expect(scan.acceptable).toBe(true)
   })
 
-  it('实现与证据同式：门槛处 0 点、满级轮回 44 点（总量不变）', () => {
+  it('实现与证据同式：门槛处 0 点、满级轮回 52 点（满级技能 ×6）', () => {
     expect(simD.d.prestige.fast.points).toBe(0)
-    expect(simD.d.prestige.maxed.points).toBe(44)
+    expect(simD.d.prestige.maxed.points).toBe(52) // 满级技能 ×6：28 + 24
     const s = newGame('T', 0)
     const xp100 = xpForLevel(100)
     s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
-    expect(prestigePointsFor(s)).toBe(44)
+    expect(prestigePointsFor(s)).toBe(52)
   })
 
   it('门槛处不给点也不再"白轮回"：doPrestige 被拦下且提示可执行', () => {
     const s = newGame('T', 0)
     const xp30 = xpForLevel(30)
     s.skills = { mining: xp30, smelting: xp30, forging: xp30, enhancing: xp30 } // 总 120
-    expect(prestigePointsFor(s)).toBe(0)
+    expect(prestigePointsFor(s)).toBe(0) // 30 级不满足均衡门槛（最低 ≥0.9×平均）
     const ev = doPrestige(s)
     expect(ev.some((e) => e.type === 'blocked')).toBe(true)
     expect(s.skills.mining, '被拦下时不应重置任何东西').toBe(xp30)
@@ -172,7 +174,7 @@ describe('v3.4 处置回归（评审 V2~V5）', () => {
 
   it('V4：传承面板文案与公式一致（满级技能 ×4，不是 +1）', () => {
     const p = src('src/ui/components/PrestigePanel.vue')
-    expect(p).toContain('满级技能 ×4')
+    expect(p).toContain('满级技能 ×6')
     expect(p).not.toContain('满级技能 +1')
   })
 
