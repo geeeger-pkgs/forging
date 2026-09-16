@@ -271,7 +271,9 @@ export function seasonView(state: GameState, now: number): SeasonView {
   return {
     index: state.season.index,
     renown,
-    maxRenown: DEF.tierRenown.gold * slots.length,
+    // v3.3 B1：满级门槛 = levels × renownPerLevel（60），界面分母用它；
+    // 三金（120）是容错档，不再当作分母（否则满级玩家看到 60/120 会以为坏了）
+    maxRenown: DEF.levels * DEF.renownPerLevel,
     level,
     maxLevel: DEF.levels,
     /** v3.3 B1：当前账号档位与目标缩放系数（UI 如实标注） */

@@ -130,12 +130,19 @@ console.log('═'.repeat(78))
 console.log('C. 赛季声望曲线（14 天一赛季；3 条任务 × 3 档；**只计最高达成档**）')
 console.log('═'.repeat(78))
 const seasonMax = TIER_RENOWN.gold * 3
+/**
+ * v3.3 评审修正：等级奖励**读内容表**（此前硬编码 500+250lv / 1+⌊lv/4⌋ / tokens；
+ * 一旦有人调 data/season.json.levelReward，脚本结论不会跟着变 —— 违反"文档=脚本=表"纪律）。
+ */
 const levelReward = (lv) => {
-  const gold = 500 + lv * 250
-  const essence = 1 + Math.floor(lv / 4)
-  const tokens = lv === LEVELS ? 10 : lv % 5 === 0 ? 2 : 0
+  const r = SEASON.levelReward
+  const gold = r.goldBase + r.goldPerLevel * lv
+  const essence = r.essenceBase + Math.floor(lv / 4)
+  const tokens = lv === LEVELS ? r.maxLevelTokens : lv % r.tokenEvery === 0 ? r.tokenAmount : 0
   return { gold, essence, tokens, value: gold + essence * 15 + tokens * 200 }
 }
+// 落进 JSON：测试逐字段对比"脚本算的 === 表里的"，防再硬编码
+const LEVEL_REWARD_ROWS = Array.from({ length: LEVELS }, (_, i) => levelReward(i + 1))
 let cumValue = 0
 let tokenTotal = 0
 const levelMarks = [5, 10, 15, 20]
@@ -403,6 +410,7 @@ const summary = {
       end: 'stages.end（T7，v2.3 既有口径）',
     },
     promises: afterScale,
+    levelRewardRows: LEVEL_REWARD_ROWS,
     scaleByMaturity,
     coefFloor: COEF_FLOOR,
     scaledTargets,

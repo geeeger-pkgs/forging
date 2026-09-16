@@ -14,7 +14,8 @@
   "maxQueueSlots": 6,
   "prestigeUnlockLevel": 120,
   "recycleConfirm": {
-    "perfectScore": 0.9,
-    "goldGain": 5000
+    "perfectScore": 0.95,
+    "goldGain": 20000,
+    "enhanceLevel": 3
   }
 }

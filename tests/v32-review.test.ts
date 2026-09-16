@@ -241,7 +241,7 @@ describe('Minor 处置：交互收口', () => {
   it('槽位是可点入口：有 role/tabindex/Enter+Space 与"正在查看"高亮', () => {
     const rp = ui('RightPanel.vue')
     expect(rp).toContain('@keyup.enter="inspect(s.inst.instanceId)"')
-    expect(rp).toContain('@keyup.space.prevent="inspect(s.inst.instanceId)"')
+    expect(rp).toContain('@keydown.space.prevent="inspect(s.inst.instanceId)"')
     expect(rp).toContain(':class="{ inspecting: inspectedSlot === s.id }"')
   })
 

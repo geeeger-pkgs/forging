@@ -44,12 +44,13 @@ const tutorial = computed(() => {
  *   ① 远征 run.done（完成待领，见 ExpeditionsState）
  *   ② 教程当前步已完成但未领取（claimTutorial 的判定条件）
  */
-const pendingCount = computed(() => {
-  const runs = store.state.meta.expeditions?.runs?.filter((r) => r.done).length ?? 0
+const pendingExpeditions = computed(() => store.state.meta.expeditions?.runs?.filter((r) => r.done).length ?? 0)
+const pendingTutorial = computed(() => {
   const t = store.state.flags.tutorial
-  const tut = t.completed.includes(t.current) && !t.claimed.includes(t.current) ? 1 : 0
-  return runs + tut
+  return t.completed.includes(t.current) && !t.claimed.includes(t.current) ? 1 : 0
 })
+/** 「更多」开关上的总数（跨分区提示有东西可拿） */
+const pendingCount = computed(() => pendingExpeditions.value + pendingTutorial.value)
 
 /** v3.1：章节二目标的计数器可读名（面板文案用） */
 const COUNTER_LABEL: Record<string, string> = {
@@ -190,7 +191,15 @@ function toggleMute(): void {
         <span class="name">
           更多<em v-if="!toolsOpen && currentToolLabel"> · {{ currentToolLabel }}</em>
           <!-- v3.3 C1：有可领取奖励时给个明确的有东西可拿信号 -->
-          <span v-if="pendingCount > 0" class="badge" :title="`有 ${pendingCount} 项奖励可领取`" aria-label="有奖励可领取">{{ pendingCount }}</span>
+          <span
+            v-if="pendingCount > 0"
+            class="badge"
+            role="status"
+            :title="`有 ${pendingCount} 项奖励可领取（远征 / 教程）`"
+            :aria-label="`有 ${pendingCount} 项奖励可领取`"
+          >
+            {{ pendingCount }}
+          </span>
         </span>
       </span>
     </button>
@@ -209,8 +218,16 @@ function toggleMute(): void {
         <span class="body">
           <span class="name">
             远征
-            <!-- v3.3 C1 徽标挂点 2：抽屉展开时（含桌面）也能看到 -->
-            <span v-if="pendingCount > 0" class="badge" :title="`有 ${pendingCount} 项奖励可领取`" aria-label="有奖励可领取">{{ pendingCount }}</span>
+            <!-- v3.3 C1 徽标挂点 2：抽屉展开时（含桌面）也能看到。
+                 **只报远征自己的待领数**（评审：混入教程数会让玩家点进远征却空空如也） -->
+            <span
+              v-if="pendingExpeditions > 0"
+              class="badge"
+              :title="`有 ${pendingExpeditions} 支远征待领取`"
+              :aria-label="`有 ${pendingExpeditions} 支远征待领取`"
+            >
+              {{ pendingExpeditions }}
+            </span>
           </span>
         </span>
       </button>
@@ -320,8 +337,9 @@ function toggleMute(): void {
   padding: 0 4px;
   margin-left: 6px;
   border-radius: 8px;
-  background: var(--c-danger);
-  color: #fff;
+  /* v3.3 评审：红=报错联想，改用强调色（"有奖励可拿"的语义更贴切） */
+  background: var(--c-accent);
+  color: #1a1204;
   font-size: 11px;
   font-weight: 700;
   line-height: 1;

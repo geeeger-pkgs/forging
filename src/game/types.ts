@@ -163,7 +163,7 @@ export interface ConfigDef {
   /** v1.5：传承解锁总等级 */
   prestigeUnlockLevel: number
   /** v3.3 C4：高价值回收的二次确认阈值（完美度比例 / 单件金币） */
-  recycleConfirm: { perfectScore: number; goldGain: number }
+  recycleConfirm: { perfectScore: number; goldGain: number; enhanceLevel: number }
 }
 
 export interface SkillDef {

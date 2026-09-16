@@ -802,6 +802,128 @@
         "ratioAfter": 8.540134119081488
       }
     ],
+    "levelRewardRows": [
+      {
+        "gold": 750,
+        "essence": 1,
+        "tokens": 0,
+        "value": 765
+      },
+      {
+        "gold": 1000,
+        "essence": 1,
+        "tokens": 0,
+        "value": 1015
+      },
+      {
+        "gold": 1250,
+        "essence": 1,
+        "tokens": 0,
+        "value": 1265
+      },
+      {
+        "gold": 1500,
+        "essence": 2,
+        "tokens": 0,
+        "value": 1530
+      },
+      {
+        "gold": 1750,
+        "essence": 2,
+        "tokens": 2,
+        "value": 2180
+      },
+      {
+        "gold": 2000,
+        "essence": 2,
+        "tokens": 0,
+        "value": 2030
+      },
+      {
+        "gold": 2250,
+        "essence": 2,
+        "tokens": 0,
+        "value": 2280
+      },
+      {
+        "gold": 2500,
+        "essence": 3,
+        "tokens": 0,
+        "value": 2545
+      },
+      {
+        "gold": 2750,
+        "essence": 3,
+        "tokens": 0,
+        "value": 2795
+      },
+      {
+        "gold": 3000,
+        "essence": 3,
+        "tokens": 2,
+        "value": 3445
+      },
+      {
+        "gold": 3250,
+        "essence": 3,
+        "tokens": 0,
+        "value": 3295
+      },
+      {
+        "gold": 3500,
+        "essence": 4,
+        "tokens": 0,
+        "value": 3560
+      },
+      {
+        "gold": 3750,
+        "essence": 4,
+        "tokens": 0,
+        "value": 3810
+      },
+      {
+        "gold": 4000,
+        "essence": 4,
+        "tokens": 0,
+        "value": 4060
+      },
+      {
+        "gold": 4250,
+        "essence": 4,
+        "tokens": 2,
+        "value": 4710
+      },
+      {
+        "gold": 4500,
+        "essence": 5,
+        "tokens": 0,
+        "value": 4575
+      },
+      {
+        "gold": 4750,
+        "essence": 5,
+        "tokens": 0,
+        "value": 4825
+      },
+      {
+        "gold": 5000,
+        "essence": 5,
+        "tokens": 0,
+        "value": 5075
+      },
+      {
+        "gold": 5250,
+        "essence": 5,
+        "tokens": 0,
+        "value": 5325
+      },
+      {
+        "gold": 5500,
+        "essence": 6,
+        "tokens": 10,
+        "value": 7590
+      }
+    ],
     "scaleByMaturity": {
       "junior": 0.67,
       "veteran": 0.66

@@ -477,6 +477,7 @@ export function validateContent(t: ContentTables): string[] {
   // v3.3 C4：回收确认阈值必须在 (0,1] / >0 范围内（否则确认永不触发或恒触发）
   if (!(t.config.recycleConfirm.perfectScore > 0 && t.config.recycleConfirm.perfectScore <= 1)) errs.push('config.recycleConfirm.perfectScore 非法')
   if (!(t.config.recycleConfirm.goldGain > 0)) errs.push('config.recycleConfirm.goldGain 非法')
+  if (!(t.config.recycleConfirm.enhanceLevel >= 0)) errs.push('config.recycleConfirm.enhanceLevel 非法')
 
   return errs
 }

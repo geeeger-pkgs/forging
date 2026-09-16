@@ -328,10 +328,14 @@ function recycleInstance(instanceId: number): void {
   if (inst && cfg) {
     const score = perfectScore(inst.itemId, inst.affixes)
     const gain = recycleGain(store.state, inst.itemId, 1)
-    const highValue = score >= cfg.perfectScore || gain >= cfg.goldGain
-    if (highValue && !window.confirm(`回收「${itemDef(inst.itemId).name} +${inst.enhanceLevel}」？\n完美度 ${fmtPct(score)}、回收 +${gain} 金（不可撤销）`)) {
-      return
-    }
+    // v3.3 评审校准：0.9 是"及格线"（设计里的目标线），清杂鱼装备时几乎次次弹窗 →
+    // 改为完美阈值 0.95 + 2 万金（≈末期 16 分钟产出）+ **强化投入保护**（+N 的投入不返还，
+    // 此前一件 +5 的装备可能被静默回收）
+    const invested = inst.enhanceLevel >= cfg.enhanceLevel
+    const highValue = score >= cfg.perfectScore || gain >= cfg.goldGain || invested
+    const tip = invested ? `\n注意：强化 +${inst.enhanceLevel} 的投入不返还` : ''
+    const msg = `回收「${itemDef(inst.itemId).name} +${inst.enhanceLevel}」？\n完美度 ${fmtPct(score)}、回收 +${gain} 金${tip}\n（不可撤销）`
+    if (highValue && !window.confirm(msg)) return
   }
   cmd({ type: 'recycleInstance', instanceId })
 }
@@ -431,7 +435,7 @@ function isTop(score: number): boolean {
               :title="`查看「${s.name}」详情（可卸下 / 重铸）`"
               @click="inspect(s.inst.instanceId)"
               @keyup.enter="inspect(s.inst.instanceId)"
-              @keyup.space.prevent="inspect(s.inst.instanceId)"
+              @keydown.space.prevent="inspect(s.inst.instanceId)"
             >
               <ItemIcon :item-id="s.inst.itemId" :size="18" />
               <span class="slot-name">{{ s.name }}<em>+{{ s.inst.enhanceLevel }}</em></span>
@@ -469,7 +473,7 @@ function isTop(score: number): boolean {
             :title="`查看「${m.name}」用途`"
             @click="inspect(null, m.id)"
             @keyup.enter="inspect(null, m.id)"
-            @keyup.space.prevent="inspect(null, m.id)"
+            @keydown.space.prevent="inspect(null, m.id)"
           >
             <ItemIcon :item-id="m.id" :size="16" />
             <span class="name">{{ m.name }}</span>
@@ -544,7 +548,7 @@ function isTop(score: number): boolean {
           :title="`查看「${b.name}」详情（可卸下 / 重铸）`"
           @click="inspect(b.inst.instanceId)"
           @keyup.enter="inspect(b.inst.instanceId)"
-          @keyup.space.prevent="inspect(b.inst.instanceId)"
+          @keydown.space.prevent="inspect(b.inst.instanceId)"
         >
           <ItemIcon :item-id="b.inst.itemId" :size="16" />
           <span class="name">
@@ -722,6 +726,12 @@ h3 {
   align-self: stretch; /* v3.2 评审：让热区撑满整行，而不是只有文字那一条 */
   min-height: 28px;
   cursor: pointer;
+}
+/* v3.3 评审：窄屏触控高度补到 40px（此前只有 28px，DoD 却已写已落地） */
+@media (max-width: 900px) {
+  .clickable {
+    min-height: 40px;
+  }
 }
 .clickable:hover .name {
   color: var(--c-accent);

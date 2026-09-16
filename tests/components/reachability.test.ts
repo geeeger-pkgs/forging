@@ -8,6 +8,8 @@
 // **不挂 App**（避免 SceneCanvas 的 getContext('2d')、FxLayer、audio 在 jsdom 下拖崩）。
 // 环境：逐文件 `@vitest-environment jsdom`（默认仍是 node，内核用例零影响）。
 // ============================================================
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
@@ -33,6 +35,9 @@ function boot(now = 1_000_000): GameState {
 }
 
 /** 找按钮：按可见文案匹配（可达性断言以"玩家看得到的文字"为准） */
+/** 读组件源码做样式/结构契约断言 */
+const uiFile = (name: string) => readFileSync(join(process.cwd(), 'src', 'ui', 'components', name), 'utf8')
+/** 找按钮：按可见文案匹配（可达性断言以玩家看得到的文字为准） */
 const btn = (w: ReturnType<typeof mount>, text: string) =>
   w.findAll('button').find((b) => (b.text() || '').includes(text))
 
@@ -309,5 +314,62 @@ describe('C 组：交互补完', () => {
     answer = true
     await recycle().trigger('click')
     expect(s.equipment.some((e) => e.instanceId === id), '确认后应回收').toBe(false)
+  })
+})
+
+// ---- v3.3 评审处置：新增/修正的交互分支补测 ----
+describe('评审处置回归（v3.3 复审）', () => {
+  it('C2：键盘按到"已展开分区"只保持选中，不收起（实机抓到的分支）', async () => {
+    boot()
+    const rp = mount(RightPanel)
+    const nav = rp.find('.rtabs')
+    await nav.trigger('keydown', { key: 'End' }) // 打开资源
+    await nextTick()
+    expect(rp.find('#rtabpanel-mats').isVisible()).toBe(true)
+    await nav.trigger('keydown', { key: 'End' }) // 再按 End：应仍是展开状态
+    await nextTick()
+    expect(rp.find('#rtabpanel-mats').isVisible(), '停在已展开分区不得收起').toBe(true)
+  })
+
+  it('C4：强化 +3 的装备即便完美度低也触发确认（强化投入不返还）', async () => {
+    const s = boot()
+    const id = addInstance(s, 'pick_copper')
+    const inst = s.equipment.find((e) => e.instanceId === id)!
+    inst.affixes = []
+    inst.enhanceLevel = s.constructor ? 3 : 3
+    const calls: string[] = []
+    ;(window as unknown as { confirm: unknown }).confirm = (m: string) => {
+      calls.push(String(m))
+      return false
+    }
+    const rp = mount(RightPanel)
+    const recycle = rp.findAll('#rtabpanel-bag .row button').find((b) => b.text().includes('回收'))!
+    await recycle.trigger('click')
+    expect(calls.length, '有强化投入的装备回收应确认').toBe(1)
+    expect(calls[0]).toContain('强化 +3 的投入不返还')
+    expect(s.equipment.some((e) => e.instanceId === id), '拒绝后应保留').toBe(true)
+  })
+
+  it('C1：远征项徽标只报远征待领数（不混入教程）', async () => {
+    const s = boot()
+    s.flags.tutorial = { current: 1, completed: [1], claimed: [], progress: 1 } // 教程可领 1
+    const nav = mount(NavBar)
+    const row = nav.findAll('#nav-tools .item').find((b) => b.text().includes('远征'))!
+    expect(row.find('.badge').exists(), '只有教程可领时，远征项不应有徽标').toBe(false)
+    expect(nav.find('.tools-toggle .badge').text()).toBe('1') // 开关报总数
+    s.meta.expeditions.runs.push({
+      id: 9, routeId: CONTENT.expeditions.routes[0].id, hours: 1, startedAt: 0, endsAt: 1,
+      team: [], done: true, outcome: null,
+    })
+    const nav2 = mount(NavBar)
+    const row2 = nav2.findAll('#nav-tools .item').find((b) => b.text().includes('远征'))!
+    expect(row2.find('.badge').text()).toBe('1')
+    expect(nav2.find('.tools-toggle .badge').text()).toBe('2')
+  })
+
+  it('C3：窄屏 .clickable 触控高度 40px（样式契约）', () => {
+    const rp = uiFile('RightPanel.vue')
+    const mq = rp.slice(rp.indexOf('v3.3 评审：窄屏触控高度'))
+    expect(mq).toMatch(/@media \(max-width: 900px\) \{[\s\S]{0,200}?min-height: 40px/)
   })
 })

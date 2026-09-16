@@ -9,17 +9,17 @@
 
 | # | 测什么 | 实测 | 判定 |
 |---|---|---|---|
-| S1 | A 组组件测试层 | `npm test` 25 → **26 文件 / 457 项**全绿；`tests/components/` 在 jsdom 下运行，内核用例仍全部跑 node（数量不减） | ✅ |
-| S2 | A2 操作矩阵可达性 | 15 条组件用例全部断言"元素存在 + 交互后 store 变化"；**虚假验证**：把卸下按钮条件改成 `false` → ①用例变红，还原 → 全绿 | ✅ |
+| S1 | A 组组件测试层 | `npm test` **26 文件 / 463 项**全绿（组件用例 25 条）；jsdom 逐文件声明，内核用例仍跑 node（数量不减） | ✅ |
+| S2 | A2 操作矩阵可达性 | 组件用例 25 条（A2 矩阵 12 + C 组与处置回归 13）；其中 **store 变化级**断言 15 条、元素/aria 级 10 条（评审指出原表述夸大，已按实修正）；**虚假验证**：把卸下按钮条件改成 `false` → ①用例变红，还原 → 全绿 | ✅ |
 | S3 | A4 真实档回归 | `tests/fixtures/save-v13.json`（字段齐全：装备/词缀/槽位/增益/自动回收/配装/赛季/深渊/材料/技能）载入后逐项保留，且两次载入幂等 | ✅ |
 | S4 | C1 徽标 | 播种 1 条待领远征 + 教程可领 → 开关与抽屉「远征」项同时显示 `2`；无待领时不渲染（组件断言） | ✅（截图 `v33-mobile-season.png`） |
 | S5 | C2 方向键 | 在 tablist 派发 ←/→/Home/End：`装备 →(→) 行囊 →(→) 资源`、`End` 停在资源、`Home` 回装备 | ✅ |
 | S6 | C2 修正（实机发现） | 初次实测 `End` 把**已展开的资源分区收起**了（键盘复用了"再点一次收起"的点击语义）→ 已拆出 `selectRightTab`：键盘只选中、不收起 | ✅（修复后复测） |
 | S7 | C3 键盘化 | 组件测试断言材料名/行囊名 `role=button` + `tabindex=0` + Enter（v3.2 已加 Space） | ✅ |
-| S8 | C4 高价值回收确认 | 满词缀金镐（完美度 1.0 ≥ 阈值 0.95）点「回收」→ 弹确认 `回收「金镐 +5」？`；接受/拒绝行为由组件用例覆盖 | ✅ |
+| S8 | C4 高价值回收确认 | 满词缀金镐（完美度 1.0 ≥ 阈值 **0.95**）点「回收」→ 弹确认 `回收「金镐 +5」？`（阈值经评审由 0.9 上调 + 新增"强化 +3 起必确认"）；接受/拒绝/强化投入三分支由组件用例覆盖 | ✅ |
 | S9 | B1 赛季缩放（玩家可见） | 图鉴页赛季面板显示 `目标已按你的账号进度调整：老手档 ×0.66`；目标数值 = 基础 ×0.66 向上取整（强化 T4：120/320/600 → **80/212/396**） | ✅（截图 `v33-mobile-season.png` / `v33-desktop-season.png`） |
 | S10 | 桌面回归 | 1200px：无横向溢出、右栏 Tab 条隐藏（三区同显）、徽标照常可见 | ✅ |
-| S11 | 门禁 | `npm test` 457 全绿｜`typecheck` 无错｜`build` gzip **107.48KB**（≤110KB）｜`gen:check` 通过｜`audit:fx:check` 通过｜`audit:content` 零发现 | ✅ |
+| S11 | 门禁 | `npm test` **463 全绿**｜`typecheck` 无错｜`build` gzip 见 §5｜`gen:check` 通过｜`audit:fx:check` 通过｜`audit:content` 零发现 | ✅ |
 
 ## 2. 本轮实机抓到的问题（已修）
 
@@ -43,3 +43,16 @@ node scripts/gen-content.mjs         # 生成 data/*.json（会读 sim 输出；
 npm test && npm run typecheck && npm run build
 npm run gen:check && npm run audit:fx:check && npm run audit:content
 ```
+
+## 5. 评审处置后的复跑（两名评审员各 7.5/10、无 Blocker；条件项全部落地）
+
+| 项 | 结果 |
+|---|---|
+| C3 触控高度（评审 M1，两人共同指出） | `.clickable` 窄屏补 `min-height: 40px`（此前 DoD 写了但没实现）+ 样式契约用例 |
+| C4 阈值（评审 M2） | `perfectScore 0.9 → 0.95`、`goldGain 5000 → 20000`、新增 `enhanceLevel ≥ 3` 触发（文案追加"强化 +N 的投入不返还"）；config 校验 + 三分支用例 |
+| C1 徽标（评审 M3） | 计数按目的地拆分（远征项只报远征、开关报总数）；改 `role=status` + 强调色（不再用危险红） |
+| 赛季分母（评审 Minor） | `seasonView.maxRenown` 改为满级声望 60；实机截图可见 `声望 0 / 60`（此前 `/120`） |
+| 证据链（评审 Major） | sim 的 `levelReward` 改读内容表并落 JSON（20 行）；新增用例逐行比对"脚本 == 表" |
+| 键盘（评审 Minor） | 槽位/材料/行囊的 Space 由 `keyup` 改 `keydown`（按下瞬间的默认滚动不再发生） |
+| 重截证据（评审 M4） | `docs/v33-mobile-season.png`（375px：赛季面板 + "目标已按你的账号进度调整：老手档 ×0.66" + 缩放后目标 165k/330k/528k 与 80/212/396 + 声望 0/60）、`docs/v33-desktop-season.png` |
+| 门禁 | `npm test` 463 全绿｜`typecheck` 无错｜`build` gzip 见提交信息｜`gen:check` / `audit:fx:check` / `audit:content` 全通过 |

@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { CONTENT } from '../src/game/content'
-import { maturityClassOf, seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
+import { maturityClassOf, seasonScaleCoef, seasonTargetsFor, seasonView } from '../src/game/season'
 import { xpForLevel } from '../src/game/level'
 import { newGame } from '../src/game/state'
 
@@ -104,5 +104,34 @@ describe('B1 分档与派生：内核实现与表一致', () => {
     const tpl = DEF.templates[0]
     const t = seasonTargetsFor(s, tpl.id)
     expect(t).toEqual(sim.maturity.scaledTargets.veteran[tpl.counter])
+  })
+})
+
+// ============================================================
+// v3.3 评审处置回归（两名评审员，各 7.5/10 有条件放行）
+// ============================================================
+describe('评审处置：证据链与下界', () => {
+  it('sim 的等级奖励读内容表（不再硬编码），并逐行落 JSON', () => {
+    const rows = (sim.maturity as unknown as { levelRewardRows: { gold: number; essence: number; tokens: number }[] })
+      .levelRewardRows
+    expect(rows.length).toBe(DEF.levels)
+    const r = DEF.levelReward
+    rows.forEach((row, i) => {
+      const lv = i + 1
+      expect(row.gold).toBe(r.goldBase + r.goldPerLevel * lv)
+      expect(row.essence).toBe(r.essenceBase + Math.floor(lv / 4))
+      expect(row.tokens).toBe(lv >= DEF.levels ? r.maxLevelTokens : lv % r.tokenEvery === 0 ? r.tokenAmount : 0)
+    })
+  })
+
+  it('面板分母用满级声望（60），不是三金容错上限（120）', () => {
+    const s = newGame('T', 0)
+    s.skills.mining = xpForLevel(100)
+    s.season.renown = 60
+    s.season.tasks = []
+    const view = seasonView(s, 0)
+    expect(view.maxRenown).toBe(DEF.levels * DEF.renownPerLevel)
+    expect(view.maxRenown).toBe(60)
+    expect(view.level).toBe(DEF.levels) // 60 声望即满级
   })
 })
