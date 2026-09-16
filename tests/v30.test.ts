@@ -378,6 +378,23 @@ describe('F6 图鉴位图与分区门槛', () => {
     expect(CODEX_TITLES.length).toBe(4)
   })
 
+  it('渲染期安全：进度/门槛查询必须是**纯读**（不自触发重渲染）', () => {
+    // v3.0 实机走查抓到：CodexPanel 渲染期调用 codexProgress/codexGate 时，
+    // 旧 ensure() 每次都写回 state.codex → Vue 判定"渲染中修改依赖"→ 无限重渲染，
+    // 面板计数卡住不更新（Maximum recursive updates exceeded）。
+    const s = fresh()
+    recordItem(s, 'ore_iron')
+    const snapshot = JSON.stringify(s.codex)
+    codexProgress(s)
+    codexGate(s)
+    milestoneReached(s, CONTENT.season.codexMilestones[0])
+    codexIds(s, 'items')
+    codexIds(s, 'relics')
+    // 查询前后状态必须**逐字节一致**（对象引用也不应变）
+    expect(JSON.stringify(s.codex)).toBe(snapshot)
+    expect(s.codex.bits).toBe(JSON.parse(snapshot).bits)
+  })
+
   it('遗物与进度同源（不再出现"计数 3/3 但列表未收集"）', () => {
     const s = fresh()
     const relics = Object.keys(CONTENT.items).filter((id) => itemDef(id).category === 'relic')

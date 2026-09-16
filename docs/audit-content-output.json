@@ -1,0 +1,22 @@
+{
+  "version": "3.0.0",
+  "counts": {
+    "items": 107,
+    "recipes": 92,
+    "affixes": 9,
+    "runes": 12,
+    "companions": 6,
+    "routes": 4,
+    "traits": 4,
+    "achievements": 82,
+    "tasks": 9,
+    "seasonTemplates": 6,
+    "codexEntries": 222
+  },
+  "unreachableItems": [],
+  "badRecipes": [],
+  "badAchievements": [],
+  "missingCounters": [],
+  "neverIncremented": [],
+  "findings": []
+}

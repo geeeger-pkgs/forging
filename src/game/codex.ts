@@ -8,7 +8,7 @@
 //   （否则 keep:0 的自动回收玩家，其采集物在扫描前就被卖掉了）
 // ============================================================
 import { CONTENT, itemDef } from './content'
-import { emptyCodex, normalizeCodex, sectionCount, sectionIds, sectionTotal, setBit } from './codex-store'
+import { codexFingerprint, emptyCodex, normalizeCodex, sectionCount, sectionIds, sectionTotal, setBit } from './codex-store'
 import { addGold, addMaterial } from './state'
 import type { CodexState, GameEvent, GameState, ItemId } from './types'
 
@@ -16,10 +16,30 @@ const DEF = CONTENT.season
 
 // ---------------- 登记（源头调用；位图 O(1)） ----------------
 
+/**
+ * 取（必要时补）图鉴状态。
+ *
+ * **渲染期安全**：本函数会在**组件渲染**中被调用（`codexProgress`/`codexGate`/`milestoneReached`
+ * 都走这里），因此正常路径必须是**纯读**——不能每次返回新对象，否则 Vue 会判定
+ * "组件在渲染中修改自己的依赖"并无限重渲染（v3.0 实机走查实测：
+ * `Maximum recursive updates exceeded in component <CodexPanel>`，图鉴面板计数卡住不更新）。
+ * 只在**确实缺失/指纹不符**时才写一次状态。
+ *
+ * 指纹在模块加载时算一次即可（内容表是静态的），顺带消除"每次产出都重算指纹"的开销。
+ */
+const FP = codexFingerprint()
+
 function ensure(state: GameState): CodexState {
-  if (!state.codex || typeof state.codex.bits !== 'string') state.codex = emptyCodex()
-  else state.codex = normalizeCodex(state.codex)
-  return state.codex
+  const cur = state.codex
+  if (cur && typeof cur.bits === 'string') {
+    if (cur.fp === FP) return cur // 正常路径：零写入
+    const fixed = normalizeCodex(cur)
+    state.codex = fixed
+    return fixed
+  }
+  const fresh = emptyCodex()
+  state.codex = fresh
+  return fresh
 }
 
 /** 物品登记（材料/装备/符文/遗物；由 addMaterial / addInstance 调用） */

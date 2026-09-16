@@ -21,6 +21,21 @@ describe('toolchain', () => {
   }, 30000)
 
   /**
+   * 内容可达性守卫（v3.0）：内容表里每一条内容都必须有产出路径。
+   * 脚本本身只做静态判定；这里断言"无 Blocker 级发现"，防止新增内容时漏接产出路径。
+   */
+  it('内容可达性审计无 Blocker（npm run audit:content）', () => {
+    const out = execFileSync('node', ['scripts/audit-content.mjs', '--json'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    const json = JSON.parse(out) as { findings: { sev: string; msg: string }[]; unreachableItems: string[] }
+    const blockers = json.findings.filter((f) => f.sev === 'Blocker')
+    expect(blockers, blockers.map((f) => f.msg).join('; ')).toEqual([])
+    expect(json.unreachableItems).toEqual([])
+  }, 60000)
+
+  /**
    * 证据链不变量：提交的 docs/audit-fx-output.json 必须**就是**审计脚本的输出
    * （测评 Minor-2：只比"JSON ↔ 内容表"不足以证明它是脚本产物）。
    */

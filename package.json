@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "gen:check": "node scripts/gen-content.mjs --check",
     "audit:fx": "node scripts/audit-fx.mjs",
-    "audit:fx:check": "node scripts/audit-fx.mjs --check"
+    "audit:fx:check": "node scripts/audit-fx.mjs --check",
+    "audit:content": "node scripts/audit-content.mjs"
   },
   "dependencies": {
     "vue": "^3.5.42"
