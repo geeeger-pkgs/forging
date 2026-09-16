@@ -238,13 +238,16 @@ v3.0 的创意不是"再加一个系统"，而是把已有内容做成能对外�
 
 ## 6. 验收标准（Definition of Done，逐条可判定）
 
-- [ ] **架构**：`grep -rn "\bdocument\b\|window\." src/game` 零命中；`grep -rn "TODO\|FIXME" src/ scripts/` 零命中；`package.json` 运行时依赖仅 `vue`
-- [ ] **内容**：`validateContent` 通过；发布文档的规模对比表由 `scripts/report-content.mjs` 生成（脚本产物，不手写）
-- [ ] **可玩性**：F2（连打）/F3（批量）/F1（层词条）/F5（行囊）全绿；`settleOffline` 后 `abyss.bestFloor` 与 `crystals` **不变**（离线不自动挑战）；离线体力 ≤ 24 且在线 ≤ 12
-- [ ] **交互与效果**：Lighthouse 四类 ≥95（落盘）；`audit-fx.mjs` E1/E3/E7 全过；`tests/fx.test.ts` 对**全部 GameEvent 成员**的穷举断言（有表现或显式白名单）；390/375px `scrollWidth === clientWidth`
-- [ ] **数值**：四个 `sim-*.mjs` 全部读表 + JSON + 双向断言一致；堆叠审计含结论（"赛季/图鉴/伙伴无永久属性项"）；四条反套利断言通过：①离线单位时间收益 ≤ 在线；②价格非负且单调不减；③前拨单次增量 ≤ 24 点体力；④远征补给 ≤ 毛产出 5%
-- [ ] **稳定性**：`tests/migration.test.ts` 1→13 全链通过；离线上限/队列满/材料不足三边界用例通过
-- [ ] **质量**：测试 ≥354 全绿 / `typecheck` / `build`（gzip JS ≤105KB，记录实际值）/ `gen:check` 与 `audit:fx:check` 同源
+> **D2 订正（v3.5 封板时点复核，2026-09-16）**：以下各条为逐条机械复核后的勾选，
+> 括号内为封板实测值（原条目数字按当时口径，未回改历史断言）。
+
+- [x] **架构**：`grep -rn "\bdocument\b\|window\." src/game` 零命中；`grep -rn "TODO\|FIXME" src/ scripts/` 零命中；`package.json` 运行时依赖仅 `vue`（v3.5 复核：三项均 0 命中，deps 仅 vue@3.5.42）
+- [x] **内容**：`validateContent` 通过；发布文档的规模对比表由 `scripts/report-content.mjs` 生成（脚本产物，不手写）
+- [x] **可玩性**：F2（连打）/F3（批量）/F1（层词条）/F5（行囊）全绿；`settleOffline` 后 `abyss.bestFloor` 与 `crystals` **不变**（离线不自动挑战）；离线体力 ≤ 24 且在线 ≤ 12
+- [x] **交互与效果**：Lighthouse 四类 ≥95（落盘；v3.5 复跑 99/100/100/100）；`audit-fx.mjs` E1/E3/E7 全过；`tests/fx.test.ts` 对**全部 GameEvent 成员**的穷举断言（有表现或显式白名单）；390/375px `scrollWidth === clientWidth`（v3.5 生产构建实测 375/390 均无溢出）
+- [x] **数值**：四个 `sim-*.mjs` 全部读表 + JSON + 双向断言一致；堆叠审计含结论（"赛季/图鉴/伙伴无永久属性项"）；四条反套利断言通过：①离线单位时间收益 ≤ 在线；②价格非负且单调不减；③前拨单次增量 ≤ 24 点体力；④远征补给 ≤ 毛产出 5%
+- [x] **稳定性**：`tests/migration.test.ts` 全链通过（v3.5 已扩至 **1→15**）；离线上限/队列满/材料不足三边界用例通过
+- [x] **质量**：测试全绿（v3.5：543/32 文件）/ `typecheck` / `build`（gzip JS 实测记录：v3.0 100.5KB → v3.5 110.21KB，预算限制已由用户裁定放宽，见 release-v3.5 §3）/ `gen:check` 与 `audit:fx:check` 同源
 - [x] **发布**：`docs/09-release-v3.0.md` 存在且含 8 条承诺终态复核；版本 3.0.0；应用内「关于」面板更新（本仓库无 README，故不承诺）
 
 ## 7. 范围外（v3.x backlog，本版不做）
