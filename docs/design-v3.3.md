@@ -32,11 +32,11 @@
 |---|---|
 | 问题 | `docs/sim-season-output.json`：`once/full`（每日 1 次 ×14 天 = 112h 预算）需 **302.56h = 270%**；中后期玩家把赛季过成"14 天苦役" |
 | 预算 profile | 沿用既有口径：`once` 112h / `twice` 224h / `always` 336h |
-| 账号分档 | 用**已存在可判定**的 `totalLevelOf(state)`：≤60 新号 ×1.00 / 61~85 中期 / ≥86 老号（**无新增存档字段**） |
-| 系数来源 | `scripts/sim-season.mjs` **先**输出"满足承诺口径的最大系数"，再写入 `data/season.json.scaleByMaturity`（先脚本后定表；不得先定系数让脚本圆） |
-| DoD 承诺 | `twice`/`always`：三档全 ≤100% 预算；`once`：铜/银档 ≤100%（金档如实登记为"需要更活跃的节奏"，不作承诺） |
-| 反挂保护 | 缩放后 targets 严格递增且 ≥ base ×0.5（脚本断言 + `content.ts` 校验） |
-| 满级门槛 | 改 `renownPerLevel` 4 → 3（满级 80 → 60 声望）；`levels: 20` 与等级奖励**不变**（奖励不减）；`sim-season.mjs` 里硬编码的 `levelReward` 改为读表 |
+| 账号分档 | 用**已存在可判定**的 `totalLevelOf(state)`：新晋（≤119）/ 老手（≥120，= 传承解锁线）；**无新增存档字段**（不升 SAVE_VERSION） |
+| 系数来源 | `scripts/sim-season.mjs` **先**输出"满足承诺口径的最小系数"，再写入 `data/season.json.scaleByMaturity`（先脚本后定表；生成器缺 sim 输出即报错） |
+| **实测（定稿）** | **新晋 ×0.67（T3 模型）｜老手 ×0.66（T7 模型）**；下限 0.35（表内登记）。缩放后**承诺集最差占比 99.1% ≤100%**、严格递增 ✅、下限保护 ✅。证据：`docs/sim-season-output.json.maturity` |
+| **参赛资格修正** | 赛季在总等级 60 解锁 → T1 产出的新号**根本不参赛**（脚本保留其作为对照行：连 always/铜档都要 114% 预算）。因此分档只按参保账号定义，初稿的新号档是伪需求 |
+| 承诺集 | twice/always × {全铜, 全银, 1金+2银}；once × {全铜 全档, 全银 老手}；**3 金不承诺**（容错档） |
 | 测试 | S12 改为"**基础 targets 不被覆盖** + 派生 `targetsScaled` 由 sim 输出机器校验"；`season.ts` 缩放为纯函数只读派生 |
 
 ### C. 交互补完

@@ -206,7 +206,12 @@ function onTabKeydown(e: KeyboardEvent): void {
           ? (cur + 1) % ids.length
           : (cur - 1 + ids.length) % ids.length
   const next = ids[nextIdx]
-  void toggleRightTab(next)
+  if (rightOpen.value && rightTab.value === next) {
+    // 已是当前分区：只把焦点带过去，不改开合
+    document.getElementById(`rtab-${next}`)?.focus()
+    return
+  }
+  void selectRightTab(next)
   // 焦点跟随（roving tabindex 的"焦点与选中同步"语义）
   requestAnimationFrame(() => document.getElementById(`rtab-${next}`)?.focus())
 }
@@ -217,9 +222,18 @@ function onTabKeydown(e: KeyboardEvent): void {
  */
 async function toggleRightTab(t: RightTab): Promise<void> {
   if (rightOpen.value && rightTab.value === t) {
-    rightOpen.value = false // 再点一次收起
+    rightOpen.value = false // 再点一次收起（仅**点击**语义；键盘选中走下文的 selectRightTab）
     return
   }
+  return selectRightTab(t)
+}
+
+/**
+ * 选中并展开某分区（**不**收起）。
+ * v3.3 实机发现：键盘 ←/→/Home/End 若复用 toggle，按到「当前已选中且已展开」的那一项会**收起面板**
+ * （End 停在资源、再按 End 就关掉整个面板），与 APG 选中语义不符。
+ */
+async function selectRightTab(t: RightTab): Promise<void> {
   const wasOpen = rightOpen.value
   rightTab.value = t
   rightOpen.value = true
