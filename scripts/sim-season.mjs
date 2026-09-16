@@ -333,7 +333,14 @@ for (const [cls, def] of Object.entries(CLASSES)) {
     }
   }
 }
-/** 系数下限（登记在 data/season.json.coefFloor，测试断言一致）：再低会让赛季奖励"奖杯化" */
+/**
+ * 系数下限（登记在 data/season.json.coefFloor，测试断言一致）：再低会让赛季奖励"奖杯化"。
+ *
+ * ⚠️ 同源说明（v3.5 封板登记，来自六审遗留项）：本脚本是 .mjs、无法 import TS 内核，
+ * 因此 `scaleByMaturity` 的推导与 `src/game/scale.ts#scaleTargets` 的**取整口径是两份实现**。
+ * 兜底：tests/season.test.ts 的 S12 逐字段断言"gen-content 产物 == 内核 scaleTargets"，
+ * 以及 tests/toolchain.test.ts 的工件同源检查；改动任一处的取整规则时必须同时跑这两条。
+ */
 const COEF_FLOOR = 0.30 // v3.4 A3：T2 模型下新晋档需 0.34，下限调到 0.30 让证据说话（仍防奖杯化）
 const scaleByMaturity = {}
 for (const cls of Object.keys(CLASSES)) {
