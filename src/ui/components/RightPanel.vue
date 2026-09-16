@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { recycleGain } from '../../game/economy'
@@ -196,6 +196,16 @@ watch(
     store.ui.rightTabWanted = null
   },
 )
+/**
+ * v3.4.5：**挂载时兜底消费**——若请求发生在面板挂载之前（watch 只监听变化，会漏掉已置位的值），
+ * 这里补一次，避免"点了前往但右栏没反应"。应用里 RightPanel 常驻（App.vue），该路径主要用于健壮性。
+ */
+onMounted(() => {
+  const t = store.ui.rightTabWanted
+  if (!t) return
+  void selectRightTab(t as RightTab)
+  store.ui.rightTabWanted = null
+})
 
 /**
  * v3.3 C2：tablist 的 roving tabindex + 方向键。
