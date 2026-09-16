@@ -1,3 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { CONTENT } from '../src/game/content'
+import { xpForLevel } from '../src/game/level'
+import { prestigePointsFor } from '../src/game/prestige'
+import { scaleTargets } from '../src/game/scale'
+import { seasonTargetsFor } from '../src/game/season'
+import { newGame } from '../src/game/state'
 import { execFileSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
 
@@ -52,4 +59,31 @@ describe('toolchain', () => {
     expect(out).toContain('--check 通过')
     expect(out).toContain('审计结论：全部通过')
   }, 60000)
+})
+
+/**
+ * 证据≠实现 门禁（v3.4 五审后新增）：提交的机器可读产物必须与**实现**一致。
+ * 起因：v3.4 期间四次出现"宣称改了、代码里没有"（sim-audit 上限、cue 类型、D 段公式、经济入档）。
+ * 这里选三处最容易被抄错的数字，直接由实现派生后与产物比对——产物陈旧或公式漂移即红。
+ */
+describe('证据与实现同源（防"宣称≠实现"）', () => {
+  it('sim-audit-output.json 的满级点数 == prestigePointsFor(四技能满级)', () => {
+    const sim = JSON.parse(readFileSync('docs/sim-audit-output.json', 'utf8')) as {
+      d: { stretchScan: { rows: { name: string; points: number }[] } }
+    }
+    const s = newGame('T', 0)
+    const xp100 = xpForLevel(100)
+    s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
+    const impl = prestigePointsFor(s)
+    const row = sim.d.stretchScan.rows.find((r) => r.name.includes('满级'))
+    expect(row, '产物应含满级行').toBeTruthy()
+    expect(row!.points, '产物点数必须等于实现（漂移即失败）').toBe(impl)
+  })
+
+  it('season.json 的缩放系数 == 内核系数；缩放目标 == scaleTargets(基础, 系数)', () => {
+    const s = newGame('T', 0)
+    const coef = CONTENT.season.scaleByMaturity.junior
+    const tpl = CONTENT.season.templates[0]
+    expect(seasonTargetsFor(s, tpl.id)).toEqual(scaleTargets(tpl.targets, coef))
+  })
 })
