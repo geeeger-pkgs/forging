@@ -41,16 +41,27 @@ function sample(v: number): Record<string, unknown> {
   if (v >= 12) {
     ;(base.meta as Record<string, unknown>).settings = { sound: true, volume: 50, fx: 'auto' }
   }
+  // v3.5 终审 A-M2：起点 13/14 的样本要保真——真实 v13 档必经 MIGRATIONS[12]（含 autoRecyclePerfect）
+  if (v >= 13) {
+    ;(base.meta as Record<string, unknown>).autoRecyclePerfect = 60
+    base.codex = { bits: '', fp: '' } // v13 起为位图格式
+  }
+  if (v >= 14) {
+    ;(base.meta as Record<string, unknown>).bestSkillLevel = 2 // v14 起（MIGRATIONS[13] 产出）
+    ;(base.meta as Record<string, unknown>).expeditions = { runs: [], banner: 0, nextRunId: 1 }
+    base.companions = {}
+  }
   return base
 }
 
-describe('迁移全链（1 → 13）', () => {
+describe('迁移全链（1 → 15）', () => {
   it('SAVE_VERSION 为当前版本（v3.4 起为 15）', () => {
     expect(SAVE_VERSION).toBe(15)
   })
 
-  it('v1~v12 每个版本都能迁到当前版本，且关键字段无损', () => {
-    for (let v = 1; v <= 12; v++) {
+  it('v1~v14 每个版本都能迁到当前版本，且关键字段无损（上界随 SAVE_VERSION 走）', () => {
+    // v3.5 终审 A-M2：上界此前写死 12，起点 13/14 只靠 fixture/他测覆盖；改为随版本自适应
+    for (let v = 1; v <= SAVE_VERSION - 1; v++) {
       const raw = JSON.stringify(sample(v))
       const back = deserializeSave(raw)
       expect(back, `v${v} 应可迁移`).not.toBeNull()

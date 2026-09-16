@@ -4,6 +4,7 @@ import { cmd, store } from '../../app/store'
 import { CONTENT } from '../../game/content'
 import { levelInfo, totalLevel } from '../../game/level'
 import {
+  FIRST_POINT_BASELINE_HOURS,
   PERK_OVERDRIVE_COST_MULT,
   PERK_OVERDRIVE_MULT,
   PRESTIGE_FIRST_POINT_SKILL,
@@ -13,6 +14,7 @@ import {
   prestigePointsFor,
   prestigeUnlocked,
 } from '../../game/prestige'
+import { fmtDur } from '../format'
 
 const total = computed(() => totalLevel(store.state.skills))
 const unlocked = computed(() => prestigeUnlocked(store.state))
@@ -70,6 +72,11 @@ function confirmPrestige(): void {
       <p v-if="unlocked && willGain === 0" class="dim small">
         当前 0 点：<b>最低技能</b>需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（2 点；现 Lv{{ minSkill }}）
         ——精通要求四项技能均衡（档位表见上）
+      </p>
+      <!-- v3.5 终审 B-M3：时间量级披露（基准来自 sim-audit 工件，有同源断言） -->
+      <p class="dim small">
+        首点基准：四项技能齐到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }}，按不间断产出约 {{ fmtDur(FIRST_POINT_BASELINE_HOURS * 3_600_000) }}
+        ——这是长线目标（按周推进即可），不是一晚上能拿到的。
       </p>
       <button class="btn primary" :disabled="!unlocked || willGain === 0" @click="confirmPrestige">
         {{ unlocked ? '立即传承' : `总等级 ${PRESTIGE_MIN_LEVEL} 解锁` }}

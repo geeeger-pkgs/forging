@@ -507,4 +507,14 @@ describe('v3.4.6：成就进度与判定同源（双人确认评审 A/B 各实�
     expect(achievementValue(s, def)).toBe(3)
     expect(isMet(s, def), 'isMet ⟺ value≥target').toBe(true)
   })
+
+  it('首点基准时长与 sim-audit 工件同源（终审 B-M3 的披露数字必须有出处）', async () => {
+    const { FIRST_POINT_BASELINE_HOURS } = await import('../src/game/prestige')
+    const audit = JSON.parse(readFileSync(join(process.cwd(), 'docs', 'sim-audit-output.json'), 'utf8')) as {
+      d: { stretchScan: { rows: { name: string; hours: number }[] } }
+    }
+    const row = audit.d.stretchScan.rows.find((r) => r.name === '均衡 50')
+    expect(row, '工件应含"均衡 50"行').toBeTruthy()
+    expect(Math.abs(FIRST_POINT_BASELINE_HOURS - row!.hours), '面板常量 == sim-audit 实测（±0.1h）').toBeLessThan(0.1)
+  })
 })

@@ -16,6 +16,14 @@ export const PRESTIGE_MIN_LEVEL = CONTENT.config.prestigeUnlockLevel || 120
 export const PERK_OVERDRIVE_MULT = 2
 export const PERK_OVERDRIVE_COST_MULT = 2
 
+/**
+ * 首个精通点的**基准时长**（小时）：均衡四技能推到 Lv50、无任何加成。
+ * v3.5 终审 B-M3：时间量级此前只在设计文档里，玩家可见处零披露。
+ * 来源：docs/sim-audit-output.json 的 `d.stretchScan.rows["均衡 50"].hours`（2763.6h）；
+ * 由 tests/v34-a2.test.ts 断言与工件同源（±0.1h），杜绝文案与证据漂移。
+ */
+export const FIRST_POINT_BASELINE_HOURS = 2763.6
+
 /** 精通上限（含深造） */
 export function perkMaxLevel(def: PerkDef): number {
   return def.max * PERK_OVERDRIVE_MULT

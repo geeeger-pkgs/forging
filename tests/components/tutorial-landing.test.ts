@@ -100,5 +100,7 @@ describe('教程「前往」落点（效果级）', () => {
     store.state.flags.tutorial = { current: eqStep.step, completed: [], claimed: [], progress: 0 }
     const nav = mountTracked(mount(NavBar))
     expect(nav.text()).toContain('装备一件工具/武器')
+    // v3.5 终审 B（n1）：步序标签（长线步骤不再像"卡住"）
+    expect(nav.text(), '应显示"第 N / 总步数 步"').toContain(`第 ${eqStep.step} / ${steps.length} 步`)
   })
 })

@@ -81,6 +81,13 @@ describe('v3.4.6：其余面板的公式/计数型文案值级断言（B 评审�
     expect(w.text()).toContain('迅捷精通 20 → 40 级')
   })
 
+  it('PrestigePanel 首点基准时长披露（终审 B-M3：2763.6h → 115d 3h）', () => {
+    boot()
+    const w = mountTracked(mount(PrestigePanel))
+    expect(w.text(), '首点时间量级必须可见').toContain('首点基准')
+    expect(w.text(), 'fmtDur(2763.6h)').toContain('115d 3h')
+  })
+
   it('ShopPanel 工具速度区间：+15.0% → +135.0%（内容表 min/max）', () => {
     boot()
     const w = mountTracked(mount(ShopPanel))

@@ -279,7 +279,8 @@ function toggleMute(): void {
     </button>
 
     <div v-if="tutorial" class="tutorial">
-      <div class="t-title">📘 教程 · {{ tutorial.step.title }}</div>
+      <!-- v3.5 终审 B（n1）：给教程卡加步序，长线目标不再像"卡住" -->
+      <div class="t-title">📘 教程 · {{ tutorial.step.title }}<span class="dim small">（第 {{ tutorial.step.step }} / {{ CONTENT.tutorial.length }} 步）</span></div>
       <div class="t-goal">{{ tutorial.goalText }}</div>
       <div class="t-progress">
         {{ tutorial.done ? '目标已达成' : `进度 ${tutorial.progress} / ${tutorial.target}（还差 ${tutorial.remain}）` }}

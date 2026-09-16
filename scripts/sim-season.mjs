@@ -392,6 +392,8 @@ console.log(`重铸模板（金币门槛，单列）：金档 ${T.totalReforgesT
 
 // ── 机器校验 JSON ─────────────────────────────────────────────
 const summary = {
+  /** v3.5 终审 A-M3：产物补 version（此前缺失，与 audit-content/sim-audit 不一致） */
+  version: JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version,
   codex: {
     items: codexItems.length,
     recipes: RECIPES.length,

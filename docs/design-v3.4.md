@@ -21,7 +21,7 @@ v3.4 是**清账版**：把 2026-09-16 全量盘点出的 **26 条未处置项**
 | A6 | **传承快轮回无惩罚**（新发现） | `sim-audit` **D 段**新增"快轮回 vs 满级轮回的**每小时点数**模型"并落 JSON；若快轮回仍显著更优 → 点数改随总等级超线性（形式由脚本反推）；若影响有限 → 正式裁定不改（写入发布说明） | `docs/sim-audit-output.json` 的 `prestige` 段；测试断言"快轮回/小时 ≤ 满级轮回/小时"或裁定记录 |
 | B4 | **任务付费重掷无确认**（新发现） | 免费次数用完后付费重掷加二次确认；**难度分池正式裁定不做**（随机是设计） | 组件用例：确认出现 / 取消不扣金 |
 | B3 | **组件矩阵 5 缺口** | 配装**应用/删除**、材料**回收 10 / 全部回收**、**强化动作**、**深渊挑战**、**远征领取** 各 1 条"交互后 store 变化"断言 | 组件用例（挂载级） |
-| C1 | **Lighthouse 从未跑** | ✅ **已补跑成功**（v3.0 的"待补"结案）：headless Chrome + 生产构建预览，四类 **performance 99 / accessibility 100 / best-practices 100 / seo 100**（判据 ≥95 全部达标；FCP 1.5s、LCP 1.9s、TBT 68.5ms、CLS 0） | `docs/lighthouse-v3.4.json` + `.html`（Lighthouse 13.4.1） |
+| C1 | **Lighthouse 从未跑** | ✅ **已补跑成功**（v3.0 的"待补"结案）：headless Chrome + 生产构建预览，四类 **performance 99 / accessibility 100 / best-practices 100 / seo 100**（判据 ≥95 全部达标；FCP 1.5s、LCP 1.9s、TBT 68.5ms†、CLS 0） | `docs/lighthouse-v3.4.json` + `.html`（Lighthouse 13.4.1） |
 | C5 | fx 类型与审计覆盖 | 暴露的 `cue?: string` 类型收窄为闭合联合；`audit-fx` **E3 覆盖 burst 扫描**（现只扫 cue） | `audit:fx:check` 通过 + 类型收窄 |
 
 ### B. 正式裁定不做（写进 `docs/release-v3.5.md` 已知取舍）
@@ -108,6 +108,9 @@ v3.4 结束时未处置清单归零（完成 / 正式裁定二选一）。v3.5 �
 | 13 | `scripts/audit-fx.mjs` | C5：E3 覆盖 burst |
 | 14 | `tests/migration.test.ts` / `tests/season.test.ts`(S12) / `tests/v33-b1.test.ts` | 迁移 v14、S12 与 B1 断言同步 |
 | 15 | `docs/08-roadmap-v3.md` / `docs/release-v3.5.md`（草） | D1/D2 + 裁定全集 |
+
+> † **C1 数值订正（v3.5 终审 A-N2）**：TBT 手记为 68.5ms，落盘 `docs/lighthouse-v3.4.json` 实为 70ms（不影响 ≥95 判据）；
+> v3.5.0 最终构建复跑为 **60ms**（`docs/lighthouse-v3.5.json`）。历史行按"不回改、加注订正"处理。
 
 ## 5. 风险与对策
 
