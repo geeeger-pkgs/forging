@@ -163,6 +163,17 @@ function computeStats(loadout, { abyssPermanent = false, runes = null, withRunes
     agg.rareFind += ab.rareFind ?? 0
     agg.enhanceRate += ab.enhanceRate ?? 0
   }
+  // v3.4 V8：里程碑（满配口径 = bestSkillLevel 100）——此前复制版缺这项，导致深渊战力偏低
+  {
+    const LC = read('levelCurve.json')
+    for (const m of LC.milestones ?? []) {
+      if (m.stat === 'allSpeed') agg.allSpeed += m.value
+      else if (m.stat === 'quantity') agg.quantity += m.value
+      else if (m.stat === 'wisdom') agg.wisdom += m.value
+      else if (m.stat === 'rareFind') agg.rareFind += m.value
+      else if (m.stat === 'efficiency') agg.efficiency += m.value
+    }
+  }
   let best = 0
   for (const c of tierCount.values()) best = Math.max(best, c)
   if (best >= 5) agg.allSpeed += 0.04

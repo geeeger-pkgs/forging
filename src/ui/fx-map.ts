@@ -7,6 +7,25 @@
 // store.handleEvents 只做薄适配：把 FxPlan 交给 playCue / 场景层 / 飘字层。
 // ============================================================
 import type { FxLevel, FxSetting, GameEvent } from '../game/types'
+/** v3.4 V9：可由 playCue/plan 引用的 cue 名（与 data/fx.json.cues 同源，16 条；audit-fx 的 E3 校验二者一致） */
+export type CueId =
+  | 'actionStart'
+  | 'actionComplete'
+  | 'levelUp'
+  | 'prestige'
+  | 'seasonLevel'
+  | 'enhanceSuccess'
+  | 'enhanceFail'
+  | 'enhanceGuarded'
+  | 'crateOpen'
+  | 'rareDrop'
+  | 'lootBig'
+  | 'taskComplete'
+  | 'achievement'
+  | 'abyssClear'
+  | 'purchase'
+  | 'blocked'
+
 
 /**
  * 爆发色系。

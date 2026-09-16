@@ -49,6 +49,25 @@
     "unknown": [],
     "pass": true
   },
+  "E3b": {
+    "usedBursts": [
+      "abyss",
+      "blue",
+      "gold",
+      "gray",
+      "spark"
+    ],
+    "definedBursts": [
+      "abyss",
+      "blue",
+      "gold",
+      "gray",
+      "ore",
+      "spark"
+    ],
+    "unknown": [],
+    "pass": true
+  },
   "E4": {
     "budget": {
       "maxParticles": 260,

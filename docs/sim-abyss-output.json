@@ -136,42 +136,42 @@
     "tableFingerprint": 1741
   },
   "scores": {
-    "novice": 0.2135,
-    "early": 3.671,
-    "mid": 5.9552000000000005,
-    "end": 7.965400000000001
+    "novice": 0.2605,
+    "early": 3.718,
+    "mid": 6.0022,
+    "end": 8.012400000000001
   },
   "stats": {
     "novice": {
-      "speed": 0.1935,
+      "speed": 0.2135,
       "efficiency": 0,
-      "quantity": 0.02,
-      "rareFind": 0,
-      "wisdom": 0,
+      "quantity": 0.03,
+      "rareFind": 0.01,
+      "wisdom": 0.02,
       "enhanceRate": 0
     },
     "early": {
-      "speed": 1.409,
+      "speed": 1.429,
       "efficiency": 0.355,
-      "quantity": 0.30900000000000005,
-      "rareFind": 1.3399999999999999,
-      "wisdom": 0.685,
+      "quantity": 0.31900000000000006,
+      "rareFind": 1.3499999999999999,
+      "wisdom": 0.7050000000000001,
       "enhanceRate": 0.07
     },
     "mid": {
-      "speed": 2.1665,
+      "speed": 2.1865,
       "efficiency": 0.7618000000000001,
-      "quantity": 0.658,
-      "rareFind": 1.7900000000000003,
-      "wisdom": 1.05,
+      "quantity": 0.668,
+      "rareFind": 1.8,
+      "wisdom": 1.07,
       "enhanceRate": 0.105
     },
     "end": {
-      "speed": 2.8175000000000003,
+      "speed": 2.8375000000000004,
       "efficiency": 1.1146,
-      "quantity": 0.932,
-      "rareFind": 2.1700000000000004,
-      "wisdom": 1.6300000000000001,
+      "quantity": 0.9420000000000001,
+      "rareFind": 2.18,
+      "wisdom": 1.6500000000000001,
       "enhanceRate": 0.105
     }
   },
@@ -183,7 +183,7 @@
   },
   "reachFlat": {
     "novice": 0,
-    "early": 10,
+    "early": 11,
     "mid": 26,
     "end": 36
   },

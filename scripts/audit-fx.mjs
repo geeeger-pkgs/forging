@@ -179,6 +179,8 @@ const out = {
   E1: { count: E1.count, ids: E1.ids, pass: E1.pass },
   E2: { gameEventCount: E2.gameEventCount, pass: E2.pass },
   E3: { usedCues: E3.usedCues, unusedCues: E3.unusedCues, unknown: E3.unknown, pass: E3.pass },
+  // v3.4 V9：burst 契约（实现字面量 ⊆ fx-map 的 BurstKind 联合）
+  E3b: { usedBursts: E3b.usedBursts, definedBursts: E3b.definedBursts, unknown: E3b.unknown, pass: E3b.pass },
   E4: { budget: E4.budget, pass: E4.pass },
   E5: { media: E5.media, pass: E5.pass },
   E6: { defaults: E6.defaults, fxLevels: E6.fxLevels, pass: E6.pass },
