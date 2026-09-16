@@ -1,7 +1,7 @@
 // ============================================================
 // Forging · 传承系统（v1.5）
 // 解锁：总等级 ≥ config.prestigeUnlockLevel（120）
-// 结算（v3.4 A6 改）：精通点 = ⌊(总等级 − 门槛) ÷ 10⌋ + 每个满级技能 ×4
+// 结算（v3.4 三审定稿）：精通点 = f(最低技能) = steps²，steps = ⌊(min − 40)/10⌋（见 prestigePointsFor）
 // 重置：技能等级/经验（至起点精通加成）、当前动作、队列
 // 保留：材料/装备/金币/成就/任务/队列位/增益
 // v1.9 深造：基础上限后可继续购买（价格 ×2），上限 = 基础上限 ×2
@@ -43,7 +43,6 @@ export function prestigeUnlocked(state: GameState): boolean {
  *   点/h 随最低技能**单调递增** → 满级（100×4）严格最优，任何"偏科/浅均衡"策略收益为 0。
  * 口径（三审定稿）：min < 50 → 0 点；否则 steps = ⌊(min − 40)/10⌋，点数 = steps²（1/4/9/16/25/36）。
  */
-export const PRESTIGE_MIN_SKILL = 60
 
 /** 拿到第 1 点所需的最低技能等级（min ≥ 此值才有点数） */
 export const PRESTIGE_FIRST_POINT_SKILL = 50

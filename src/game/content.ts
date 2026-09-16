@@ -3,6 +3,7 @@
 // 载入 data/*.json → 结构校验 → 交叉引用校验 → 导出强类型 CONTENT
 // 校验失败直接 throw（启动即失败，避免脏数据流入运行时）
 // ============================================================
+import { scaleTargets } from './scale'
 import type {
   AffixArchetype,
   AffixDef,
@@ -344,7 +345,7 @@ export function validateContent(t: ContentTables): string[] {
   }
   if (scale && s.coefFloor > 0) {
     for (const tpl of s.templates) {
-      const scaled = tpl.targets.map((t) => Math.max(1, Math.ceil(t * scale.junior)))
+      const scaled = scaleTargets(tpl.targets, scale.junior) // 四审：内核同一实现（此前是第三份浮点拷贝，与内核差 1）
       if (!(scaled[0] < scaled[1] && scaled[1] < scaled[2])) errs.push(`缩放后目标不再递增: ${tpl.id}`)
       if (scaled.some((v, i) => v < tpl.targets[i] * s.coefFloor)) errs.push(`缩放后目标低于下限保护: ${tpl.id}`)
     }

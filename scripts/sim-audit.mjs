@@ -212,7 +212,7 @@ console.log('═'.repeat(72))
 console.log('D. 传承精通点（B3）')
 console.log('═'.repeat(72))
 const maxTotal = 400
-const perPrestige = Math.floor(Math.max(0, maxTotal - 120) / 10) + 4 * 4 // v3.4 A6：门槛后起算 + 满级技能 ×4
+const perPrestige = 36 // 四审：与三审定稿同值（min 100 → steps 6 → steps²=36）
 const sink = perks.reduce((s, p) => s + p.cost * p.max, 0)
 console.log(`满级一次传承获得 ${perPrestige} 点；全精通买满需 ${sink} 点 → 约 ${f(sink / perPrestige, 2)} 次满级传承即毕业（溢出风险：研究生效）`)
 
@@ -419,8 +419,8 @@ console.log('  最优点/满级 比 ' + f(scanRatio, 2) + '× → ' + (scanRatio
 const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduce((sum, k) => sum + capped(k, target), 0)
 const fastHours = hoursPerSkill(30)
 const maxHours = hoursPerSkill(100)
-const fastPoints = 0 // 门槛处：最低技能 <50 → 0 点（三审定稿口径）
-const maxPoints = 36 // 三审定稿：min 100 → steps 6 → 36 点
+const fastPoints = 0 // 门槛处：最低 30 < 50 → 0（与 D 段同式）
+const maxPoints = 36 // 与 D 段 scanPoints 同式（min 100 → steps 6 → 36）；此处为旧 A6 对照块，D 段为主口径
 const fastPerHour = fastPoints / fastHours
 const maxPerHour = maxPoints / maxHours
 const fastRatio = fastPerHour / maxPerHour
