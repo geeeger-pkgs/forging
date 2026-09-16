@@ -31,12 +31,31 @@
   故键盘可操作性以 **Space 路径**为准记录，Enter 路径**未在本环境取得证据**。
 - 右栏 Tab 条为 `position: sticky; bottom: 0`，在超长页面中会随滚动吸附于视口底部（设计如此，便于随时切换分区）。
 
-## 4. 复现命令
+## 4. 第二轮：评审处置后的复验（375×720 真视口）
+
+> 评审结论与逐条处置见 `docs/review-v3.2.md`。本轮把视口方法从"同源 iframe 注入"换成 IAB 的
+> `setViewportSize`（本机已支持；v3.0 期不支持，故当时用 iframe），两法结论一致。
+
+| 项 | 实测 | 判定 |
+|---|---|---|
+| 底栏首屏可见（评审 Major） | 未滚动时 `top=667 / bottom=720`（视口 720） | ✅（原 sticky 实现只在页面底部可见） |
+| 抽屉默认收起 | display:none + aria-expanded=false | ✅ |
+| 抽屉选中后收起 | 展开 → 点「图鉴」→ 视图切到"图鉴与赛季"且抽屉收起 | ✅（原先有 watch 把收起又顶开，已删） |
+| 卸下可达（评审 Blocker） | 点槽位 → 弹窗 footer `卸下/关闭/⚒重铸` → 点击后槽位「空」、装备留在行囊 | ✅ |
+| 材料菜单行内 | 菜单 1 个实例、位于被点行内（`gapPx=2`）、无输入时「应用」置灰 | ✅ |
+| 触控尺寸 | `.rtab` 实测 40px；`.btn.sm` 窄屏 min-height 40px | ✅ |
+| 门禁 | 414 测试 / 24 文件全绿、typecheck 通过、build gzip 106.08KB | ✅ |
+
+> **插曲（如实登记）**：首轮"卸下后装备消失"实为该存档开启了**实例级自动回收（<60% 完美度）**，
+> 卸下即按玩家设定自动卖出——既有设计行为，非缺陷；关闭设置后复验装备留在行囊。
+> v3.3 可考虑补一句"该装备已被自动回收"的提示。
+
+## 5. 复现命令
 
 ```bash
 npm run dev                 # localhost:5174
-# 浏览器：打开 / 后执行（DEV 构建）
-#   iframe(w=390|375|1200) 加载 '/' → 读 computed style 与 scrollWidth
+# 浏览器（DEV 构建）：setViewportSize(375/390/1200) 后读 computed style / scrollWidth
+#   （v3.0 期本机 IAB 不支持视口调节，当时用同源 iframe 注入；两法结论一致）
 npm test && npm run typecheck && npm run build
 npm run gen:check && npm run audit:fx:check && npm run audit:content
 ```

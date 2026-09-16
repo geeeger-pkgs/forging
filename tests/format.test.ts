@@ -71,10 +71,12 @@ describe('窄屏默认状态（DoD §3：抽屉/右栏默认收起）', () => {
   const nav = comp('NavBar.vue')
   const right = comp('RightPanel.vue')
 
-  it('NavBar：工具抽屉默认收起（技能页），初始即工具页时才展开，且进入工具页自动展开', () => {
+  it('NavBar：工具抽屉默认收起（技能页），初始即工具页时才展开，选中工具后自动收起', () => {
     expect(nav).toContain('const toolsOpen = ref(TOOL_VIEWS.includes(store.ui.view))')
     expect(nav).not.toContain('ref(!TOOL_VIEWS.includes(store.ui.view))')
-    expect(nav).toMatch(/watch\(\s*\(\) => store\.ui\.view,[\s\S]*?TOOL_VIEWS\.includes\(v\)\)\s*toolsOpen\.value = true/)
+    // v3.2 修正：删掉"进入工具页自动展开"的 watch（它与"选完收起"打架：watch 后跑又把抽屉顶开）
+    expect(nav).not.toMatch(/watch\(\s*\(\) => store\.ui\.view/)
+    expect(nav).toMatch(/function pickTool\([\s\S]{0,120}?toolsOpen\.value = false/)
   })
 
   it('NavBar：抽屉开关带 aria-expanded/aria-controls，面板挂 id 与 collapsed 类', () => {

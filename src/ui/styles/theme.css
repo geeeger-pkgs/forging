@@ -138,12 +138,24 @@ body {
 :focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  /* 不设 border-radius：旧版设了 4px，会让 6px 圆角的按钮在聚焦瞬间"变方"抖动（评审 Nit） */
 }
 button:focus:not(:focus-visible),
 select:focus:not(:focus-visible),
 input:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* ============================================================
+   v3.2 修正：窄屏触控目标 ≥40px（评审 Major）
+   `.btn.sm` 原为 12px 字 + 上下 2px padding ≈ 20-24px 高，手指点不中；
+   而"回收"这类不可逆操作常与「…」相邻，误触代价高。桌面端不受影响。
+   ============================================================ */
+@media (max-width: 900px) {
+  .btn,
+  .btn.sm {
+    min-height: 40px;
+  }
 }
 
 /* ============================================================

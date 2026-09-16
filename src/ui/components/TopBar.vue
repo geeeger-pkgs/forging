@@ -51,7 +51,8 @@ const buffs = computed(() =>
         <ProgressBar :started-at="cur.startedAt" :duration-ms="cur.durationMs" />
         <button class="btn sm stop" @click="cmd({ type: 'stopAction' })">停止</button>
       </div>
-      <div v-else class="idle">无所事事……</div>
+      <!-- v3.2 C3 修正：空态要给出下一步，而不是"无所事事……"（设计点名的例子，评审 Minor） -->
+      <div v-else class="idle">暂无进行中的动作（下一步：在下方点一个矿脉或配方开始）</div>
 
       <div v-if="queue.length" class="queue">
         <span class="qlabel">队列</span>

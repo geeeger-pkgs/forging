@@ -129,6 +129,25 @@ function doReforge(): void {
 function close(): void {
   inspectInstance(null)
 }
+
+/**
+ * v3.2 B2 修正：卸下入口。
+ * 批 B 撤掉了每槽位的「卸下」，把入口挪到「详情内」，但落点是右栏**材料**详情区
+ * （由 inspectItemId 驱动），而槽位/行囊点击只写 inspectInstanceId —— 两者互斥，按钮永不渲染（评审 Blocker）。
+ * 现落在本弹窗 footer，条件只依赖"该实例是否已装备"。
+ */
+const equippedSlot = computed<SlotId | null>(() => {
+  const i = inst.value
+  if (!i) return null
+  for (const [slot, id] of Object.entries(store.state.slots)) {
+    if (id === i.instanceId) return slot as SlotId
+  }
+  return null
+})
+function unequip(): void {
+  const slot = equippedSlot.value
+  if (slot) cmd({ type: 'unequip', slot })
+}
 </script>
 
 <template>
@@ -218,6 +237,7 @@ function close(): void {
       <footer>
         <span class="dim small gold">💰 {{ have.gold }} · 精华 {{ have.essence }} · 重铸石 {{ have.emberstone }}</span>
         <div class="right-actions">
+          <button v-if="equippedSlot" class="btn" title="从该槽位卸下（不销毁）" @click="unequip">卸下</button>
           <button class="btn" @click="close">关闭</button>
           <button class="btn primary" :disabled="!!blockReason" @click="doReforge">⚒ 重铸</button>
         </div>

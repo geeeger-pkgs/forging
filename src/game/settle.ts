@@ -96,7 +96,8 @@ function performRound(
   now: number,
 ): boolean {
   const ref = act.ref
-  if (ref.kind === 'enhance') return performEnhance(state, act, events, mode, rng)
+  // v3.2 D2 修正：强化路径同样透传 now（此前漏改，仍读墙钟 —— 评审 Major）
+  if (ref.kind === 'enhance') return performEnhance(state, act, events, mode, rng, now)
 
   const ok = applyRewards(state, ref, events, mode, rng, now)
   if (!ok) return false
@@ -210,6 +211,7 @@ function performEnhance(
   events: GameEvent[],
   mode: 'online' | 'expectation',
   rng: Rng,
+  now: number,
 ): boolean {
   const ref = act.ref
   if (ref.kind !== 'enhance') return false
@@ -244,7 +246,7 @@ function performEnhance(
   // v3.1：强化技能等级首次产生实际效果（测评 A-2：此前 Lv1 与 Lv100 完全相同）——
   // 每 10 级 +1% 成功率（Lv100 = +10%），与词缀/符文/精通同池相加
   const skillBonus = Math.floor(levelInfo(state.skills.enhancing).level / 10) * 0.01
-  const rate = Math.min(1, step.successRate + agg.enhanceRate + skillBonus + buffBonuses(state, Date.now()).enhanceRate)
+  const rate = Math.min(1, step.successRate + agg.enhanceRate + skillBonus + buffBonuses(state, now).enhanceRate)
   const success = rng.next() < rate
   const from = inst.enhanceLevel
   let to = from

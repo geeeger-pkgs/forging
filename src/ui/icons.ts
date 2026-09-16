@@ -36,14 +36,10 @@ export function buffIcon(effect: string): string {
   return BUFF_ICON[effect] ?? '🔷'
 }
 
-export function fmtDuration(ms: number): string {
-  const s = ms / 1000
-  return `${s.toFixed(s >= 10 ? 0 : 1)}s`
-}
-
-export function fmtPct(x: number): string {
-  return `${(x * 100).toFixed(2)}%`
-}
+// v3.2 B4 修正：格式化统一到 format.ts（评审 Major —— 旧 fmtPct 两位小数、fmtDuration 与 fmtDur 口径不同，
+// 导致同屏出现 "8.12%" 与 "74.1%" 两种百分比、"4.0s/4 分 33 秒" 两种时长写法）。此处仅保留转出口，
+// 老调用点（ActionDialog 等）自动获得统一口径；新代码请直接从 ./format 导入。
+export { fmtDur as fmtDuration, fmtPct } from './format'
 
 /** 大数字缩写（万/亿；仅用于展示） */
 export function fmtNum(n: number): string {

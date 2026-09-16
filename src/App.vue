@@ -59,6 +59,9 @@ watchEffect(() => {
   .body {
     flex-direction: column;
     overflow-y: auto;
+    /* v3.2 修正：右栏 Tab 条改为常驻视口底部（fixed），滚动容器留出等高内边距，
+       否则会遮住页面最后一行的内容（评审 Major） */
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

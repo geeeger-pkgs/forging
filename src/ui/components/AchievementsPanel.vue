@@ -42,7 +42,9 @@ function rewardText(a: AchievementDef): string {
           <span class="name">{{ a.name }}</span>
         </div>
         <div class="desc">{{ a.desc }}</div>
-        <div v-if="!a.done && a.cur > 0" class="prog">{{ a.cur }} / {{ a.target }}<span v-if="a.cur === 0" class="dim">（进行中）</span></div>
+        <!-- v3.2 修正：未完成**一律**显示 当前/目标（此前 cur=0 的条目什么都不显示，82 项里有一批只能靠猜；
+             且内层 v-if="a.cur === 0" 在 cur>0 的外层条件下永不渲染，是死代码 —— 评审 Minor） -->
+        <div v-if="!a.done" class="prog">{{ a.cur }} / {{ a.target }}</div>
         <div class="reward">奖励：{{ rewardText(a) }}</div>
       </div>
     </div>

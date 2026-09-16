@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { cmd, setView, store } from '../../app/store'
 import { CONTENT, TUTORIAL_BY_STEP } from '../../game/content'
 import { levelInfo } from '../../game/level'
@@ -108,18 +108,18 @@ function claim(): void {
 /**
  * v3.2 A1：窄屏工具抽屉。
  * 390px 下把 8 个工具入口 + 静音 + 教程卡全平铺会吃掉半个首屏（测评 B-10）；
- * 桌面端（>900px）始终展开，窄屏默认收起，点「更多」展开；当前视图在工具区时自动展开。
+ * 桌面端（>900px）始终展开（CSS 忽略该 class），窄屏默认收起，点「更多」展开。
+ * v3.2 修正两处：
+ *   ① 初始值曾写反（`!TOOL_VIEWS.includes`）——技能页为 true，窄屏反而默认展开；
+ *   ② 曾有一条"进入工具页自动展开"的 watch，与"选完收起"互相打架（watch 后跑，把收起又顶开）
+ *      —— 已删除：抽屉状态完全交给用户（「更多」开合 / 选中任一工具后自动收起）。
  */
 const TOOL_VIEWS = ['prestige', 'tasks', 'expedition', 'codex', 'abyss', 'shop', 'achievements', 'settings']
-// v3.2 修正：默认**收起**——仅当初始视图本身就是工具页时才展开（刷新后导航能反映当前分区）；
-// 桌面端 CSS 无视该 class 始终全展示。此前初始值写反（`!TOOL_VIEWS.includes`），窄屏反而是默认展开
 const toolsOpen = ref(TOOL_VIEWS.includes(store.ui.view))
-watch(
-  () => store.ui.view,
-  (v) => {
-    if (TOOL_VIEWS.includes(v)) toolsOpen.value = true
-  },
-)
+function pickTool(v: string): void {
+  setView(v as never)
+  toolsOpen.value = false
+}
 
 /** 快捷静音（测评 M1）：音效要有一个"随手按掉"的入口，而不是非进设置页不可 */
 const soundOn = computed(() => store.state.meta.settings?.sound ?? true)
@@ -156,35 +156,35 @@ function toggleMute(): void {
     </button>
 
     <div id="nav-tools" class="tools" :class="{ collapsed: !toolsOpen }">
-      <button class="item" :class="{ active: store.ui.view === 'prestige' }" @click="setView('prestige')">
+      <button class="item" :class="{ active: store.ui.view === 'prestige' }" @click="pickTool('prestige')">
         <span class="icon">🔮</span>
         <span class="body"><span class="name">传承</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'tasks' }" @click="setView('tasks')">
+      <button class="item" :class="{ active: store.ui.view === 'tasks' }" @click="pickTool('tasks')">
         <span class="icon">📋</span>
         <span class="body"><span class="name">任务</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'expedition' }" @click="setView('expedition')">
+      <button class="item" :class="{ active: store.ui.view === 'expedition' }" @click="pickTool('expedition')">
         <span class="icon">🧭</span>
         <span class="body"><span class="name">远征</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'codex' }" @click="setView('codex')">
+      <button class="item" :class="{ active: store.ui.view === 'codex' }" @click="pickTool('codex')">
         <span class="icon">📖</span>
         <span class="body"><span class="name">图鉴</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'abyss' }" @click="setView('abyss')">
+      <button class="item" :class="{ active: store.ui.view === 'abyss' }" @click="pickTool('abyss')">
         <span class="icon">🕳</span>
         <span class="body"><span class="name">深渊</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'shop' }" @click="setView('shop')">
+      <button class="item" :class="{ active: store.ui.view === 'shop' }" @click="pickTool('shop')">
         <span class="icon">🛒</span>
         <span class="body"><span class="name">商店</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'achievements' }" @click="setView('achievements')">
+      <button class="item" :class="{ active: store.ui.view === 'achievements' }" @click="pickTool('achievements')">
         <span class="icon">🏆</span>
         <span class="body"><span class="name">成就</span></span>
       </button>
-      <button class="item" :class="{ active: store.ui.view === 'settings' }" @click="setView('settings')">
+      <button class="item" :class="{ active: store.ui.view === 'settings' }" @click="pickTool('settings')">
         <span class="icon">⚙️</span>
         <span class="body"><span class="name">设置</span></span>
       </button>
@@ -329,6 +329,8 @@ function toggleMute(): void {
   .item {
     flex: 0 0 auto;
     padding: 6px 10px;
+    /* v3.2 修正：窄屏触控目标 ≥40px（评审 Major） */
+    min-height: 40px;
   }
   .xpbar {
     display: none;

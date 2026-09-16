@@ -4,6 +4,7 @@ import { pickAction, store } from '../../app/store'
 import { CONTENT, itemDef, skillName } from '../../game/content'
 import { levelInfo } from '../../game/level'
 import { durationOf } from '../../game/rules'
+import { fmtDur } from '../format'
 import type { RecipeDef } from '../../game/types'
 import { FORGE_CATEGORIES, type ActionCard } from '../types'
 import AchievementsPanel from './AchievementsPanel.vue'
@@ -68,7 +69,7 @@ const miningCards = computed<ActionCard[]>(() => {
       highlight: !locked && isHinted('mine', s.outputItemId),
       note: locked
         ? `需要 Lv${s.unlockLevel}`
-        : `${(dur / 1000).toFixed(1)}s · ${itemDef(s.outputItemId).name} ${s.yieldMin}~${s.yieldMax}`,
+        : `${fmtDur(dur)} · ${itemDef(s.outputItemId).name} ${s.yieldMin}~${s.yieldMax}`,
     }
   })
 })
@@ -93,7 +94,7 @@ function recipeCard(r: RecipeDef): ActionCard {
     highlight: !locked && isHinted('craft', itemId),
     note: locked
       ? `需要 Lv${r.unlockLevel}`
-      : `${ins}${more} → 1 ${itemId ? itemDef(itemId).name : ''} · ${(dur / 1000).toFixed(1)}s`,
+      : `${ins}${more} → 1 ${itemId ? itemDef(itemId).name : ''} · ${fmtDur(dur)}`,
   }
 }
 

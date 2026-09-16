@@ -5,7 +5,7 @@
 import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
 import { CONTENT, ROUTE_BY_ID, TRAIT_BY_ID, itemDef } from '../../game/content'
-import { fmtPct } from '../format'
+import { fmtDur, fmtPct } from '../format'
 import {
   HOUR_MS,
   bannerUpgradeCost,
@@ -120,11 +120,9 @@ function dispatch(routeId: string): void {
   cmd({ type: 'dispatchExpedition', routeId, hours: pickHours.value, team })
 }
 
+/** v3.2 B4 修正：统一 fmtDur（此前是 'X 时 Y 分' 写法） */
 function fmtLeft(ms: number): string {
-  const s = Math.ceil(ms / 1000)
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  return h > 0 ? `${h} 时 ${m} 分` : `${m} 分 ${s % 60} 秒`
+  return fmtDur(ms)
 }
 
 const bannerCost = computed(() => bannerUpgradeCost(store.state))
@@ -219,7 +217,7 @@ void levelInfo
 
     <section class="card">
       <h3>进行中 / 待领取</h3>
-      <div v-if="runs.length === 0" class="dim">暂无进行中的远征。</div>
+      <div v-if="runs.length === 0" class="dim">暂无进行中的远征（下一步：在下方选一条路线并派出队伍）</div>
       <div v-for="r in runs" :key="r.id" class="run">
         <div class="rhead">
           <b>{{ r.name }}</b>

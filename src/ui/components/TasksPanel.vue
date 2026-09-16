@@ -4,6 +4,7 @@ import { cmd, store } from '../../app/store'
 import { TASK_DAILY_BY_ID, TASK_WEEKLY_BY_ID, itemDef } from '../../game/content'
 import { msToNextDay, PAID_REROLL_COST, taskProgress } from '../../game/tasks'
 import { msToSeasonEnd, seasonUnlocked, seasonView } from '../../game/season'
+import { fmtDur } from '../format'
 import type { TaskSlot } from '../../game/types'
 
 interface TaskDefLite {
@@ -43,18 +44,8 @@ const tasks = computed(() => store.state.meta.tasks)
 // v2.3：赛季摘要（发现性——完整面板在图鉴页）
 const seasonOn = computed(() => seasonUnlocked(store.state))
 const season = computed(() => (seasonOn.value ? seasonView(store.state, store.now) : null))
-const seasonLeft = computed(() => {
-  const ms = msToSeasonEnd(store.now)
-  const d = Math.floor(ms / 86400000)
-  const h = Math.floor((ms % 86400000) / 3600000)
-  return d > 0 ? `${d} 天 ${h} 小时` : `${h} 小时`
-})
-const nextIn = computed(() => {
-  const ms = msToNextDay(store.now)
-  const h = Math.floor(ms / 3600000)
-  const m = Math.floor((ms % 3600000) / 60000)
-  return `${h} 小时 ${m} 分`
-})
+const seasonLeft = computed(() => fmtDur(msToSeasonEnd(store.now)))
+const nextIn = computed(() => fmtDur(msToNextDay(store.now)))
 
 function rewardText(slot: TaskSlot): string {
   const parts: string[] = []

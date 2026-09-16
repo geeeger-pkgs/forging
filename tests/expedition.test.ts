@@ -377,7 +377,9 @@ describe('内容与护栏（E11/E15/E16/E17）', () => {
   it('E17：UI 覆盖——主面板注册了远征视图与页签', () => {
     expect(mainPanelSrc).toContain("view === 'expedition'")
     expect(mainPanelSrc).toContain('ExpeditionPanel')
-    expect(navBarSrc).toContain("setView('expedition')")
+    // v3.2：导航入口统一走 pickTool（选中后收起抽屉），断言放宽为两种接法之一
+    expect(navBarSrc).toMatch(/pickTool\('expedition'\)|setView\('expedition'\)/)
+    expect(navBarSrc).toContain("'expedition'")
   })
 })
 

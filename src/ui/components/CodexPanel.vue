@@ -6,6 +6,7 @@ import { computed, onMounted, ref } from 'vue'
 import { store } from '../../app/store'
 import { codexGate, codexIds, codexMilestonesClaimed, codexProgress, milestoneReached } from '../../game/codex'
 import { CONTENT, itemDef } from '../../game/content'
+import { fmtDur } from '../format'
 import { msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
 import type { CodexCategory } from '../../game/codex'
 
@@ -82,10 +83,9 @@ const unlocked = computed(() => seasonUnlocked(store.state))
 const season = computed(() => seasonView(store.state, store.now))
 const msLeft = computed(() => msToSeasonEnd(store.now))
 
+/** v3.2 B4 修正：统一 fmtDur（此前是 'X 天 Y 小时' 写法） */
 function fmtLeft(ms: number): string {
-  const days = Math.floor(ms / 86400000)
-  const hours = Math.floor((ms % 86400000) / 3600000)
-  return days > 0 ? `${days} 天 ${hours} 小时` : `${hours} 小时`
+  return fmtDur(ms)
 }
 
 function tierLabel(tier: number): string {

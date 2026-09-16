@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 import { store } from '../../app/store'
 import { itemDef, skillName } from '../../game/content'
+import { fmtDur } from '../format'
 import { refLabel } from '../../game/refs'
 
 const s = computed(() => store.summary)
 
+/** v3.2 B4 修正：统一 fmtDur（此前是 'X.X 小时 / X 分钟' 写法） */
 function fmtMin(ms: number): string {
-  const min = ms / 60000
-  return min >= 60 ? `${(min / 60).toFixed(1)} 小时` : `${min.toFixed(0)} 分钟`
+  return fmtDur(ms)
 }
 function close(): void {
   store.summary = null

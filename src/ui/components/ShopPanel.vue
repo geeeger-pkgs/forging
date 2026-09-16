@@ -65,7 +65,7 @@ const sellable = computed(() =>
           <span class="dim">×{{ s.qty }} · 单价 {{ s.value }} · 共 {{ s.total }}💰</span>
         </div>
       </div>
-      <p v-else class="dim">暂无可回收材料。</p>
+      <p v-else class="dim">暂无可回收材料（下一步：回矿场挖矿，或开工匠小箱拿素材）</p>
     </section>
 
     <section class="card">

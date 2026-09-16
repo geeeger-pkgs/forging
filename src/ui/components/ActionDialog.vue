@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { closeDialog, cmd, store } from '../../app/store'
 import { describeAction, type ActionDesc } from '../../app/describe'
 import { nextQueueSlotCost } from '../../game/commands'
-import { fmtDuration, fmtPct } from '../icons'
+import { fmtDur, fmtPct } from '../format'
 import ItemIcon from './ItemIcon.vue'
 
 const desc = computed<ActionDesc | null>(() =>
@@ -79,7 +79,7 @@ function start(mode: 'now' | 'enqueue'): void {
 
       <div v-if="desc.enhanceRate !== undefined" class="row">
         <label>成功率</label>
-        <span :class="{ bad: desc.enhanceRate < 0.5 }">{{ (desc.enhanceRate * 100).toFixed(0) }}%</span>
+        <span :class="{ bad: desc.enhanceRate < 0.5 }">{{ fmtPct(desc.enhanceRate) }}</span>
       </div>
 
       <div v-for="d in desc.drops" :key="'d-' + d.itemId" class="row">
@@ -89,7 +89,7 @@ function start(mode: 'now' | 'enqueue'): void {
 
       <div class="row">
         <label>时长</label>
-        <span>{{ fmtDuration(desc.durationMs) }}（基础 {{ fmtDuration(desc.baseTimeMs) }}）</span>
+        <span>{{ fmtDur(desc.durationMs) }}（基础 {{ fmtDur(desc.baseTimeMs) }}）</span>
       </div>
 
       <div class="row">

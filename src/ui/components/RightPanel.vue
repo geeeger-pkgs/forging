@@ -109,14 +109,17 @@ function statsText(def: ItemDef): string {
 function pct(x: number): string {
   return x > 0 ? `+${(x * 100).toFixed(1)}%` : '—'
 }
-function unequip(slot: SlotId): void {
-  cmd({ type: 'unequip', slot })
-}
-/** 当前查看的实例是否已装备 → 是则返回其槽位（详情内的「卸下」按钮用） */
+
 /** v3.2 B3：按当前视图高亮相关的属性（挖矿页亮挖速/产量，强化页亮强化率…） */
 const isMineView = computed(() => store.ui.view === 'mining')
 const isEnhanceView = computed(() => store.ui.view === 'enhancing')
 
+/**
+ * 当前查看的实例是否已装备 → 是则返回其槽位。
+ * v3.2 修正：卸下入口已迁至 `ItemDetailModal`（点击槽位/行囊即开）；
+ * 本文件原先那个「材料详情区卸下」按钮的渲染条件与槽位点击互斥，永不显示（评审 Blocker），已删除；
+ * 该 computed 现仅用于「槽位行高亮当前查看项」。
+ */
 const inspectedSlot = computed<SlotId | null>(() => {
   const instId = store.ui.inspectInstanceId
   if (instId === null) return null
@@ -186,8 +189,14 @@ function toggleRightTab(t: RightTab): void {
 /** v3.2 B1：材料「…」菜单与自动保留量内联输入（替代系统 prompt） */
 const openMenu = ref<string | null>(null)
 const keepDraft = ref<number | null>(null)
+/** 草稿仅当是合法数字才可提交：空输入 = 取消（此前空输入会被当成 0，等于静默关闭自动回收 → 评审 Minor） */
+const keepValid = computed(() => typeof keepDraft.value === 'number' && Number.isFinite(keepDraft.value))
 function materialById(id: string) {
   return materials.value.find((m) => m.id === id)
+}
+function toggleMenu(id: string): void {
+  keepDraft.value = null // 每次开合都清草稿，避免「上一个材料的保留量」被应用到这一个
+  openMenu.value = openMenu.value === id ? null : id
 }
 function recycleThen(kind: '1' | '10' | 'all'): void {
   const id = openMenu.value
@@ -199,9 +208,13 @@ function recycleThen(kind: '1' | '10' | 'all'): void {
 }
 function applyKeep(): void {
   const id = openMenu.value
-  if (!id) return
-  const v = keepDraft.value
-  cmd({ type: 'setAutoRecycle', itemId: id, keep: v === null || Number.isNaN(v) ? null : Math.max(0, Math.floor(v)) })
+  if (!id || !keepValid.value) return // 未输入数字：不写库（避免误设 0 把材料全部自动卖掉）
+  cmd({ type: 'setAutoRecycle', itemId: id, keep: Math.max(0, Math.floor(keepDraft.value as number)) })
+  keepDraft.value = null
+  openMenu.value = null
+}
+function clearKeep(id: string): void {
+  cmd({ type: 'setAutoRecycle', itemId: id, keep: null })
   keepDraft.value = null
   openMenu.value = null
 }
@@ -220,6 +233,11 @@ function saveGearSet(): void {
     return
   }
   cmd({ type: 'saveGearSet', name: gearNameDraft.value })
+  gearNameDraft.value = ''
+  showGearNameInput.value = false
+}
+/** 取消（按钮或 Esc）：退出输入态且不保存（此前只能硬存或刷新 → 评审 Minor） */
+function cancelGearName(): void {
   gearNameDraft.value = ''
   showGearNameInput.value = false
 }
@@ -266,8 +284,9 @@ function isTop(score: number): boolean {
 
 <template>
   <aside class="right" :class="{ 'tab-open': rightOpen }" :data-tab="rightTab">
-    <!-- v3.2 A2：窄屏 Tab 条（桌面隐藏） -->
-    <nav class="rtabs" role="tablist" aria-label="右侧面板分区">
+    <!-- v3.2 A2：窄屏 Tab 条（桌面隐藏）。**常驻视口底部**——评审 Major：
+         此前用 sticky（包含块是页面末尾的 aside），未滚到页面底部时根本不可见，等于没有入口。 -->
+    <nav class="rtabs" role="tablist" aria-label="右侧面板分区（装备 / 行囊 / 资源）">
       <button
         v-for="t in ([
           { id: 'gear', label: '装备' },
@@ -277,6 +296,8 @@ function isTop(score: number): boolean {
         :key="t.id"
         class="rtab"
         role="tab"
+        :id="`rtab-${t.id}`"
+        :aria-controls="`rtabpanel-${t.id}`"
         :aria-selected="rightOpen && rightTab === t.id"
         :class="{ active: rightOpen && rightTab === t.id }"
         @click="toggleRightTab(t.id)"
@@ -284,7 +305,7 @@ function isTop(score: number): boolean {
         {{ t.label }}
       </button>
     </nav>
-    <section data-sec="gear">
+    <section id="rtabpanel-gear" role="tabpanel" aria-labelledby="rtab-gear" data-sec="gear">
       <h3>装备</h3>
       <div class="gearsets">
         <button
@@ -303,8 +324,10 @@ function isTop(score: number): boolean {
             :placeholder="`配装${gearSets.length + 1}`"
             maxlength="10"
             @keyup.enter="saveGearSet"
+            @keyup.esc="cancelGearName"
           />
           <button class="btn sm primary" title="确认保存" @click="saveGearSet">保存</button>
+          <button class="btn sm" title="取消（Esc）" @click="cancelGearName">取消</button>
         </template>
         <button v-else class="btn sm" title="保存当前着装（最多 3 套）" @click="saveGearSet">存配装</button>
         <button
@@ -321,14 +344,24 @@ function isTop(score: number): boolean {
         <div v-for="s in slots" :key="s.id" class="slot" :class="{ filled: s.inst }">
           <div class="slot-label">{{ s.label }}</div>
           <template v-if="s.inst">
-            <div class="slot-item" @click="inspect(s.inst.instanceId)">
+            <!-- v3.2 修正：槽位是可点入口，但此前只有 cursor:pointer（触屏无 hover、键盘不可达）
+                 → 补 title / role / tabindex / Enter，并高亮"正在查看"的槽位（评审 Minor/Nit） -->
+            <div
+              class="slot-item"
+              :class="{ inspecting: inspectedSlot === s.id }"
+              role="button"
+              tabindex="0"
+              :title="`查看「${s.name}」详情（可卸下 / 重铸）`"
+              @click="inspect(s.inst.instanceId)"
+              @keyup.enter="inspect(s.inst.instanceId)"
+            >
               <ItemIcon :item-id="s.inst.itemId" :size="18" />
               <span class="slot-name">{{ s.name }}<em>+{{ s.inst.enhanceLevel }}</em></span>
+              <span class="chev" aria-hidden="true">›</span>
             </div>
             <div v-if="s.affix > 0" class="affix-badge" :class="{ top: isTop(s.score) }">
               {{ affixBadge(s.affix, s.score) }}
             </div>
-            <!-- v3.2 B2：卸下移入装备详情（点击槽位即打开），槽位行不再常驻 10 个按钮 -->
           </template>
           <div v-else class="slot-empty">空</div>
         </div>
@@ -345,55 +378,66 @@ function isTop(score: number): boolean {
       </div>
     </section>
 
-    <section data-sec="mats">
+    <section id="rtabpanel-mats" role="tabpanel" aria-labelledby="rtab-mats" data-sec="mats">
       <h3>资源</h3>
-      <div v-if="materials.length === 0" class="dim">暂无资源（去挖矿或熔炼获得）</div>
-      <div v-for="m in materials" :key="m.id" class="row">
-        <span class="clickable" @click="inspect(null, m.id)">
-          <ItemIcon :item-id="m.id" :size="16" />
-          <span class="name">{{ m.name }}</span>
-        </span>
-        <span class="qty" :title="`单价 ${m.value} 金 · 全部回收 +${m.total} 金`">
-          ×{{ m.qty }}<em class="price">（单价 {{ m.value }}）</em>
-        </span>
-        <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
-        <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
-        <!-- v3.0：0 收益物品（遗物/徽记）不出现在回收入口（防误删图鉴进度） -->
-        <template v-if="recyclable(m.id)">
-          <!-- v3.2 B1：回收收进「…」菜单（此前一行 4 个按钮），自动保留量改内联输入 -->
+      <div v-if="materials.length === 0" class="dim">暂无资源（下一步：回矿场挖矿或熔炼矿石）</div>
+      <div v-for="m in materials" :key="m.id" class="mat-item">
+        <div class="row">
+          <span class="clickable" @click="inspect(null, m.id)">
+            <ItemIcon :item-id="m.id" :size="16" />
+            <span class="name">{{ m.name }}</span>
+          </span>
+          <span class="qty" :title="`单价 ${m.value} 金 · 全部回收 +${m.total} 金`">
+            ×{{ m.qty }}<em class="price">（单价 {{ m.value }}）</em>
+          </span>
+          <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
+          <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
+          <!-- v3.0：0 收益物品（遗物/徽记）不出现在回收入口（防误删图鉴进度） -->
+          <template v-if="recyclable(m.id)">
+            <!-- v3.2 B1：回收收进「…」菜单（此前一行 4 个按钮），自动保留量改内联输入 -->
+            <button
+              class="btn sm menu-btn"
+              :class="{ primary: autoKeep(m.id) !== undefined }"
+              :aria-expanded="openMenu === m.id"
+              :title="autoKeep(m.id) !== undefined ? `自动回收已开启（保留 ${autoKeep(m.id)}）` : '更多操作（回收 / 自动保留）'"
+              @click="toggleMenu(m.id)"
+            >
+              {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '…' }}
+            </button>
+          </template>
+          <span v-else class="dim small" title="图鉴收集品：无回收价值，也不参与自动回收">收藏品</span>
+        </div>
+        <!-- v3.2 修正：菜单在**被点的那一行**下方展开（此前只有一个实例渲染在整个列表末尾，材料多时离手很远、甚至滚出屏幕 → 评审 Minor） -->
+        <div v-if="openMenu === m.id" class="mat-menu">
+          <button class="btn sm" @click="recycleThen('1')">回收 1</button>
+          <button class="btn sm" @click="recycleThen('10')">回收 10</button>
+          <button class="btn sm" title="从该材料开始自动回收：保留量以上的部分自动卖出" @click="recycleThen('all')">全部回收</button>
+          <span class="spacer" />
+          <label class="dim small">自动保留</label>
+          <input
+            v-model.number="keepDraft"
+            class="num-input"
+            type="number"
+            min="0"
+            step="10"
+            :placeholder="String(autoKeep(m.id) ?? 0)"
+            @keyup.enter="applyKeep"
+          />
+          <button class="btn sm primary" :disabled="!keepValid" title="输入数字后应用（留 0 = 全部自动卖出）" @click="applyKeep">应用</button>
           <button
-            class="btn sm menu-btn"
-            :class="{ primary: autoKeep(m.id) !== undefined }"
-            :aria-expanded="openMenu === m.id"
-            :title="autoKeep(m.id) !== undefined ? `自动回收已开启（保留 ${autoKeep(m.id)}）` : '更多操作'"
-            @click="openMenu = openMenu === m.id ? null : m.id"
+            v-if="autoKeep(m.id) !== undefined"
+            class="btn sm"
+            title="关闭该材料的自动回收（不再自动卖出）"
+            @click="clearKeep(m.id)"
           >
-            {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '…' }}
+            关自动
           </button>
-        </template>
-        <span v-else class="dim small" title="图鉴收集品：无回收价值，也不参与自动回收">收藏品</span>
-      </div>
-      <div v-if="openMenu && materialById(openMenu)" class="mat-menu">
-        <span class="dim small">{{ materialById(openMenu)!.name }}：</span>
-        <button class="btn sm" @click="recycleThen('1')">回收 1</button>
-        <button class="btn sm" @click="recycleThen('10')">回收 10</button>
-        <button class="btn sm" @click="recycleThen('all')">全部回收</button>
-        <span class="spacer" />
-        <label class="dim small">自动保留</label>
-        <input
-          v-model.number="keepDraft"
-          class="num-input"
-          type="number"
-          min="0"
-          step="10"
-          :placeholder="String(autoKeep(openMenu) ?? 0)"
-        />
-        <button class="btn sm primary" @click="applyKeep()">应用</button>
-        <button class="btn sm" @click="openMenu = null">关闭</button>
+          <button class="btn sm" title="收起（不修改）" @click="toggleMenu(m.id)">关闭</button>
+        </div>
       </div>
     </section>
 
-    <section data-sec="bag">
+    <section id="rtabpanel-bag" role="tabpanel" aria-labelledby="rtab-bag" data-sec="bag">
       <h3>行囊（装备）</h3>
       <div class="bagbar">
         <span class="dim small">排序</span>
@@ -420,12 +464,10 @@ function isTop(score: number): boolean {
     </section>
 
     <section v-if="inspected" class="inspect">
-      <!-- 详情内卸下（v3.2 B2） -->
       <div class="inspect-head">
         <ItemIcon :item-id="inspected.def.id" :size="22" />
         <span class="inspect-name">{{ inspected.def.name }}</span>
         <span class="spacer" />
-        <button v-if="inspectedSlot" class="btn sm" title="卸下该槽位装备" @click="unequip(inspectedSlot)">卸下</button>
         <button class="btn sm" @click="inspectItem(null)">✕</button>
       </div>
       <div v-if="statsText(inspected.def)" class="stat-line">{{ statsText(inspected.def) }}</div>
@@ -516,6 +558,20 @@ h3 {
   align-items: center;
   gap: 4px;
   cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 2px;
+}
+.slot-item:hover,
+.slot-item.inspecting {
+  background: var(--c-panel-2);
+}
+.slot-item.inspecting {
+  outline: 1px solid var(--c-accent-2);
+}
+.slot-item .chev {
+  color: var(--c-text-dim);
+  font-size: 14px;
+  line-height: 1;
 }
 .slot-name em {
   font-style: normal;
@@ -545,9 +601,15 @@ h3 {
 }
 .stats-line {
   margin-top: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--c-text-dim);
   line-height: 1.8;
+}
+/* v3.2 B3 修正：当前视图相关的数值高亮。**容器类名是 stats-line**——此前误写成 `.stat-line .hot`
+   （少一个 s，那是"物品详情属性行"的类），高亮从未生效（评审 Major：白加 class） */
+.stats-line .hot {
+  color: var(--c-accent);
+  font-weight: 600;
 }
 .row {
   display: flex;
@@ -584,10 +646,6 @@ h3 {
 .dim {
   color: var(--c-text-dim);
   font-size: 12px;
-}
-.stat-line .hot {
-  color: var(--c-accent);
-  font-weight: 600;
 }
 .stat-line {
   font-size: 12px;
@@ -643,14 +701,22 @@ h3 {
     border-top: 1px solid var(--c-border);
     overflow-y: visible;
   }
-  /* v3.2 A2：窄屏用 Tab 切换分区；未展开时不占高度 */
+  /* v3.2 A2 修正：Tab 条**常驻视口底部**（fixed，而非 sticky——sticky 的包含块是页面末尾的 aside，
+     不滚到底就看不见，等于没有入口）。主内容留出等高的底部内边距，避免遮住最后一行。
+     展开分区时 Tab 条同样固定在底部（面板在其上方展开）。 */
   .rtabs {
     display: flex;
-    position: sticky;
+    position: fixed;
+    left: 0;
+    right: 0;
     bottom: 0;
     background: var(--c-panel);
-    padding: 6px 0;
-    z-index: 5;
+    border-top: 1px solid var(--c-border);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index: 6;
+  }
+  .rtab {
+    min-height: 40px;
   }
   .right > section {
     display: none;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { fmtDur } from '../format'
 
 const props = defineProps<{ startedAt: number; durationMs: number }>()
 
@@ -9,15 +10,10 @@ const remain = ref('')
 let raf = 0
 let lastShown = -1
 
-/** 剩余时间的可读写法：<10s 显示一位小数（0.1s 粒度需要），否则显示整秒 */
+/** 剩余时间：统一走 fmtDur（v3.2 B4 修正，此前这里是 'm:ss' 第三种写法） */
 function formatRemain(ms: number): string {
   if (ms <= 0) return '完成中'
-  const s = ms / 1000
-  if (s < 10) return `${s.toFixed(1)}s`
-  if (s < 60) return `${Math.ceil(s)}s`
-  const m = Math.floor(s / 60)
-  const r = Math.floor(s % 60)
-  return `${m}:${String(r).padStart(2, '0')}`
+  return fmtDur(ms)
 }
 
 function frame(): void {
