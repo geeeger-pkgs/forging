@@ -57,6 +57,8 @@ export function newGame(name: string, now: number): GameState {
       totalPrestiges: 0,
       totalPrestigePointsEarned: 0,
       totalReforges: 0,
+    totalEnhancesT4: 0,
+    totalReforgesT4: 0,
       perfectAffixes: 0,
       totalExpeditions: 0,
       totalRecruits: 0,

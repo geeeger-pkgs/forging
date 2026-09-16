@@ -33,8 +33,8 @@
         "name": "永久速度",
         "desc": "永久 +1% 速度 / 级（可重复购买，价格递增）",
         "crystal": 150,
-        "max": 8,
-        "priceGrowth": 1.3,
+        "max": 24,
+        "priceGrowth": 1.1,
         "perLevel": 0.01
       },
       {
@@ -100,11 +100,9 @@
       {
         "mod": 3,
         "id": "trial",
-        "reqMul": 1,
-        "crystalMul": 1,
-        "weightMul": {
-          "enhanceRate": 1.5
-        }
+        "reqMul": 1.03,
+        "crystalMul": 1.3,
+        "weightMul": {}
       },
       {
         "mod": 4,
@@ -125,13 +123,23 @@
     "challengeMaxFloors": 3,
     "sweepMaxCount": 12,
     "offlineCapExtra": 12,
-    "tableFingerprint": 1692
+    "introReqs": [
+      1.15,
+      1.5,
+      2.5
+    ],
+    "chainCost": [
+      1,
+      1,
+      2
+    ],
+    "tableFingerprint": 1741
   },
   "scores": {
     "novice": 0.2135,
     "early": 3.671,
     "mid": 5.9552000000000005,
-    "end": 7.805400000000001
+    "end": 7.965400000000001
   },
   "stats": {
     "novice": {
@@ -159,7 +167,7 @@
       "enhanceRate": 0.105
     },
     "end": {
-      "speed": 2.6575,
+      "speed": 2.8175000000000003,
       "efficiency": 1.1146,
       "quantity": 0.932,
       "rareFind": 2.1700000000000004,
@@ -177,7 +185,7 @@
     "novice": 0,
     "early": 10,
     "mid": 26,
-    "end": 35
+    "end": 36
   },
   "bands": {
     "novice": [
@@ -197,7 +205,7 @@
       38
     ]
   },
-  "baseSearchHits": 33,
+  "baseSearchHits": 34,
   "singleStatReach": {
     "novice": 0,
     "early": 5,
@@ -213,17 +221,17 @@
     {
       "floor": 2,
       "mod": "bounty",
-      "ratio": 1.031
+      "ratio": 1.304348
     },
     {
       "floor": 3,
       "mod": "trial",
-      "ratio": 1.031
+      "ratio": 1.666667
     },
     {
       "floor": 4,
       "mod": "rift",
-      "ratio": 0.96914
+      "ratio": 1.127405
     },
     {
       "floor": 5,
@@ -243,12 +251,12 @@
     {
       "floor": 8,
       "mod": "trial",
-      "ratio": 1.031
+      "ratio": 1.06193
     },
     {
       "floor": 9,
       "mod": "rift",
-      "ratio": 0.96914
+      "ratio": 0.940913
     },
     {
       "floor": 10,
@@ -266,7 +274,7 @@
       "ratio": 1.031
     }
   ],
-  "avgFirstClearCrystalMul": 1.06,
+  "avgFirstClearCrystalMul": 1.12,
   "offline": {
     "onlineCap": 12,
     "offlineCap": 24,
@@ -278,14 +286,14 @@
     }
   },
   "firstClearAtReach": {
-    "early": 180,
-    "mid": 870,
-    "end": 1595
+    "early": 191,
+    "mid": 920,
+    "end": 1686
   },
   "daysToClearShop": {
-    "online": 12.3,
-    "login2": 24.6,
-    "login1": 24.6
+    "online": 6.8,
+    "login2": 13.5,
+    "login1": 13.5
   },
   "auditedLiterals": [
     2.736,
@@ -297,7 +305,7 @@
     12
   ],
   "reqAt": {
-    "1": 2.736,
+    "1": 1.15,
     "9": 3.2833204292181493,
     "15": 4.446755718961512,
     "24": 5.190309409335708,
@@ -306,13 +314,13 @@
     "40": 9.539154972609266
   },
   "crystalToFloor": {
-    "9": 180,
-    "15": 417,
-    "24": 870,
-    "30": 1311,
-    "35": 1715,
-    "40": 2172
+    "9": 191,
+    "15": 438,
+    "24": 920,
+    "30": 1380,
+    "35": 1806,
+    "40": 2288
   },
-  "firstTier": 2776,
-  "shopTotal": 11812
+  "firstTier": 2336,
+  "shopTotal": 21510
 }

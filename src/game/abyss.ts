@@ -142,9 +142,22 @@ function roundCrystal(v: number): number {
 
 // ---------------- 层数与门槛 ----------------
 
-/** 层门槛 = base × growth^(层−1) × 层词条门槛倍率 */
+/**
+ * 层门槛。
+ * v3.1：第 1~3 层用 **introReqs**（入门三层，让 T3 装备也能起步）；
+ * 第 4 层起 = base × growth^(层−1) × 层词条门槛倍率。
+ */
 export function abyssRequirement(floor: number): number {
+  const intro = DEF.introReqs ?? []
+  if (floor >= 1 && floor <= intro.length) return intro[floor - 1]
   return DEF.base * Math.pow(DEF.growth, floor - 1) * abyssModifier(floor).reqMul
+}
+
+/** v3.1：连打 N 层的体力消耗（缺省按内容表；越界回落到 1 点/层上限） */
+export function chainStaminaCost(floors: number): number {
+  const cost = DEF.chainCost ?? []
+  const n = Math.max(1, Math.min(Math.floor(floors), DEF.challengeMaxFloors))
+  return cost[n - 1] ?? n
 }
 
 export function abyssTheme(floor: number): string {
@@ -189,11 +202,13 @@ export function challengeAbyss(state: GameState, now: number, events: GameEvent[
     })
     return
   }
-  if (a.stamina < 1) {
-    events.push({ type: 'blocked', reason: `体力不足（${a.stamina}/${DEF.staminaMax}）` })
+  // v3.1：连打代价按内容表（×1/×2 各 1 点、×3 为 2 点）—— 失败仍不收费
+  const cost = chainStaminaCost(want)
+  if (a.stamina < cost) {
+    events.push({ type: 'blocked', reason: `体力不足（连打 ${want} 层需 ${cost} 点，当前 ${a.stamina}）` })
     return
   }
-  a.stamina -= 1
+  a.stamina -= cost
 
   let cleared = 0
   let gainTotal = 0
@@ -209,7 +224,7 @@ export function challengeAbyss(state: GameState, now: number, events: GameEvent[
   }
   if (cleared === 0) {
     // 兜底（上面已判过 first 层；理论不可达）——保持不消耗体力的语义
-    a.stamina += 1
+    a.stamina += cost
     events.push({ type: 'blocked', reason: '战力不足' })
     return
   }

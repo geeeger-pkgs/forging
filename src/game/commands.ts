@@ -37,6 +37,7 @@ import { durationOf, enhanceCostFor } from './rules'
 import { simulate } from './settle'
 import {
   addGold,
+  addMaterial,
   freeInstances,
   instanceById,
   isEquipped,
@@ -144,6 +145,11 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
     case 'upgradeBanner': {
       const events: GameEvent[] = []
       upgradeBanner(state, events)
+      return events
+    }
+    case 'buyGoldShopItem': {
+      const events: GameEvent[] = []
+      buyGoldShopItem(state, cmd.id, events)
       return events
     }
     case 'tidyBag': {
@@ -331,6 +337,54 @@ function recycleInstance(state: GameState, instanceId: number): GameEvent[] {
   return [{ type: 'goldGained', amount: gain }]
 }
 
+// ---------------- v3.1 金币商店（循环出口） ----------------
+
+export function goldShopItem(id: string) {
+  return CONTENT.goldShop.find((x) => x.id === id)
+}
+
+/** 第 k 次购买（k 从 0 起）的价格：base × growth^k（四舍五入） */
+export function goldShopPrice(id: string, k: number): number | null {
+  const def = goldShopItem(id)
+  if (!def) return null
+  return Math.round(def.basePrice * Math.pow(def.growth, k))
+}
+
+/** 当前价格（面板用） */
+export function goldShopNextPrice(state: GameState, id: string): number | null {
+  return goldShopPrice(id, state.meta.goldShop?.[id] ?? 0)
+}
+
+/**
+ * 金币商店购买（v3.1 循环出口：金 → 精华 / 重铸石）。
+ * 反套利：买价 base ≥ 100 且随次数递增，而材料的回收价（精华 15 / 重铸石 40）恒低于买价，
+ * 因此"买了再卖"必然亏损（tests/v31.test.ts 有守护）。
+ */
+function buyGoldShopItem(state: GameState, id: string, events: GameEvent[]): void {
+  const def = goldShopItem(id)
+  if (!def) {
+    events.push({ type: 'blocked', reason: '商品不存在' })
+    return
+  }
+  const bought = state.meta.goldShop?.[id] ?? 0
+  const price = goldShopPrice(id, bought) as number
+  if (state.gold < price) {
+    events.push({ type: 'blocked', reason: `金币不足（需要 ${price}）` })
+    return
+  }
+  const gain = recycleGain(state, def.itemId, 1)
+  if (price <= gain) {
+    // 防御：内容表若被改坏（买价 ≤ 回收价）直接拒绝，避免无限套利
+    events.push({ type: 'blocked', reason: '该商品价格异常，已阻止购买（内容表错误）' })
+    return
+  }
+  addGold(state, -price)
+  addMaterial(state, def.itemId, 1)
+  state.meta.goldShop = { ...(state.meta.goldShop ?? {}), [id]: bought + 1 }
+  events.push({ type: 'goldGained', amount: -price })
+  events.push({ type: 'itemsGained', items: [{ itemId: def.itemId, qty: 1 }] })
+}
+
 // ---------------- 队列扩容 ----------------
 
 /** 下一个队列位的价格；无可购买位返回 null（上限 / 教程位未领） */
@@ -505,6 +559,8 @@ function reforgeInstance(
   inst.affixes = next
   for (const a of next) recordAffix(state, a.id)
   state.stats.totalReforges += 1
+  // v3.1：T4+ 计数（赛季"重铸"目标不再能靠 T1 垃圾装备刷）
+  if ((itemDef(inst.itemId).tier ?? 0) >= 4) state.stats.totalReforgesT4 = (state.stats.totalReforgesT4 ?? 0) + 1
   return [
     { type: 'goldGained', amount: -cost.gold },
     { type: 'reforged', instanceId, name: itemDef(inst.itemId).name, before, after: perfectScore(inst.itemId, next) },

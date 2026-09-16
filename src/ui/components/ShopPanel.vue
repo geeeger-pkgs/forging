@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { CONTENT, itemDef } from '../../game/content'
+import { goldShopNextPrice } from '../../game/commands'
 
 const slots = computed(() => store.state.queueSlots)
 const maxSlots = CONTENT.config.maxQueueSlots
@@ -10,6 +11,15 @@ const tutorialGrant = computed(() => (store.state.flags.tutorial.claimed.include
 function pct(x: number): string {
   return x > 0 ? `+${(x * 100).toFixed(1)}%` : '—'
 }
+
+/** v3.1 金币商店：当前价格 + 已购次数 */
+const goldShop = computed(() =>
+  CONTENT.goldShop.map((g) => {
+    const bought = store.state.meta.goldShop?.[g.id] ?? 0
+    const price = goldShopNextPrice(store.state, g.id) ?? g.basePrice
+    return { ...g, bought, price, affordable: store.state.gold >= price }
+  }),
+)
 
 /** 可回收材料速览（单价 × 数量 = 回收总额） */
 const sellable = computed(() =>
@@ -30,6 +40,20 @@ const sellable = computed(() =>
         购买队列位
       </button>
       <p v-else class="dim">队列已达上限（{{ maxSlots }}）。</p>
+    </section>
+
+    <section class="card">
+      <h3>金币商店<span class="dim">（循环出口：金 → 助剂，价格随次数 ×1.02）</span></h3>
+      <p class="dim">金币在中后期会饱和——这里的助剂是可无限购买的出口，价格逐次递增（防套利：买价恒高于回收价）。</p>
+      <div class="sell-list">
+        <div v-for="g in goldShop" :key="g.id" class="sell-row">
+          <span class="name">{{ g.name }}<em class="dim"> 已购 {{ g.bought }}</em></span>
+          <span class="spacer" />
+          <button class="btn sm" :class="{ primary: g.affordable }" :disabled="!g.affordable" @click="cmd({ type: 'buyGoldShopItem', id: g.id })">
+            {{ g.price }} 金
+          </button>
+        </div>
+      </div>
     </section>
 
     <section class="card">
@@ -95,6 +119,9 @@ const sellable = computed(() =>
   margin-top: 8px;
   max-height: 260px;
   overflow-y: auto;
+}
+.spacer {
+  flex: 1;
 }
 .sell-row {
   display: flex;

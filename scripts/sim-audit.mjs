@@ -73,9 +73,12 @@ console.log(`符文（T3+T2 异符叠加）：速度 +${f(runeVal('speed', 3) + 
 console.log(`精通满级：速度 +${perkVal('speed')} / 效率 +${perkVal('efficiency')} / 稀有 +${perkVal('rareFind')}`)
 // v2.1 词缀（10 槽完美上限，见 sim-affixes A 段）+ v2.4 深渊永久速度（8 级 × 1%）
 const affixSpeedCap = 0.192
-const abyssPermSpeed = 0.08
+// v3.1：读内容表（上限 8→24 的结晶出口扩张后，满配 +24%）
+const ABYSS_TBL = rd('abyss.json')
+const permDef = ABYSS_TBL.shop.find((x) => x.id === 'permanent_speed')
+const abyssPermSpeed = permDef.perLevel * permDef.max
 console.log(`词缀（v2.1，10 槽完美上限）：速度 +${affixSpeedCap}（另有效率 +0.096 / 产量 +0.272 / 稀有 +0.68）`)
-console.log(`深渊永久速度（v2.4，8 级）：+${abyssPermSpeed}`)
+console.log(`深渊永久速度（v3.1，${permDef.max} 级 × ${permDef.perLevel}）：+${abyssPermSpeed.toFixed(2)}`)
 console.log('')
 const speedMaxAll = speedMaxMine + affixSpeedCap + abyssPermSpeed
 console.log(`速度合计（采矿·终局满配）: +${f(speedMaxMine, 3)} → 时长 ×${f(1 / (1 + speedMaxMine), 3)}`)

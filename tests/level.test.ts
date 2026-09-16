@@ -38,14 +38,15 @@ describe('经验曲线（源级闭式口径）', () => {
     expect(totalLevel(s.skills)).toBe(4)
   })
 
-  it('v1.6 扩展锚点（Lv51→100，方案 D：1.03 / 1.02）', () => {
-    expect(cumulative(65)).toBe(1716346)
-    expect(cumulative(80)).toBe(3478915)
-    expect(cumulative(100)).toBe(6944983)
-    expect(levelInfo(1716346).level).toBe(65)
-    expect(levelInfo(3478915).level).toBe(80)
-    expect(levelInfo(6944983).level).toBe(100)
-    // Lv50 锚点不受扩展影响
+  it('v1.6 扩展锚点（Lv51→100；v3.1 长尾压缩：末段 1.02 → 1.01）', () => {
+    // v3.1：76+ 段 multiplier 1.02 → 1.01（测评：Lv80→100 占 49.9% XP 却零解锁）
+    // 实算影响：Lv100 累计 −6.5%、长尾段 −12.9%；Lv80 及以下锚点不变
     expect(cumulative(50)).toBe(583137)
+    expect(cumulative(65)).toBe(1716346)
+    expect(cumulative(80)).toBe(3470848)
+    expect(cumulative(100)).toBe(6490525)
+    expect(levelInfo(1716346).level).toBe(65)
+    expect(levelInfo(3470848).level).toBe(80)
+    expect(levelInfo(6490525).level).toBe(100)
   })
 })

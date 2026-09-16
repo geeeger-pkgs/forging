@@ -235,7 +235,11 @@ const LOADOUTS = {
 const scoreOf = (stats) => Object.entries(W).reduce((s, [k, w]) => s + w * (stats[k] ?? 0), 0)
 /** 六项等比缩放（±30% 鲁棒性用） */
 const mulStats = (stats, k) => Object.fromEntries(Object.entries(stats).map(([key, v]) => [key, typeof v === 'number' ? v * k : v]))
-const reqAt = (floor, base) => base * Math.pow(ABYSS.growth, floor - 1) * MOD_OF(floor).reqMul
+/** v3.1：第 1~3 层走 introReqs，第 4 层起接曲线 */
+const reqAt = (floor, base) =>
+  floor <= (ABYSS_TABLE.introReqs ?? []).length
+    ? ABYSS_TABLE.introReqs[floor - 1]
+    : base * Math.pow(ABYSS.growth, floor - 1) * MOD_OF(floor).reqMul
 /** 无词条口径（v2.4 旧口径，用于对照） */
 const reqFlat = (floor, base) => base * Math.pow(ABYSS.growth, floor - 1)
 /**
@@ -335,6 +339,8 @@ for (let n = 1; n <= 12; n++) {
 }
 const avgCrystalMul = ABYSS_TABLE.mods.reduce((s2, m) => s2 + m.crystalMul, 0) / ABYSS_TABLE.mods.length
 console.log(`  每 5 层**首通**结晶平均倍率 = ${f(avgCrystalMul, 3)}（取整 ${ABYSS_TABLE.rounding}；扫荡不吃倍率，避免 bestFloor 词条造成收益悬崖）`)
+console.log(`  入门三层门槛 = ${(ABYSS_TABLE.introReqs ?? []).join(' / ')}（v3.1：让 T3 装备也能起步；第 4 层起接曲线）`)
+console.log(`  连打体力代价 = ${(ABYSS_TABLE.chainCost ?? []).join(' / ')} 点（v3.1：×2 是省体力甜点，×3 多花 1 点换可能多 1 层）`)
 console.log(`  墙层（${ABYSS_TABLE.mods.find((m) => m.id === 'rich').name}）环比 = ${(reqAt(5, base) / reqAt(4, base)).toFixed(4)}；墙后喘息层环比 = ${(reqAt(6, base) / reqAt(5, base)).toFixed(4)}`)
 
 console.log('')
@@ -459,6 +465,8 @@ const out = {
     challengeMaxFloors: ABYSS_TABLE.challengeMaxFloors,
     sweepMaxCount: ABYSS_TABLE.sweepMaxCount,
     offlineCapExtra: ABYSS_TABLE.offlineCapExtra,
+    introReqs: ABYSS_TABLE.introReqs,
+    chainCost: ABYSS_TABLE.chainCost,
     // 表指纹：内容表变化时证据必须重跑（三件套的"输入标记"）
     tableFingerprint: JSON.stringify(ABYSS_TABLE).length,
   },

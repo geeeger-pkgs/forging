@@ -240,6 +240,9 @@ export type TaskCounter =
   | 'totalJewelryForged'
   | 'totalRunesCrafted'
   | 'totalReforges'
+  /** v3.1：仅统计 T4+ 装备（防止在低档装备上刷计数） */
+  | 'totalEnhancesT4'
+  | 'totalReforgesT4'
   | 'totalExpeditions'
 
 export interface TaskTemplate {
@@ -419,6 +422,10 @@ export interface AbyssDef {
   rounding: 'floor'
   /** v3.0：一次挑战最多连打层数 */
   challengeMaxFloors: number
+  /** v3.1：连打体力代价（下标 = 层数−1；长度须覆盖 challengeMaxFloors） */
+  chainCost: number[]
+  /** v3.1：入门三层门槛（第 1~3 层，第 4 层起接 base 曲线）；修"看得见打不了" */
+  introReqs: number[]
   /** v3.0：批量扫荡单次上限 */
   sweepMaxCount: number
   /** v3.0：离线结算时体力上限的提升量（仅离线段生效） */
@@ -443,6 +450,16 @@ export interface AbyssState {
   permanentSpeed: number
   /** 称号是否已购买 */
   title: boolean
+}
+
+/** v3.1：金币商店（可无限购买、价格递增的循环出口） */
+export interface GoldShopItemDef {
+  id: string
+  itemId: string
+  name: string
+  desc: string
+  basePrice: number
+  growth: number
 }
 
 // ---------- 视听与手感（v2.5） ----------
@@ -722,6 +739,7 @@ export interface ContentTables {
   expeditions: ExpeditionsDef
   season: SeasonDef
   abyss: AbyssDef
+  goldShop: GoldShopItemDef[]
   fx: FxDef
   config: ConfigDef
 }
@@ -820,6 +838,8 @@ export interface GameState {
     settings?: SettingsState
     /** v3.0 L2：实例级自动回收的完美度阈值（0~100；0 = 关闭）；低于阈值的非装备实例自动回收 */
     autoRecyclePerfect?: number
+    /** v3.1：金币商店购买次数（itemId → 次数），用于价格递增 */
+    goldShop?: Record<string, number>
   }
   stats: {
     totalCrafts: number
@@ -839,6 +859,9 @@ export interface GameState {
     totalPrestigePointsEarned: number
     /** v2.1：重铸次数与累计产出的「完美词缀」条数（单调递增） */
     totalReforges: number
+    /** v3.1：仅统计 **T4+ 装备**的强化/重铸次数（赛季目标用；防止在 T1 垃圾上刷计数） */
+    totalEnhancesT4: number
+    totalReforgesT4: number
     perfectAffixes: number
     /** v2.4：深渊统计（单调递增） */
     totalAbyssSweeps: number
@@ -892,6 +915,8 @@ export type Command =
   | { type: 'buyAbyssItem'; itemId: string }
   /** v2.5：设置（音效 / 音量 / 特效档位）—— 只写 meta.settings，不触碰任何数值 */
   | { type: 'setSettings'; patch: Partial<SettingsState> }
+  /** v3.1：金币商店（金 → 精华/重铸石，价格递增的循环出口） */
+  | { type: 'buyGoldShopItem'; id: string }
 
 // ---------- 事件（内核 → UI 回流） ----------
 

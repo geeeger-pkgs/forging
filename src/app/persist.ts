@@ -252,6 +252,10 @@ function ensureFields(s: GameState): GameState {
     out = { ...out, meta: { ...out.meta, expeditions: { runs: [], banner: 0, nextRunId: 1 } } }
   }
   if (!out.companions) out = { ...out, companions: {} }
+  // v3.1：T4+ 计数（老档回填 0；此前的历史次数无法按档位追溯，如实从 0 起算）
+  if (typeof (out.stats as unknown as Record<string, number>).totalEnhancesT4 !== 'number') {
+    out = { ...out, stats: { ...out.stats, totalEnhancesT4: 0, totalReforgesT4: 0 } }
+  }
   out = { ...out, codex: normalizeCodex(out.codex ?? { bits: '', fp: '' }, out.codex as never) }
   // v2.5：设置补齐 + 非法值消毒（手改存档/跨版本导入都不应让界面进入未定义档位）
   out = { ...out, meta: { ...out.meta, settings: sanitizeSettings(out.meta.settings) } }

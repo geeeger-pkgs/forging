@@ -39,8 +39,11 @@ function withCrystals(s: GameState, n: number): void {
 
 describe('战力口径（A1/A2）', () => {
   it('A2：门槛曲线与内容表一致；abyssScore 是注入 now 的纯函数', () => {
-    // v3.0：门槛含层词条倍率（abyssRequirement 内部已乘）
-    expect(abyssRequirement(1)).toBeCloseTo(DEF.base * abyssModifier(1).reqMul, 10)
+    // v3.1：第 1~3 层走**入门三层**（introReqs），第 4 层起 = base × growth^(n−1) × 层词条倍率
+    expect(abyssRequirement(1)).toBeCloseTo(DEF.introReqs[0], 10)
+    expect(abyssRequirement(2)).toBeCloseTo(DEF.introReqs[1], 10)
+    expect(abyssRequirement(3)).toBeCloseTo(DEF.introReqs[2], 10)
+    expect(abyssRequirement(4)).toBeCloseTo(DEF.base * Math.pow(DEF.growth, 3) * abyssModifier(4).reqMul, 10)
     expect(abyssRequirement(9)).toBeCloseTo(DEF.base * Math.pow(DEF.growth, 8) * abyssModifier(9).reqMul, 10)
     const s = newGame('T', 0)
     const a = abyssScore(s, 1000)
@@ -523,14 +526,20 @@ describe('体力与商店的联动（实现契约）', () => {
 })
 
 describe('入口难度（实现说明）', () => {
-  it('第 1 层需要整套配装（战力为全局加权和 → 深渊由 build 自然门禁）', () => {
+  it('入门三层：新手裸号仍过不了第 1 层，但小成 build 能起步（v3.1）', () => {
+    // 裸号（无装备）：仍 0 层 —— 保住 novice 目标带 [0,0]
     const bare = newGame('T', 0)
     expect(abyssScore(bare, 0).total).toBeLessThan(abyssRequirement(1))
-    // 单件 T7 不足以通关（设计上"深渊检验的是整套 build"）
+    // 单件 T7 +10（无词缀）：1.47 ≥ 入门门槛 1.15 → **能进第 1 层**（这是 v3.1 的修复目标：
+    // 此前首层 2.736 让 T3/T4 装备长时间"看得见打不了"）
     const one = newGame('T', 0)
     const id = addInstance(one, 'pick_void')
-    one.equipment.find((e) => e.instanceId === id)!.affixes = []
+    const inst = one.equipment.find((e) => e.instanceId === id)!
+    inst.affixes = []
+    inst.enhanceLevel = 10
     one.slots.pick = id
-    expect(abyssScore(one, 0).total).toBeLessThan(abyssRequirement(1))
+    expect(abyssScore(one, 0).total).toBeGreaterThanOrEqual(abyssRequirement(1))
+    // 但第 4 层起的曲线仍然要求整套 build
+    expect(abyssScore(one, 0).total).toBeLessThan(abyssRequirement(4))
   })
 })

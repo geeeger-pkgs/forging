@@ -1,0 +1,18 @@
+[
+  {
+    "id": "essence",
+    "itemId": "essence",
+    "name": "精华",
+    "desc": "强化/符文用的助剂（价格随购买次数 ×1.02）",
+    "basePrice": 100,
+    "growth": 1.02
+  },
+  {
+    "id": "emberstone",
+    "itemId": "emberstone",
+    "name": "重铸石",
+    "desc": "重铸词缀用的助剂（价格随购买次数 ×1.02）",
+    "basePrice": 250,
+    "growth": 1.02
+  }
+]

@@ -58,8 +58,8 @@
     {
       "id": "s_enhance",
       "title": "锤炼不止",
-      "desc": "强化尝试（需在线）",
-      "counter": "totalEnhances",
+      "desc": "强化 T4+ 装备（需在线；低档不计）",
+      "counter": "totalEnhancesT4",
       "unit": "次",
       "targets": [
         120,
@@ -82,8 +82,8 @@
     {
       "id": "s_reforge",
       "title": "精益求精",
-      "desc": "重铸词缀（需在线）",
-      "counter": "totalReforges",
+      "desc": "重铸 T4+ 装备的词缀（需在线；低档不计）",
+      "counter": "totalReforgesT4",
       "unit": "次",
       "targets": [
         15,

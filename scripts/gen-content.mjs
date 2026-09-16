@@ -351,9 +351,9 @@ const season = {
     { id: 's_craft', title: '炉火不熄', desc: '熔炼或锻造', counter: 'totalCrafts', unit: '次', targets: [1000, 2400, 4800] },
     // C10：口径写清是**毛收入**（含任务/成就/卖店/远征；赛季等级奖励同样计入）
     { id: 's_gold', title: '财富积累', desc: '累计获得金币（毛收入：任务/成就/卖店/远征均计入）', counter: 'totalGoldEarned', unit: '金', targets: [250000, 500000, 800000] },
-    { id: 's_enhance', title: '锤炼不止', desc: '强化尝试（需在线）', counter: 'totalEnhances', unit: '次', targets: [120, 320, 600] },
+    { id: 's_enhance', title: '锤炼不止', desc: '强化 T4+ 装备（需在线；低档不计）', counter: 'totalEnhancesT4', unit: '次', targets: [120, 320, 600] },
     { id: 's_expedition', title: '远行不辍', desc: '完成远征', counter: 'totalExpeditions', unit: '次', targets: [12, 20, 28] },
-    { id: 's_reforge', title: '精益求精', desc: '重铸词缀（需在线）', counter: 'totalReforges', unit: '次', targets: [15, 35, 60] },
+    { id: 's_reforge', title: '精益求精', desc: '重铸 T4+ 装备的词缀（需在线；低档不计）', counter: 'totalReforgesT4', unit: '次', targets: [15, 35, 60] },
   ],
   /** 图鉴里程碑（每 25%；与赛季解耦，只给自奖励） */
   /**
@@ -384,6 +384,13 @@ const abyss = {
   growth: 1.031,
   themes: ['矿脉裂隙', '熔岩回廊', '符文甬道', '无光深渊', '虚空之喉'],
   /**
+   * v3.1：**入门三层**（修两位测评师共同点名的"看得见打不了"）。
+   * 第 1~3 层用显式低门槛，第 4 层起接 base/growth 曲线。
+   * 实算（docs/design-v3.1.md §2.1）：T3 干净套(1.194) 进第 1 层、T3+10(1.574) 进第 2 层；
+   * novice(0.213) 仍 0 层、early/mid/end 可达层 9/24/34 **完全不变**（只改入门，不动深度）。
+   */
+  introReqs: [1.15, 1.5, 2.5],
+  /**
    * v3.0 层词条（L6）：按 floor % 5 取值，floor 1 = 迅捷层（新玩家第一层不受惩罚）。
    * 设计期实算（docs/design-v3.0.md §2.3a）：可达层 10/26/35 → 9/24/34；
    * 门槛环比：裂隙→富矿 ×1.1626（墙）、富矿→迅捷 ×0.9726（喘息）、其余 ×1.0310。
@@ -391,7 +398,8 @@ const abyss = {
   mods: [
     { mod: 1, id: 'swift', name: '迅捷层', desc: '速度权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { speed: 1.5 } },
     { mod: 2, id: 'bounty', name: '丰饶层', desc: '产量与稀有权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { quantity: 1.5, rareFind: 1.5 } },
-    { mod: 3, id: 'trial', name: '试炼层', desc: '强化率权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { enhanceRate: 1.5 } },
+    // v3.1：原「强化率权重 ×1.5」实测只值 +1.3~1.9%（伪词条）→ 改为**小试炼**：门槛略高、结晶可观
+    { mod: 3, id: 'trial', name: '试炼层', desc: '门槛 ×1.03（小试炼），首通结晶 ×1.3', reqMul: 1.03, crystalMul: 1.3, weightMul: {} },
     { mod: 4, id: 'rift', name: '裂隙层', desc: '门槛 ×0.94（墙前的喘息层），结晶 ×0.8', reqMul: 0.94, crystalMul: 0.8, weightMul: {} },
     { mod: 0, id: 'rich', name: '富矿层', desc: '门槛 ×1.06（每 5 层一道墙），结晶 ×1.5', reqMul: 1.06, crystalMul: 1.5, weightMul: {} },
   ],
@@ -399,6 +407,8 @@ const abyss = {
   rounding: 'floor',
   /** 连打：一次挑战最多连打几层（逐层判定，首个失败层停止） */
   challengeMaxFloors: 3,
+  /** v3.1 连打体力代价：1 层=1 点、2 层=1 点（省体力）、3 层=2 点（多花 1 点换可能多 1 层） */
+  chainCost: [1, 1, 2],
   /** 批量扫荡：一次最多扫荡次数（UI「用尽体力」按体力上限取 min） */
   sweepMaxCount: 12,
   /** 离线回体上限提升（仅离线段有效；时间比例，不可刷） */
@@ -410,7 +420,8 @@ const abyss = {
   /** 商店：可重复项用 priceGrowth 递增；一次性项 priceGrowth = 1 */
   shop: [
     { id: 'reroll_ticket', name: '定向重铸券', desc: '重铸时指定一条词缀 id 保底出现（可重复购买，价格递增）', crystal: 100, max: 12, priceGrowth: 1.3 },
-    { id: 'permanent_speed', name: '永久速度', desc: '永久 +1% 速度 / 级（可重复购买，价格递增）', crystal: 150, max: 8, priceGrowth: 1.3, perLevel: 0.01 },
+    // v3.1：上限 8→24（结晶在买空后仍有出口；增长率降到 1.10 → 满级约 13.3k 结晶 ≈ 再 140 天）
+    { id: 'permanent_speed', name: '永久速度', desc: '永久 +1% 速度 / 级（可重复购买，价格递增）', crystal: 150, max: 24, priceGrowth: 1.1, perLevel: 0.01 },
     { id: 'relic_gear', name: '遗物·锈蚀齿轮', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_gear' },
     { id: 'relic_shard', name: '遗物·铭文碎片', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_shard' },
     { id: 'relic_core', name: '遗物·深渊之核', desc: '直接兑换该遗物（补齐图鉴 100%）', crystal: 200, max: 1, priceGrowth: 1, itemId: 'relic_core' },
@@ -421,6 +432,16 @@ const abyss = {
 // ---------------- 视听与手感（v2.5） ----------------
 // 设计：docs/design-v2.5.md（表现层版本；证据由 scripts/audit-fx.mjs 输出）
 // 音效全部程序化合成（振荡器 + 包络 + 噪声），**零外部资源**
+/**
+ * v3.1：**金币循环出口**（测评 A-3：一次性出口仅 ~2.6M ≈ 终局 35h 产出，之后金币变废纸）。
+ * 两项可无限购买、价格按次递增：精华 100 金（×1.02/次）、重铸石 250 金（×1.02/次）。
+ * 反套利：精华回收价 15、重铸石回收价 40 —— 买价恒高于回收价，无法通过"买了卖"套利。
+ */
+const goldShop = [
+  { id: 'essence', itemId: 'essence', name: '精华', desc: '强化/符文用的助剂（价格随购买次数 ×1.02）', basePrice: 100, growth: 1.02 },
+  { id: 'emberstone', itemId: 'emberstone', name: '重铸石', desc: '重铸词缀用的助剂（价格随购买次数 ×1.02）', basePrice: 250, growth: 1.02 },
+]
+
 const fx = {
   /** 音效清单：wave ∈ sine/square/triangle/sawtooth/noise；freqs 为按序播放的音高（Hz） */
   cues: [
@@ -473,6 +494,8 @@ const OUT = {
   'expeditions.json': expeditions,
   'season.json': season,
   'abyss.json': abyss,
+  // v3.1：金币循环出口（金 → 精华/重铸石，价格递增）
+  'goldShop.json': goldShop,
   'fx.json': fx,
   'items.json': items,
   'recipes.json': recipes,

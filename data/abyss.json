@@ -18,6 +18,11 @@
     "无光深渊",
     "虚空之喉"
   ],
+  "introReqs": [
+    1.15,
+    1.5,
+    2.5
+  ],
   "mods": [
     {
       "mod": 1,
@@ -46,12 +51,10 @@
       "mod": 3,
       "id": "trial",
       "name": "试炼层",
-      "desc": "强化率权重 ×1.5",
-      "reqMul": 1,
-      "crystalMul": 1,
-      "weightMul": {
-        "enhanceRate": 1.5
-      }
+      "desc": "门槛 ×1.03（小试炼），首通结晶 ×1.3",
+      "reqMul": 1.03,
+      "crystalMul": 1.3,
+      "weightMul": {}
     },
     {
       "mod": 4,
@@ -74,6 +77,11 @@
   ],
   "rounding": "floor",
   "challengeMaxFloors": 3,
+  "chainCost": [
+    1,
+    1,
+    2
+  ],
   "sweepMaxCount": 12,
   "offlineCapExtra": 12,
   "firstClearCrystal": {
@@ -98,8 +106,8 @@
       "name": "永久速度",
       "desc": "永久 +1% 速度 / 级（可重复购买，价格递增）",
       "crystal": 150,
-      "max": 8,
-      "priceGrowth": 1.3,
+      "max": 24,
+      "priceGrowth": 1.1,
       "perLevel": 0.01
     },
     {

@@ -38,6 +38,7 @@ import expeditionsJson from '../../data/expeditions.json'
 import seasonJson from '../../data/season.json'
 import abyssJson from '../../data/abyss.json'
 import fxJson from '../../data/fx.json'
+import goldShopJson from '../../data/goldShop.json'
 import configJson from '../../data/config.json'
 
 const SKILL_IDS: readonly SkillId[] = ['mining', 'smelting', 'forging', 'enhancing']
@@ -68,6 +69,9 @@ const TASK_COUNTERS: readonly TaskCounter[] = [
   'totalRunesCrafted',
   'totalReforges',
   'totalExpeditions',
+  // v3.1：T4+ 口径（赛季"强化/重铸"目标）
+  'totalEnhancesT4',
+  'totalReforgesT4',
 ]
 
 const AFFIX_EFFECTS: readonly AffixEffect[] = [
@@ -372,6 +376,22 @@ export function validateContent(t: ContentTables): string[] {
     }
   }
   if (ab.rounding !== 'floor' && ab.rounding !== 'round') errs.push('结晶取整方式非法')
+  // v3.1：入门三层与连打代价
+  const intro = ab.introReqs ?? []
+  if (intro.length !== 3) errs.push('入门层门槛必须恰好 3 层')
+  for (let i = 0; i < intro.length; i++) {
+    if (!(intro[i] > 0 && intro[i] < 6)) errs.push(`入门层门槛越界: #${i} -> ${intro[i]}`)
+    if (i > 0 && intro[i] <= intro[i - 1]) errs.push('入门层门槛必须递增')
+  }
+  const chain = ab.chainCost ?? []
+  if (chain.length < ab.challengeMaxFloors) errs.push('连打体力代价必须覆盖全部连打层数')
+  for (let i = 0; i < chain.length; i++) {
+    if (!(chain[i] >= 1 && chain[i] <= 4)) errs.push(`连打体力代价越界: 第 ${i + 1} 层 -> ${chain[i]}`)
+    if (i > 0 && chain[i] < chain[i - 1]) errs.push('连打体力代价必须非递减')
+  }
+  // 入门三层必须与第 4 层门槛衔接（不能高于它，否则"入门层"反而更难）
+  const req4 = ab.base * Math.pow(ab.growth, 3) * (ab.mods.find((m) => m.mod === 4)?.reqMul ?? 1)
+  if (intro.length === 3 && intro[2] >= req4) errs.push('入门层末档门槛不应高于第 4 层')
   if (!(ab.challengeMaxFloors >= 1 && ab.challengeMaxFloors <= 5)) errs.push('连打上限越界')
   if (!(ab.sweepMaxCount >= 1 && ab.sweepMaxCount <= 50)) errs.push('批量扫荡上限越界')
   if (!(ab.offlineCapExtra >= 0 && ab.offlineCapExtra <= ab.staminaMax)) errs.push('离线回体上限提升越界')
@@ -407,6 +427,16 @@ export function validateContent(t: ContentTables): string[] {
   if (fxd.defaults.fx !== 'auto' && !fxd.fxLevels.includes(fxd.defaults.fx)) errs.push('默认动效档不在档位列表内')
   if (!(fxd.defaults.volume >= 0 && fxd.defaults.volume <= 100)) errs.push('默认音量非法')
 
+  // v3.1：金币商店反套利（买价 > 回收价，否则玩家可"买了卖"套利）
+  for (const gs of t.goldShop) {
+    if (!(gs.basePrice > 0)) errs.push(`金币商店价格非法: ${gs.id}`)
+    if (!(gs.growth >= 1)) errs.push(`金币商店增长率必须 ≥ 1: ${gs.id}`)
+    if (!t.items[gs.itemId]) errs.push(`金币商店物品不存在: ${gs.id} -> ${gs.itemId}`)
+    else if (gs.basePrice <= (t.items[gs.itemId].value ?? 0)) {
+      errs.push(`金币商店存在套利风险（买价 ≤ 回收价）: ${gs.id}`)
+    }
+  }
+
   // 曲线与配置
   if (t.levelCurve.baseXp <= 0) errs.push('levelCurve.baseXp 非法')
   for (let i = 1; i < t.levelCurve.bands.length; i++) {
@@ -435,6 +465,7 @@ export const CONTENT: ContentTables = {
   expeditions: expeditionsJson,
   season: seasonJson,
   abyss: abyssJson,
+  goldShop: goldShopJson,
   fx: fxJson,
   config: configJson,
 } as unknown as ContentTables

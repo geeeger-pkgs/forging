@@ -48,7 +48,7 @@ describe('F1 层词条（abyssModifier）', () => {
     expect(abyssModifier(1).id).toBe('swift')
     expect(abyssModifier(1).reqMul).toBe(1)
     expect(abyssModifier(2).id).toBe('bounty')
-    expect(abyssModifier(3).id).toBe('trial')
+    expect(abyssModifier(3).id).toBe('trial') // v3.1：试炼层改为"门槛 ×1.03 + 结晶 ×1.3"（不再倾斜权重）
     expect(abyssModifier(4).id).toBe('rift')
     expect(abyssModifier(5).id).toBe('rich')
     for (let n = 1; n <= 50; n++) expect(abyssModifier(n).id).toBe(abyssModifier(n + 5).id)
@@ -70,8 +70,9 @@ describe('F1 层词条（abyssModifier）', () => {
     const w2 = abyssWeights(2)
     expect(w2.quantity).toBeCloseTo(DEF.weights.quantity * 1.5, 10)
     expect(w2.rareFind).toBeCloseTo(DEF.weights.rareFind * 1.5, 10)
+    // v3.1：试炼层不再倾斜权重（原 ×1.5 实测只值 +1.3~1.9%，是伪词条）
     const w3 = abyssWeights(3)
-    expect(w3.enhanceRate).toBeCloseTo(DEF.weights.enhanceRate * 1.5, 10)
+    expect(w3.enhanceRate).toBeCloseTo(DEF.weights.enhanceRate, 10)
     for (const floor of [1, 2, 3, 4, 5, 9]) {
       const sc = abyssScore(s, 0, floor)
       const sum = Object.values(sc.contributions).reduce((a, b) => a + b, 0)
@@ -156,7 +157,9 @@ describe('F2 连打（逐层判定）', () => {
       expect(e.crystals).toBe(want)
       expect(s.abyss.crystals).toBe(want)
     }
-    expect(s.abyss.stamina).toBe(2) // 整次连打只花 1 点
+    // v3.1：连打代价按内容表（×1/×2 = 1 点、×3 = 2 点）
+    const want = Math.min(DEF.challengeMaxFloors, 3)
+    expect(s.abyss.stamina).toBe(3 - (DEF.chainCost[want - 1] ?? 1))
   })
 
   it('D1 回归：逐层推进时"面板口径 == 内核判定"（倾斜层必须同源）', () => {

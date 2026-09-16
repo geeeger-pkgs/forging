@@ -238,7 +238,10 @@ function performEnhance(
 
   // v1.3/v1.4：强化成功率 = 档位基础 + 饰品加成 + 祝福符文增益（上限 100%）
   const agg = aggregateEquipment(state)
-  const rate = Math.min(1, step.successRate + agg.enhanceRate + buffBonuses(state, Date.now()).enhanceRate)
+  // v3.1：强化技能等级首次产生实际效果（测评 A-2：此前 Lv1 与 Lv100 完全相同）——
+  // 每 10 级 +1% 成功率（Lv100 = +10%），与词缀/符文/精通同池相加
+  const skillBonus = Math.floor(levelInfo(state.skills.enhancing).level / 10) * 0.01
+  const rate = Math.min(1, step.successRate + agg.enhanceRate + skillBonus + buffBonuses(state, Date.now()).enhanceRate)
   const success = rng.next() < rate
   const from = inst.enhanceLevel
   let to = from
@@ -252,6 +255,8 @@ function performEnhance(
   }
   inst.enhanceLevel = to
   state.stats.totalEnhances += 1
+  // v3.1：T4+ 计数（赛季目标用；防止在 T1 装备上刷）—— 按**强化前**的装备档位判定
+  if ((itemDef(inst.itemId).tier ?? 0) >= 4) state.stats.totalEnhancesT4 = (state.stats.totalEnhancesT4 ?? 0) + 1
   events.push({ type: 'enhanceResult', instanceId: ref.instanceId, from, to, success, guarded })
 
   // 连续强化链（v1.2）：每轮自动重臂到「当前等级 + 1」；失败降级自动跟随
