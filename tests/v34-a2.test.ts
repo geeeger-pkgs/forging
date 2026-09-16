@@ -429,11 +429,56 @@ describe('v3.4.5 第二批：成就 5 类真进度 + 其余口径', () => {
     expect(Number.isInteger(achievementValue(s, def))).toBe(true)
   })
 
-  it('赛季等级奖励的精华数读内容表（essencePerFour=1 时与旧式等价）', async () => {
+  it('赛季等级奖励的精华数真读内容表字段（临时改字段 → 结果必须跟着变）', async () => {
     const { levelReward } = await import('../src/game/season')
     const r = CONTENT.season.levelReward
-    for (const lv of [5, 12, 20]) {
-      expect(levelReward(lv).essence).toBe(r.essenceBase + Math.floor(lv / 4) * r.essencePerFour)
+    const orig = r.essencePerFour
+    // 旧写法 `… === r.essenceBase + floor(lv/4)*r.essencePerFour` 在字段=1 时与硬编码 /4 恒等，
+    // 是恒真式（A 评审探针⑥：把实现改回硬编码，全套 526 仍绿）。此处改为"改字段必须改结果"。
+    expect(orig, 'essencePerFour 应为正整数').toBeGreaterThan(0)
+    try {
+      for (const lv of [5, 12, 20]) {
+        expect(levelReward(lv).essence, `基线 Lv${lv}`).toBe(r.essenceBase + Math.floor(lv / 4) * orig)
+      }
+      r.essencePerFour = orig + 1
+      for (const lv of [5, 12, 20]) {
+        expect(levelReward(lv).essence, `改字段后 Lv${lv}（硬编码实现会返回旧值→红）`).toBe(
+          r.essenceBase + Math.floor(lv / 4) * (orig + 1),
+        )
+      }
+    } finally {
+      r.essencePerFour = orig
     }
+  })
+})
+
+describe('v3.4.6：成就进度与判定同源（双人确认评审 A/B 各实测一条反例）', () => {
+  it('companionRarity：只拥有普通伙伴时进度 0（此前恒为伙伴总数 → 面板 1/1 却锁着）', async () => {
+    const { achievementValue, isMet } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    const def = CONTENT.achievements.find((a) => a.type === 'companionRarity')!
+    expect(def, '内容表缺少 companionRarity').toBeTruthy()
+    expect(isMet(s, def), '开局只有初始普通伙伴').toBe(false)
+    expect(achievementValue(s, def), '进度应为 0，而不是伙伴总数 6').toBe(0)
+    const legend = CONTENT.companions.companions.find((c) => c.rarity === def.rarity)!
+    expect(legend, '内容表应有目标稀有度伙伴').toBeTruthy()
+    s.companions[legend.id] = { level: 1, xp: 0, trait: CONTENT.expeditions.traits[0].id }
+    expect(achievementValue(s, def), '招募到目标稀有度 → 进度 1').toBe(1)
+    expect(isMet(s, def), '与进度一致（1 ≥ 1）').toBe(true)
+  })
+
+  it('relicCount：同 id 多件按数量计（此前只数 id 种数 → 面板系统性低估）', async () => {
+    const { achievementValue, isMet } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    const def = CONTENT.achievements.find((a) => a.type === 'relicCount' && a.target === 3)!
+    expect(def, '内容表缺少 relicCount(target=3)').toBeTruthy()
+    const relic = Object.values(CONTENT.items).find((i) => i.category === 'relic')!
+    expect(relic, '内容表应有遗物').toBeTruthy()
+    s.materials[relic.id] = 2
+    expect(achievementValue(s, def), '2 件同 id 遗物 = 2（旧口径为 1）').toBe(2)
+    expect(isMet(s, def)).toBe(false)
+    s.materials[relic.id] = 3
+    expect(achievementValue(s, def)).toBe(3)
+    expect(isMet(s, def), 'isMet ⟺ value≥target').toBe(true)
   })
 })

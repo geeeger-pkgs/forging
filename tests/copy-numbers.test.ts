@@ -24,24 +24,49 @@ function walk(dir: string): string[] {
   return out
 }
 
-/** 取出 <template> ... </template> 的行（带原始行号），并剔除 HTML 注释与插值 */
-function templateTextLines(file: string): { line: number; text: string }[] {
+/**
+ * 取出 <template> ... </template> 的行（带原始行号）。
+ * - `text`：玩家可见文本（剥注释、把插值换成 `{{}}`）→ 第一个 pass 用
+ * - `raw` ：玩家可见文本（剥注释、**保留**插值）→ 第二个 pass 用
+ *   ⚠️ 第二个 pass 必须用 raw：若拿 text 去 matchAll(`{{...}}`)，插值已被换成 `{{}}`，
+ *   只能匹配到空体 —— fc40ec0 的「第二 pass」就是这样空跑的（A 评审探针证明：
+ *   把历史三元串 `'（墙：门槛 ×1.06…）'` 放回去，全套仍绿）。
+ */
+function templateTextLines(file: string): { line: number; text: string; raw: string }[] {
   const lines = readFileSync(file, 'utf8').split(/\r?\n/)
-  const out: { line: number; text: string }[] = []
+  const out: { line: number; text: string; raw: string }[] = []
   let inTpl = false
-  lines.forEach((raw, i) => {
-    const t = raw.trim()
+  let inComment = false
+  lines.forEach((line0, i) => {
+    const t = line0.trim()
     // 进入模板区（SFC 的顶层 <template>）
     if (/^<template[ >]/.test(t) && !inTpl) inTpl = true
     // 结束于 <style>（**不能**用 </template>：内层 <template v-if> 的闭合会把扫描提前掐断 ——
     // 这正是探针证明过的坑：RightPanel 里探针加了 ×1.9，守卫却没红）
     if (inTpl && /^<style[ >]/.test(t)) inTpl = false
-    if (inTpl) {
-      // 跳过模板内的开发注释（非玩家可见文本）
-      if (raw.includes('<!--') || raw.includes('-->')) return
-      // 去掉插值（值来自脚本，不算硬编码）
-      out.push({ line: i + 1, text: raw.replace(/\{\{[^}]*\}\}/g, '{{}}') })
+    if (!inTpl) return
+    // 剥 HTML 注释（含跨行）。不能"整行跳过"：`<p>×1.5</p><!-- 说明 -->` 这类
+    // 同行注释 + 可见文本会被整行放过（B 评审合成用例证明）。
+    let visible = line0
+    if (inComment) {
+      const end = visible.indexOf('-->')
+      if (end === -1) return
+      visible = visible.slice(end + 3)
+      inComment = false
     }
+    for (;;) {
+      const s = visible.indexOf('<!--')
+      if (s === -1) break
+      const e = visible.indexOf('-->', s + 4)
+      if (e === -1) {
+        visible = visible.slice(0, s)
+        inComment = true
+        break
+      }
+      visible = visible.slice(0, s) + visible.slice(e + 3)
+    }
+    if (!visible.trim()) return
+    out.push({ line: i + 1, text: visible.replace(/\{\{[^}]*\}\}/g, '{{}}'), raw: visible })
   })
   return out
 }
@@ -76,8 +101,9 @@ describe('文案数字守卫（防硬编码；评审探针证明过这类漂移�
   it('插值内的字符串字面量同样不得写死数字（防"藏在 {{ }} 里"的孔洞）', () => {
     const offenders: string[] = []
     for (const f of walk(uiRoot)) {
-      for (const { line, text } of templateTextLines(f)) {
-        for (const interp of text.matchAll(/\{\{([^}]*)\}\}/g)) {
+      // 必须用 raw（保留插值）；用 text 会得到空体，pass 空跑（探针证明过）
+      for (const { line, raw } of templateTextLines(f)) {
+        for (const interp of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
           for (const lit of interp[1].matchAll(/'([^']*)'|"([^"]*)"/g)) {
             const body = lit[1] ?? lit[2] ?? ''
             for (const { name, re } of PATTERNS) {

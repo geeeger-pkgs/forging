@@ -182,10 +182,25 @@ export function achievementValue(state: GameState, def: AchievementDef): number 
     // v3.4.5：以下 5 类此前恒返回 0（面板渲染"0 / target"，玩家以为进度不动）
     case 'affixCount':
       return state.equipment.reduce((m, e) => Math.max(m, (e.affixes ?? []).length), 0)
-    case 'companionRarity':
-      return Object.keys(state.companions ?? {}).length > 0 ? CONTENT.companions.companions.length : 0
-    case 'relicCount':
-      return Object.keys(state.materials ?? {}).filter((id) => CONTENT.items[id]?.category === 'relic').length
+    case 'companionRarity': {
+      // v3.4.6：与 isMet 同源 —— 拥有**目标稀有度**的伙伴数量。
+      // 此前返回"伙伴总数"：开局就招募学徒（starter）后恒为 6，面板钳位成 1/1 却仍锁着（B 评审实测）。
+      const want = def.rarity
+      if (!want) return 0
+      return Object.keys(state.companions ?? {}).filter((id) => {
+        const c = CONTENT.companions.companions.find((x) => x.id === id)
+        return c?.rarity === want
+      }).length
+    }
+    case 'relicCount': {
+      // v3.4.6：与 isMet 同源 —— Σ数量（遗物是 stackable 材料，同 id 多件是常规状态）。
+      // 此前只数 id 种数 → 面板系统性低估（持 2 件同 id 遗物显示 1/3；B 评审实测）。
+      let n = 0
+      for (const [id, qty] of Object.entries(state.materials ?? {})) {
+        if (itemDef(id).category === 'relic') n += qty
+      }
+      return n
+    }
     case 'abyssCrystals':
       return state.abyss?.crystals ?? 0
     case 'seasonRenown':

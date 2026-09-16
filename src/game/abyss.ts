@@ -118,11 +118,18 @@ export function abyssScore(state: GameState, now: number, floor?: number): Abyss
 
 // ---------------- 层词条（v3.0 L6） ----------------
 
-/** 该层的词条（确定性：floor % 5；floor 1 = 迅捷层，新玩家第一层不受惩罚） */
+/**
+ * 轮换周期（层）：主题每 5 层切换、词条每 5 层轮换（同一常量）。
+ * v3.4.6：从字面量提为导出常量 —— 面板文案「主题每 25 层循环、词条每 5 层轮换」
+ * 现在从这里插值（此前是写死的数字，B 评审列为公式型漏网）。
+ */
+export const ABYSS_CYCLE = 5
+
+/** 该层的词条（确定性：floor % ABYSS_CYCLE；floor 1 = 迅捷层，新玩家第一层不受惩罚） */
 export function abyssModifier(floor: number): AbyssModDef {
-  const m = DEF.mods.find((x) => x.mod === floor % 5)
+  const m = DEF.mods.find((x) => x.mod === floor % ABYSS_CYCLE)
   // 内容表由 validateContent 保证五态完备；兜底返回"无修正"以免运行期抛错
-  return m ?? { mod: floor % 5, id: 'none', name: '寻常层', desc: '', reqMul: 1, crystalMul: 1, weightMul: {} }
+  return m ?? { mod: floor % ABYSS_CYCLE, id: 'none', name: '寻常层', desc: '', reqMul: 1, crystalMul: 1, weightMul: {} }
 }
 
 /** 该层的有效权重（层词条修正后） */
@@ -161,7 +168,7 @@ export function chainStaminaCost(floors: number): number {
 }
 
 export function abyssTheme(floor: number): string {
-  return DEF.themes[Math.floor((floor - 1) / 5) % DEF.themes.length] ?? ''
+  return DEF.themes[Math.floor((floor - 1) / ABYSS_CYCLE) % DEF.themes.length] ?? ''
 }
 
 export function firstClearCrystal(floor: number): number {

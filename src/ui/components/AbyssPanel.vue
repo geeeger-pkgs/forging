@@ -5,7 +5,7 @@
 import { CONTENT } from '../../game/content'
 import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
-import { abyssDef, abyssModifier, abyssView } from '../../game/abyss'
+import { ABYSS_CYCLE, abyssDef, abyssModifier, abyssView } from '../../game/abyss'
 import { fmtDur } from '../format'
 
 const DEF = abyssDef()
@@ -74,8 +74,10 @@ function fmtMs(ms: number): string {
   return fmtDur(ms)
 }
 
-/** 扫荡产出（与内核 repeatCrystal 同式；扫荡不吃层词条倍率） */
-const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DEF.repeatCrystal.perFloor))
+/** 扫荡产出（与内核 repeatCrystal 同式；扫荡不吃层词条倍率）。v3.4.6：base 也从内容表读（此前写死 1） */
+const bestSweepCrystal = computed(
+  () => DEF.repeatCrystal.base + Math.floor(view.value.bestFloor / DEF.repeatCrystal.perFloor),
+)
 const sweepTotal = computed(() => bestSweepCrystal.value * sweepActual.value)
 const sweepMax = computed(() => Math.min(DEF.sweepMaxCount, Math.max(1, view.value.stamina)))
 
@@ -83,11 +85,14 @@ function sweep(n: number): void {
   cmd({ type: 'sweepAbyss', count: n })
 }
 
-/** v3.4.5：增长率文案由**内容表插值**（此前写死，评审把 ×1.3 改成 ×1.2 全套测试仍绿） */
+/**
+ * v3.4.5：增长率文案由**内容表插值**（此前写死，评审把 ×1.3 改成 ×1.2 全套测试仍绿）。
+ * v3.4.6：字段名修正为 priceGrowth —— 此前误读 `growth`（不存在）导致 filter 恒空、
+ * 文案渲染成「价格逐次上调（）」空括号；且 `as unknown as` 擦了类型，编译器也拦不住。
+ */
 const growthText = computed(() => {
-  const shop = CONTENT.abyss.shop as unknown as { name: string; growth?: number }[]
-  const items = shop.filter((s) => (s.growth ?? 1) > 1)
-  return items.map((s) => `${s.name} ×${s.growth}`).join(" / ")
+  const items = CONTENT.abyss.shop.filter((s) => s.priceGrowth > 1)
+  return items.map((s) => `${s.name} ×${s.priceGrowth}`).join(' / ')
 })
 
 /** v3.4.5：词条倍率文案从内容表插值（此前写死 ×0.8 / ×1.5） */
@@ -264,10 +269,11 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
         最高层 <b>{{ view.bestFloor }}</b> ｜ 累计扫荡 {{ store.state.stats.totalAbyssSweeps }} 次 ｜ 累计购买 {{ store.state.stats.totalAbyssPurchases }} 次
         <template v-if="view.title"><br />称号：<b>深渊行者</b></template>
       </p>
+      <!-- v3.4.6：公式型数字从内容表/内核常量插值（B 评审：这三行是守卫扫不到的裸奔区） -->
       <p class="dim small">
-        首通奖励 = (10 + 2×层) × 本层词条结晶倍率（{{ modifierMulText }}），向下取整；
-        扫荡奖励 = 1 + ⌊最高层 / 20⌋（不含词条倍率，避免停在裂隙层反而吃亏）。
-        层数不封顶：主题每 25 层循环、词条每 5 层轮换，深度由配装决定。
+        首通奖励 = ({{ DEF.firstClearCrystal.base }} + {{ DEF.firstClearCrystal.perFloor }}×层) × 本层词条结晶倍率（{{ modifierMulText }}），向下取整；
+        扫荡奖励 = {{ DEF.repeatCrystal.base }} + ⌊最高层 / {{ DEF.repeatCrystal.perFloor }}⌋（不含词条倍率，避免停在裂隙层反而吃亏）。
+        层数不封顶：主题每 {{ ABYSS_CYCLE * DEF.themes.length }} 层循环、词条每 {{ ABYSS_CYCLE }} 层轮换，深度由配装决定。
       </p>
     </section>
   </div>
