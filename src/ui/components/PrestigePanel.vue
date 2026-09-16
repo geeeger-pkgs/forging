@@ -2,8 +2,9 @@
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { CONTENT } from '../../game/content'
-import { totalLevel } from '../../game/level'
+import { levelInfo, totalLevel } from '../../game/level'
 import {
+  PRESTIGE_FIRST_POINT_SKILL,
   PRESTIGE_MIN_LEVEL,
   perkMaxLevel,
   perkNextCost,
@@ -15,6 +16,8 @@ const total = computed(() => totalLevel(store.state.skills))
 const unlocked = computed(() => prestigeUnlocked(store.state))
 const points = computed(() => store.state.meta.prestige.points)
 const willGain = computed(() => prestigePointsFor(store.state))
+/** v3.4 W2：0 点提示需要展示卡在哪一项 */
+const minSkill = computed(() => Math.min(...Object.values(store.state.skills).map((xp) => levelInfo(xp).level)))
 const perks = computed(() =>
   CONTENT.perks.map((p) => ({
     def: p,
@@ -46,10 +49,11 @@ function confirmPrestige(): void {
         重置：技能等级与经验 ｜ 当前动作与队列<br />
         保留：材料 / 装备 / 金币 / 成就 / 任务 / 队列位 / 符文增益
       </p>
-      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（含满级技能 ×6 奖励）</p>
+      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（点数随**最低技能**提升：70/80/90/100 → 4/16/36/64）</p>
       <!-- v3.4 处置 V5：0 点时直接禁用并说明（此前先弹破坏性确认、确认后才被内核拦下） -->
       <p v-if="unlocked && willGain === 0" class="dim small">
-        当前 0 点：总等级达到 {{ PRESTIGE_MIN_LEVEL + 10 }} 才有第 1 点（现 {{ total }}）——点数从传承门槛之后起算
+        当前 0 点：**最低技能**需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有第 1 点（现 Lv{{ minSkill }}）
+        ——精通要求四项技能均衡（点数随最低技能提升：70/80/90/100 → 4/16/36/64 点）
       </p>
       <button class="btn primary" :disabled="!unlocked || willGain === 0" @click="confirmPrestige">
         {{ unlocked ? '立即传承' : `总等级 ${PRESTIGE_MIN_LEVEL} 解锁` }}

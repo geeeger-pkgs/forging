@@ -6,7 +6,7 @@
 // 保留：材料/装备/金币/成就/任务/队列位/增益
 // v1.9 深造：基础上限后可继续购买（价格 ×2），上限 = 基础上限 ×2
 // ============================================================
-import { CONTENT, MAX_LEVEL, PERK_BY_ID } from './content'
+import { CONTENT, PERK_BY_ID } from './content'
 import { levelInfo, totalLevel, xpForLevel } from './level'
 import type { GameEvent, GameState, PerkDef, SkillId } from './types'
 
@@ -37,20 +37,24 @@ export function prestigeUnlocked(state: GameState): boolean {
 
 /** 本次传承可获得的精通点 */
 /**
- * v3.4 V1：点数要求**均衡**——任一技能等级 < PRESTIGE_MIN_SKILL 则本次得 0 点。
- * 起因（评审）：旧式让"单技能冲到 100"成为刷点最优（混合策略实测 13.1× 倒挂）。
- * 现式：均衡门槛（60）+ ⌊(总等级 − 传承门槛)/10⌋ + 满级技能 ×4。
+ * v3.4 W1（复审重做）：精通点 = f(**最低技能等级**)，与总等级无关。
+ * 为什么这么改：评审用全域扫描证明"点数随总等级"必然留下边界最优（单技能冲高 + 其余躺平，
+ * 如 [51,37,36,36] → 3.30×、[100,60,60,60] → 2.1×）。改成只看最低技能后：
+ *   点/h 随最低技能**单调递增** → 满级（100×4）严格最优，任何"偏科/浅均衡"策略收益为 0。
+ * 口径：min < 70 → 0 点；否则 steps = ⌊(min − 60)/10⌋（1..4），点数 = steps² × 4（4/16/36/64）。
  */
-export const PRESTIGE_MIN_SKILL_RATIO = 0.9 // 最低技能 ≥ 0.85×平均（堵偏科刷点）
+export const PRESTIGE_MIN_SKILL = 60
+
+/** 拿到第 1 点所需的最低技能等级（min ≥ 此值才有点数） */
+export const PRESTIGE_FIRST_POINT_SKILL = 70
 
 export function prestigePointsFor(state: GameState): number {
   const ids = Object.keys(state.skills) as SkillId[]
   const levels = ids.map((id) => levelInfo(state.skills[id]).level)
-  const avg = levels.reduce((a, b) => a + b, 0) / levels.length
-  if (Math.min(...levels) < avg * PRESTIGE_MIN_SKILL_RATIO) return 0
-  const total = totalLevel(state.skills)
-  let points = Math.floor(Math.max(0, total - PRESTIGE_MIN_LEVEL) / 10)
-  for (const lv of levels) if (lv >= MAX_LEVEL) points += 6 // v3.4 V1：满级技能 ×6（扫描定档：最优/满级 = 1.20×）
+  const minLv = Math.min(...levels)
+  if (minLv < PRESTIGE_FIRST_POINT_SKILL) return 0
+  const steps = Math.floor((minLv - PRESTIGE_MIN_SKILL) / 10)
+  const points = steps * steps * 4
   return points
 }
 
@@ -80,10 +84,16 @@ export function doPrestige(state: GameState): GameEvent[] {
   }
   const points = prestigePointsFor(state)
   if (points <= 0) {
-    // v3.4 A6：点数从门槛后起算 → 门槛处为 0；给出可执行的下一步
-    const next = PRESTIGE_MIN_LEVEL + 10
-    return [{ type: 'blocked', reason: `当前可获得 0 点：总等级达到 ${next} 才有第 1 点（现 ${totalLevel(state.skills)}）` }]
+    const levels = (Object.keys(state.skills) as SkillId[]).map((id) => levelInfo(state.skills[id]).level)
+    const minLv = Math.min(...levels)
+    return [
+      {
+        type: 'blocked',
+        reason: `最低技能需达到 Lv${PRESTIGE_FIRST_POINT_SKILL} 才有第 1 点（现 Lv${minLv}）——精通要求四项均衡`,
+      },
+    ]
   }
+
 
   // 重置：技能（回到起点精通加成的等级）
   const perk = perkBonuses(state)

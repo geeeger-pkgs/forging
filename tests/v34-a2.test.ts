@@ -129,13 +129,13 @@ describe('A6 传承点数：消除反直觉最优解', () => {
     expect(scan.acceptable).toBe(true)
   })
 
-  it('实现与证据同式：门槛处 0 点、满级轮回 52 点（满级技能 ×6）', () => {
+  it('实现与证据同式：门槛处 0 点、满级（最低技能 100）×4 = 64 点', () => {
     expect(simD.d.prestige.fast.points).toBe(0)
-    expect(simD.d.prestige.maxed.points).toBe(52) // 满级技能 ×6：28 + 24
+    expect(simD.d.prestige.maxed.points).toBe(64) // W1：steps=4 → 4²×4
     const s = newGame('T', 0)
     const xp100 = xpForLevel(100)
     s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
-    expect(prestigePointsFor(s)).toBe(52)
+    expect(prestigePointsFor(s)).toBe(64)
   })
 
   it('门槛处不给点也不再"白轮回"：doPrestige 被拦下且提示可执行', () => {
@@ -175,14 +175,14 @@ describe('v3.4 处置回归（评审 V2~V5）', () => {
 
   it('V4：传承面板文案与公式一致（满级技能 ×4，不是 +1）', () => {
     const p = src('src/ui/components/PrestigePanel.vue')
-    expect(p).toContain('满级技能 ×6')
+    expect(p).toContain('点数随**最低技能**提升')
     expect(p).not.toContain('满级技能 +1')
   })
 
   it('V5：0 点时按钮禁用且直写解锁条件（不再先确认后被拦）', () => {
     const p = src('src/ui/components/PrestigePanel.vue')
     expect(p).toContain('willGain === 0')
-    expect(p).toContain('PRESTIGE_MIN_LEVEL + 10')
+    expect(p).toContain('PRESTIGE_FIRST_POINT_SKILL')
   })
 
   it('V2/V3：里程碑用独立 class（不被窄屏 .tl 隐藏）且文案写明技能与解锁条件', () => {

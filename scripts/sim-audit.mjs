@@ -418,7 +418,7 @@ const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduc
 const fastHours = hoursPerSkill(30)
 const maxHours = hoursPerSkill(100)
 const fastPoints = 0 // 门槛处：均衡门槛（最低 ≥0.9×平均）下 30 级不达标 → 0 点
-const maxPoints = Math.floor(Math.max(0, 400 - 120) / 10) + 6 * 4
+const maxPoints = 4 * 4 * 4 // W1：steps=4 → 64（点数 = steps²×4，只看最低技能）
 const fastPerHour = fastPoints / fastHours
 const maxPerHour = maxPoints / maxHours
 const fastRatio = fastPerHour / maxPerHour
