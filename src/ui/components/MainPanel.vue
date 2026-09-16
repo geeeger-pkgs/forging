@@ -286,6 +286,11 @@ h2 {
     padding: 4px 2px;
     border-radius: var(--r-sm);
   }
+  /* v3.7.12：搜索框在 .tabs 容器内（桌面与分区同行）→ 窄屏网格下必须跨全列独占一行，
+     否则会变成第 6 个网格单元被压进 66px 小格（用户反馈"搜索框被打小了"） */
+  .search-inline {
+    grid-column: 1 / -1;
+  }
   .search,
   .search-inline {
     width: 100%;
