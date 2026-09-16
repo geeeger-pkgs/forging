@@ -48,9 +48,13 @@ export function msToSeasonEnd(now: number): number {
 export function maturityClassOf(state: GameState): 'junior' | 'veteran' {
   // 3.4.1（终审 Major）：改用**生涯最高技能等级**取档（meta.bestSkillLevel，单调不回退）——
   // 此前按当前总等级，导致"刚传承完（总等级 ≤44）的号整季被锁在新晋档"，传承循环者几乎见不到老手档。
-  // 量纲：门槛 juniorMaxTotalLevel 是**总等级**，而 bestSkillLevel 是**单技能等级**（上限 100）→ 换算成总等级等价量（×4 技能）
-  const best = (state.meta.bestSkillLevel ?? 1) * 4
-  const level = Math.max(totalLevelOf(state), best) // 取两者较大：既尊重生涯最高，也兼容老档
+  // 3.4.2（确认评审 Major）：**只有已传承过的号**才用"生涯最高"取档。
+  // 起因：bestSkillLevel×4 只是上界近似，会让"单技能偏科但总等级 ≤119"的未传承号提前进老手档
+  // （如 [40,20,20,20] 被判老手），与 juniorMaxTotalLevel 的总等级语义脱钩。
+  const total = totalLevelOf(state)
+  const prestiged = (state.stats?.totalPrestiges ?? 0) > 0
+  const bestEquiv = prestiged ? (state.meta.bestSkillLevel ?? 1) * 4 : 0
+  const level = Math.max(total, bestEquiv)
   return level <= DEF.maturityBands.juniorMaxTotalLevel ? 'junior' : 'veteran'
 }
 

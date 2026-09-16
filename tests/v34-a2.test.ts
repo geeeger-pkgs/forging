@@ -242,10 +242,26 @@ describe('三审 T5：缩放目标的浮点假进位（实机截图发现）', (
   })
 })
 
+describe('3.4.2：面板档位表必须与实现逐数字一致（防「只查语义」的漂移）', () => {
+  it('档位表数字与实现同值（2/6/12/20/30/42），不得残留旧曲线', () => {
+    const p = readFileSync(join(process.cwd(), 'src/ui/components/PrestigePanel.vue'), 'utf8')
+    expect(p).toContain('2/6/12/20/30/42')
+    expect(p).not.toContain('1/4/9/16/25/36')
+    const s = newGame('T', 0)
+    const table: Record<number, number> = { 50: 2, 60: 6, 70: 12, 80: 20, 90: 30, 100: 42 }
+    for (const [lv, pts] of Object.entries(table)) {
+      const xp = xpForLevel(Number(lv))
+      s.skills = { mining: xp, smelting: xp, forging: xp, enhancing: xp }
+      expect(prestigePointsFor(s), '最低技能 ' + lv + ' 应得 ' + pts + ' 点').toBe(pts)
+    }
+  })
+})
+
 describe('3.4.1 终审处置：赛季档位按生涯最高技能等级取档', () => {
   it('刚传承（当前技能低）但生涯最高已过线 → 仍按老手档', () => {
     const s = newGame('T', 0)
     s.meta.bestSkillLevel = 100 // 生涯最高（曾经练满）
+    s.stats.totalPrestiges = 1 // 3.4.2：只有已传承过的号才用生涯最高取档
     s.skills = { mining: 0, smelting: 0, forging: 0, enhancing: 0 } // 刚传承：当前很低
     expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.veteran)
   })

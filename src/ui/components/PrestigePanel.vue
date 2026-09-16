@@ -49,14 +49,14 @@ function confirmPrestige(): void {
         重置：技能等级与经验 ｜ 当前动作与队列<br />
         保留：材料 / 装备 / 金币 / 成就 / 任务 / 队列位 / 符文增益
       </p>
-      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（点数随<b>最低技能</b>提升：50/60/70/80/90/100 → 1/4/9/16/25/36）</p>
+      <p v-if="unlocked" class="gain">本次传承可获得 <b class="hl">{{ willGain }}</b> 精通点（点数随<b>最低技能</b>提升：50/60/70/80/90/100 → 2/6/12/20/30/42）</p>
       <!-- v3.4 处置 V5：0 点时直接禁用并说明（此前先弹破坏性确认、确认后才被内核拦下） -->
       <!-- 3.4.1（终审 Major）：解锁前也可预览首点门槛与档位表 —— 此前两者都在 unlocked 之后渲染，中期玩家会误按"总 120 即有点"规划 -->
       <p v-if="!unlocked" class="dim small">
         提示：解锁后点数取决于<b>最低技能</b>——最低技能达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（50/60/70/80/90/100 → 2/6/12/20/30/42 点）
       </p>
       <p v-if="unlocked && willGain === 0" class="dim small">
-        当前 0 点：<b>最低技能</b>需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有第 1 点（现 Lv{{ minSkill }}）
+        当前 0 点：<b>最低技能</b>需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（2 点；现 Lv{{ minSkill }}）
         ——精通要求四项技能均衡（档位表见上）
       </p>
       <button class="btn primary" :disabled="!unlocked || willGain === 0" @click="confirmPrestige">
