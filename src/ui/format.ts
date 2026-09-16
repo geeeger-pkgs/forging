@@ -32,3 +32,14 @@ export function fmtPct(ratio: number, digits = 1): string {
   if (!Number.isFinite(ratio)) return '—'
   return `${(ratio * 100).toFixed(digits)}%`
 }
+
+/**
+ * 档位中文名（T1~T7）：铜/铁/银/金/秘银/星尘/虚空。
+ * v3.6.2（backlog：T1~T7 术语对新手是黑话）：提为共享表；玩家可见文案用 `tierLabel()` 加中文注。
+ */
+export const TIER_CN: Record<number, string> = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银', 6: '星尘', 7: '虚空' }
+
+/** 档位可读名：tierLabel(4) = '金档'；未知档位回退 'T{n}' */
+export function tierLabel(tier: number): string {
+  return TIER_CN[tier] ? `${TIER_CN[tier]}档` : `T${tier}`
+}

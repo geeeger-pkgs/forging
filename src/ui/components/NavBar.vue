@@ -57,7 +57,7 @@ const pendingCount = computed(() => pendingExpeditions.value + pendingTutorial.v
 const COUNTER_LABEL: Record<string, string> = {
   totalReforges: '重铸词缀',
   totalExpeditions: '完成远征',
-  totalEnhancesT4: '强化 T4+ 装备',
+  totalEnhancesT4: '强化金档以上装备（T4+）',
   totalEnhances: '强化装备',
   totalMines: '挖掘',
   totalCrafts: '制作',

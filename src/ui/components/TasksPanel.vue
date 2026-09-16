@@ -197,4 +197,18 @@ function reroll(index: number): void {
   font-size: 14px;
   color: var(--c-accent-2);
 }
+
+/* v3.6.2（评审 v3.6 m1）：窄屏任务行（标题+描述+奖励+重掷按钮）会挤压 → 允许换行、去 spacer */
+@media (max-width: 900px) {
+  .row1 {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .row1 .spacer {
+    display: none;
+  }
+  .row1 .title {
+    min-width: 0;
+  }
+}
 </style>

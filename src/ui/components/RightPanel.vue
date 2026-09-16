@@ -4,7 +4,7 @@ import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { MAX_GEAR_SETS } from '../../game/commands'
 import { recycleGain } from '../../game/economy'
-import { fmtPct } from '../format'
+import { TIER_CN, fmtPct } from '../format'
 import { CONTENT, itemDef } from '../../game/content'
 import { effectiveStats } from '../../game/stats'
 import { instanceById } from '../../game/state'
@@ -25,7 +25,7 @@ const SLOT_LABEL: Record<SlotId, string> = {
   ring: '戒指',
 }
 
-const TIER_CN: Record<number, string> = { 1: '铜', 2: '铁', 3: '银', 4: '金', 5: '秘银', 6: '星尘', 7: '虚空' }
+// v3.6.2：档位表已提为共享（src/ui/format.ts），此处复用防漂移
 
 const slots = computed(() =>
   SLOT_IDS.map((id) => {

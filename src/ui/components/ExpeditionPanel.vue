@@ -24,7 +24,13 @@ import { materialCount } from '../../game/state'
 import type { ExpeditionRouteDef } from '../../game/types'
 
 const RARITY_CN: Record<string, string> = { common: '平凡', elite: '精锐', legend: '传奇' }
-const RARITY_COLOR: Record<string, string> = { common: '#9aa4b0', elite: '#7f9bff', legend: '#f5a623' }
+// v3.6.2：改用主题 token（此前硬编码 #9aa4b0/#7f9bff/#f5a623，脱离 token 体系且随主题漂移）；
+// 对比度：dim 5.26 / accent-2 4.97 / accent 7.95（on panel-2）
+const RARITY_COLOR: Record<string, string> = {
+  common: 'var(--c-text-dim)',
+  elite: 'var(--c-accent-2)',
+  legend: 'var(--c-accent)',
+}
 
 const state = computed(() => store.state)
 const banner = computed(() => store.state.meta.expeditions.banner)
@@ -354,7 +360,9 @@ void levelInfo
   gap: 4px;
 }
 .route.disabled {
-  opacity: 0.75;
+  /* v3.6.2：整卡 0.75 透明会把文字压到 3.42:1 → 改用"深底 + 虚线框 + 可读文本"（对比 ≥5.9） */
+  background: var(--c-bg-deep);
+  border-style: dashed;
 }
 .rhead {
   display: flex;

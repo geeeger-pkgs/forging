@@ -349,5 +349,17 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
   .tasks {
     grid-template-columns: 1fr;
   }
+  /* v3.6.2（评审 v3.6 M/m1）：任务头在 375px 会挤压折行（"未达成 · 0 声望"断成两行）→
+     允许换行、去掉推开用的 spacer、让标题可收缩 */
+  .thead {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  .thead .spacer {
+    display: none;
+  }
+  .thead b {
+    min-width: 0;
+  }
 }
 </style>

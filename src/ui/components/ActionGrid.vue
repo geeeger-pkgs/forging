@@ -82,7 +82,8 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
 }
 .cell.locked .title,
 .cell.locked .note {
-  color: #868b9e;
+  /* v3.6.2：硬编码 #868b9e（4.76 勉强达标）→ 主题 token（5.26；锁定感由图标降调承担） */
+  color: var(--c-text-dim);
 }
 .icon {
   font-size: 30px;

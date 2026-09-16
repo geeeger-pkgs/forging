@@ -180,7 +180,8 @@ function unequip(): void {
         <span class="dim">{{ canLock ? '锁定后重铸不会改变该条' : '仅 1 条词缀，无可锁定项' }}</span>
       </div>
 
-      <div v-if="inst.affixes.length === 0" class="dim">该物品没有词缀（仅 T1 以上装备拥有）</div>
+      <!-- v3.6.2：原文案「仅 T1 以上装备拥有」等于没说（所有装备都 T1+）→ 直说怎么获得 -->
+      <div v-if="inst.affixes.length === 0" class="dim">该装备暂无词缀——锻造产出的装备才会自带词缀</div>
       <div
         v-for="(a, i) in inst.affixes"
         :key="a.id"

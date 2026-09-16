@@ -73,17 +73,18 @@ function rewardText(a: AchievementDef): string {
   gap: 10px;
 }
 .card {
-  background: var(--c-panel-2);
+  /* v3.6.2（评审 v3.6 登记项）：此前整卡 opacity: 0.5 → 文字被压到 2.26:1（玩家读不了"怎么解锁"）。
+     改用"深底 + 正常可读文本 + 🔒"表达未达成；对比度：dim/accent-2 on bg-deep = 6.49 / 5.94。 */
+  background: var(--c-bg-deep);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
   padding: 10px 12px;
-  opacity: 0.5;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .card.done {
-  opacity: 1;
+  background: var(--c-panel-2);
   border-color: var(--c-accent);
 }
 .head {

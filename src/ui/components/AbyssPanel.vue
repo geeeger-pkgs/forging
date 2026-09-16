@@ -226,7 +226,7 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
         ⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。
         <template v-if="view.bestFloor === 0">
           <br />入门提示：第 1 层只需 {{ view.nextRequirement.toFixed(2) }}（入门 {{ DEF.introReqs?.length ?? 3 }} 层之一），
-          一件 T3+ 强化装备 + 少量速度/稀有词缀即可起步；再往上才需要整套 build。
+          一件银档以上（T3+）的强化装备 + 少量速度/稀有词缀即可起步；再往上才需要整套 build。
         </template>
         <template v-else>
           <br />补强方向：按本层有效权重，当前贡献最低的三项是 {{ topGapLabels }}（先补它们性价比最高）。
@@ -372,7 +372,8 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
   border-left-color: var(--c-accent);
 }
 .modbar.rift {
-  border-left-color: #7f9bff;
+  /* v3.6.2：硬编码 #7f9bff → 主题 token（rift=喘息层，用强调蓝） */
+  border-left-color: var(--c-accent-2);
 }
 .boost {
   color: var(--c-accent);
@@ -414,7 +415,9 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
   gap: 4px;
 }
 .item.owned {
-  opacity: 0.75;
+  /* v3.6.2：整卡 0.75 透明会把文字压到 3.42:1 → 改用"深底 + 可读文本"（对比 ≥5.9） */
+  background: var(--c-bg-deep);
+  border-style: dashed;
 }
 .ihead {
   display: flex;
