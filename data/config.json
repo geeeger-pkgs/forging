@@ -1,10 +1,20 @@
 {
   "offlineCapHours": 8,
   "minActionTimeMs": 250,
-  "queueSlotCosts": [300, 1200, 5000, 20000, 60000],
+  "queueSlotCosts": [
+    300,
+    1200,
+    5000,
+    20000,
+    60000
+  ],
   "autosaveSec": 5,
   "coalMineUnlock": 20,
   "defaultQueueSlots": 1,
   "maxQueueSlots": 6,
-  "prestigeUnlockLevel": 120
+  "prestigeUnlockLevel": 120,
+  "recycleConfirm": {
+    "perfectScore": 0.9,
+    "goldGain": 5000
+  }
 }

@@ -2,6 +2,7 @@
 import { computed, nextTick, ref } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
+import { recycleGain } from '../../game/economy'
 import { fmtPct } from '../format'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById } from '../../game/state'
@@ -176,8 +177,39 @@ function tidyBag(): void {
  * 现在默认收起，用底部一排 Tab 切换三个分区；桌面端（>900px）三块始终全展示。
  */
 type RightTab = 'gear' | 'bag' | 'mats'
+const RIGHT_TABS = [
+  { id: 'gear', label: '装备' },
+  { id: 'bag', label: '行囊' },
+  { id: 'mats', label: '资源' },
+] as const satisfies readonly { id: RightTab; label: string }[]
 const rightTab = ref<RightTab>('gear')
 const rightOpen = ref(false)
+
+/**
+ * v3.3 C2：tablist 的 roving tabindex + 方向键。
+ * 收起（无选中）时把「装备」留在 Tab 序列里，保证键盘能进得来；
+ * ←/→ 在三个分区之间切换，Home/End 跳到首/尾（APG tab 模式）。
+ */
+const rovingTabId = computed<RightTab>(() => (rightOpen.value ? rightTab.value : 'gear'))
+function onTabKeydown(e: KeyboardEvent): void {
+  const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
+  if (!keys.includes(e.key)) return
+  e.preventDefault()
+  const ids = RIGHT_TABS.map((t) => t.id) as RightTab[]
+  const cur = ids.indexOf(rovingTabId.value)
+  const nextIdx =
+    e.key === 'Home'
+      ? 0
+      : e.key === 'End'
+        ? ids.length - 1
+        : e.key === 'ArrowRight'
+          ? (cur + 1) % ids.length
+          : (cur - 1 + ids.length) % ids.length
+  const next = ids[nextIdx]
+  void toggleRightTab(next)
+  // 焦点跟随（roving tabindex 的"焦点与选中同步"语义）
+  requestAnimationFrame(() => document.getElementById(`rtab-${next}`)?.focus())
+}
 /**
  * v3.2 评审 N1（两名评审共同要求的放行条件）：底栏常驻后，"点开"必须把玩家带到面板。
  * 面板内容仍在文档末尾（主内容之后），只切换状态的话在页面中部点「资源」→ 视口不动，
@@ -270,7 +302,23 @@ function recycleAll(itemId: string, qty: number): void {
 function autoKeep(itemId: string): number | undefined {
   return store.state.meta.autoRecycle[itemId]
 }
+/**
+ * v3.3 C4：高价值回收二次确认（"撤销"的降级方案，见 design-v3.3 §1-C4）。
+ * 阈值表驱动（`data/config.json.recycleConfirm`），只对"删了会心疼"的两类触发：
+ *   · 完美度 ≥ perfectScore（接近满词缀，通常是主力装备）
+ *   · 单件回收金 ≥ goldGain
+ */
 function recycleInstance(instanceId: number): void {
+  const inst = store.state.equipment.find((e) => e.instanceId === instanceId)
+  const cfg = CONTENT.config.recycleConfirm
+  if (inst && cfg) {
+    const score = perfectScore(inst.itemId, inst.affixes)
+    const gain = recycleGain(store.state, inst.itemId, 1)
+    const highValue = score >= cfg.perfectScore || gain >= cfg.goldGain
+    if (highValue && !window.confirm(`回收「${itemDef(inst.itemId).name} +${inst.enhanceLevel}」？\n完美度 ${fmtPct(score)}、回收 +${gain} 金（不可撤销）`)) {
+      return
+    }
+  }
   cmd({ type: 'recycleInstance', instanceId })
 }
 /** 材料 → 简单详情条；装备实例 → 词缀详情弹窗（v2.1） */
@@ -299,13 +347,14 @@ function isTop(score: number): boolean {
   <aside class="right" :class="{ 'tab-open': rightOpen }" :data-tab="rightTab">
     <!-- v3.2 A2：窄屏 Tab 条（桌面隐藏）。**常驻视口底部**——评审 Major：
          此前用 sticky（包含块是页面末尾的 aside），未滚到页面底部时根本不可见，等于没有入口。 -->
-    <nav class="rtabs" role="tablist" aria-label="右侧面板分区（装备 / 行囊 / 资源）">
+    <nav
+      class="rtabs"
+      role="tablist"
+      aria-label="右侧面板分区（装备 / 行囊 / 资源）"
+      @keydown="onTabKeydown"
+    >
       <button
-        v-for="t in ([
-          { id: 'gear', label: '装备' },
-          { id: 'bag', label: '行囊' },
-          { id: 'mats', label: '资源' },
-        ] as const)"
+        v-for="t in RIGHT_TABS"
         :key="t.id"
         class="rtab"
         role="tab"
@@ -313,6 +362,7 @@ function isTop(score: number): boolean {
         :aria-controls="`rtabpanel-${t.id}`"
         :aria-selected="rightOpen && rightTab === t.id"
         :class="{ active: rightOpen && rightTab === t.id }"
+        :tabindex="rovingTabId === t.id ? 0 : -1"
         @click="toggleRightTab(t.id)"
       >
         {{ t.label }}
@@ -397,7 +447,16 @@ function isTop(score: number): boolean {
       <div v-if="materials.length === 0" class="dim">暂无资源（下一步：回矿场挖矿或熔炼矿石）</div>
       <div v-for="m in materials" :key="m.id" class="mat-item">
         <div class="row">
-          <span class="clickable" @click="inspect(null, m.id)">
+          <!-- v3.3 C3：可点文字也要能键盘到达（此前只有鼠标 hover/cursor 提示） -->
+          <span
+            class="clickable"
+            role="button"
+            tabindex="0"
+            :title="`查看「${m.name}」用途`"
+            @click="inspect(null, m.id)"
+            @keyup.enter="inspect(null, m.id)"
+            @keyup.space.prevent="inspect(null, m.id)"
+          >
             <ItemIcon :item-id="m.id" :size="16" />
             <span class="name">{{ m.name }}</span>
           </span>
@@ -463,7 +522,16 @@ function isTop(score: number): boolean {
       </div>
       <div v-if="bagItems.length === 0" class="dim">行囊为空（锻造装备后会出现在这里）</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
-        <span class="clickable" @click="inspect(b.inst.instanceId)">
+        <!-- v3.3 C3：键盘可达（role/tabindex/Enter+Space），与材料行一致 -->
+        <span
+          class="clickable"
+          role="button"
+          tabindex="0"
+          :title="`查看「${b.name}」详情（可卸下 / 重铸）`"
+          @click="inspect(b.inst.instanceId)"
+          @keyup.enter="inspect(b.inst.instanceId)"
+          @keyup.space.prevent="inspect(b.inst.instanceId)"
+        >
           <ItemIcon :item-id="b.inst.itemId" :size="16" />
           <span class="name">
             {{ b.name }}<em class="dim"> +{{ b.inst.enhanceLevel }}</em>

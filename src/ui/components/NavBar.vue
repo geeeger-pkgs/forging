@@ -37,6 +37,20 @@ const tutorial = computed(() => {
   }
 })
 
+/**
+ * v3.3 C1：可领奖徽标。
+ * 数据源只取**已确认存在待领取语义**的两处（评审 P-B2：任务/图鉴里程碑/赛季奖励都是自动发放，
+ * 没有可领取态 —— 初稿把它们当数据源会做出一个永远不出现的徽标）：
+ *   ① 远征 run.done（完成待领，见 ExpeditionsState）
+ *   ② 教程当前步已完成但未领取（claimTutorial 的判定条件）
+ */
+const pendingCount = computed(() => {
+  const runs = store.state.meta.expeditions?.runs?.filter((r) => r.done).length ?? 0
+  const t = store.state.flags.tutorial
+  const tut = t.completed.includes(t.current) && !t.claimed.includes(t.current) ? 1 : 0
+  return runs + tut
+})
+
 /** v3.1：章节二目标的计数器可读名（面板文案用） */
 const COUNTER_LABEL: Record<string, string> = {
   totalReforges: '重铸词缀',
@@ -172,7 +186,13 @@ function toggleMute(): void {
       @click="toolsOpen = !toolsOpen"
     >
       <span class="icon">{{ toolsOpen ? '▾' : '▸' }}</span>
-      <span class="body"><span class="name">更多<em v-if="!toolsOpen && currentToolLabel"> · {{ currentToolLabel }}</em></span></span>
+      <span class="body">
+        <span class="name">
+          更多<em v-if="!toolsOpen && currentToolLabel"> · {{ currentToolLabel }}</em>
+          <!-- v3.3 C1：有可领取奖励时给个明确的有东西可拿信号 -->
+          <span v-if="pendingCount > 0" class="badge" :title="`有 ${pendingCount} 项奖励可领取`" aria-label="有奖励可领取">{{ pendingCount }}</span>
+        </span>
+      </span>
     </button>
 
     <div id="nav-tools" class="tools" :class="{ collapsed: !toolsOpen }">
@@ -186,7 +206,13 @@ function toggleMute(): void {
       </button>
       <button class="item" :class="{ active: store.ui.view === 'expedition' }" @click="pickTool('expedition')">
         <span class="icon">🧭</span>
-        <span class="body"><span class="name">远征</span></span>
+        <span class="body">
+          <span class="name">
+            远征
+            <!-- v3.3 C1 徽标挂点 2：抽屉展开时（含桌面）也能看到 -->
+            <span v-if="pendingCount > 0" class="badge" :title="`有 ${pendingCount} 项奖励可领取`" aria-label="有奖励可领取">{{ pendingCount }}</span>
+          </span>
+        </span>
       </button>
       <button class="item" :class="{ active: store.ui.view === 'codex' }" @click="pickTool('codex')">
         <span class="icon">📖</span>
@@ -283,6 +309,22 @@ function toggleMute(): void {
 .name em {
   font-style: normal;
   color: var(--c-accent);
+}
+/* v3.3 C1：可领奖徽标（小圆点 + 数量；不依赖颜色单通道，数字本身就是语义） */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 6px;
+  border-radius: 8px;
+  background: var(--c-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
 }
 .xpbar {
   height: 3px;

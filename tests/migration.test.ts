@@ -152,7 +152,7 @@ describe('A4 真实形状 v13 档回归', () => {
     expect(s.slots.hammer).toBe(2)
     const hammer = s.equipment.find((e) => e.instanceId === 2)!
     expect(hammer.itemId).toBe('hammer_iron')
-    expect(hammer.affixes).toEqual([{ id: 'affix_speed', value: 0.12 }])
+    expect(hammer.affixes).toEqual([{ id: 'keen', value: 0.12 }])
   })
 
   it('符文增益 / 自动回收 / 配装预设 / 赛季 / 深渊 逐项保留', () => {

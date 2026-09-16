@@ -12,7 +12,8 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { store } from '../../src/app/store'
-import { addInstance, newGame, materialCount } from '../../src/game/state'
+import { CONTENT } from '../../src/game/content'
+import { addInstance, materialCount, newGame } from '../../src/game/state'
 import type { GameState } from '../../src/game/types'
 import ItemDetailModal from '../../src/ui/components/ItemDetailModal.vue'
 import NavBar from '../../src/ui/components/NavBar.vue'
@@ -212,5 +213,101 @@ describe('A2 操作矩阵：v3.2 出过事故的路径逐条走通', () => {
     expect(off, '已开启自动回收时应出现「关自动」').toBeTruthy()
     await off!.trigger('click')
     expect(s.meta.autoRecycle?.ore_copper).toBeUndefined()
+  })
+})
+
+// ============================================================
+// v3.3 C 组：交互补完（徽标 / 方向键 / 键盘化 / 回收二次确认）
+// ============================================================
+describe('C 组：交互补完', () => {
+  it('C1 徽标：无待领取时不存在；有远征待领取时显示数量', async () => {
+    const s = boot()
+    const nav1 = mount(NavBar)
+    expect(nav1.find('.badge').exists(), '没有可领奖励时不应出现徽标').toBe(false)
+    // 造一个"已完成待领取"的远征 run
+    s.meta.expeditions.runs.push({
+      id: 1,
+      routeId: CONTENT.expeditions.routes[0].id,
+      hours: 1,
+      startedAt: 0,
+      endsAt: 1,
+      team: [],
+      done: true,
+      outcome: null,
+    })
+    const nav2 = mount(NavBar)
+    const badge = nav2.find('.badge')
+    expect(badge.exists(), '有待领取远征时应出现徽标').toBe(true)
+    expect(badge.text()).toBe('1')
+  })
+
+  it('C1 徽标：教程已完成未领取也算一项', async () => {
+    const s = boot()
+    s.flags.tutorial = { current: 1, completed: [1], claimed: [], progress: 1 }
+    const nav = mount(NavBar)
+    expect(nav.find('.badge').text()).toBe('1')
+  })
+
+  it('C2 方向键：→ 切到下一分区并打开；Home/End 跳首尾', async () => {
+    boot()
+    const rp = mount(RightPanel)
+    const nav = rp.find('.rtabs')
+    await nav.trigger('keydown', { key: 'ArrowRight' })
+    await nextTick()
+    expect(rp.findAll('.rtab').find((t) => t.text() === '行囊')!.attributes('aria-selected')).toBe('true')
+    await nav.trigger('keydown', { key: 'End' })
+    await nextTick()
+    expect(rp.findAll('.rtab').find((t) => t.text() === '资源')!.attributes('aria-selected')).toBe('true')
+    await nav.trigger('keydown', { key: 'Home' })
+    await nextTick()
+    expect(rp.findAll('.rtab').find((t) => t.text() === '装备')!.attributes('aria-selected')).toBe('true')
+  })
+
+  it('C2 roving tabindex：收起时「装备」留在 Tab 序列，其余为 -1', async () => {
+    boot()
+    const rp = mount(RightPanel)
+    const tabs = rp.findAll('.rtab')
+    expect(tabs[0].attributes('tabindex')).toBe('0')
+    expect(tabs[1].attributes('tabindex')).toBe('-1')
+    expect(tabs[2].attributes('tabindex')).toBe('-1')
+  })
+
+  it('C3 材料名 / 行囊名可键盘激活（Enter）', async () => {
+    const s = boot()
+    s.materials['ore_copper'] = 5
+    const id = addInstance(s, 'pick_copper')
+    const rp = mount(RightPanel)
+    const names = rp.findAll('.clickable')
+    expect(names.length).toBeGreaterThan(0)
+    for (const n of names) {
+      expect(n.attributes('role'), '可点文字应有 button 语义').toBe('button')
+      expect(n.attributes('tabindex')).toBe('0')
+    }
+    // 行囊行 Enter → 打开详情
+    const bagName = rp.findAll('#rtabpanel-bag .clickable')[0]
+    await bagName.trigger('keyup', { key: 'Enter' })
+    expect(store.ui.inspectInstanceId).toBe(id)
+  })
+
+  it('C4 高价值回收：确认框出现且取消时不回收；低价值不打扰', async () => {
+    const s = boot()
+    const id = addInstance(s, 'pick_copper')
+    const inst = s.equipment.find((e) => e.instanceId === id)!
+    // 高完美度：满词缀 → 触发确认
+    inst.affixes = Array.from({ length: 4 }, () => ({ id: 'keen', value: 1 }))
+    const calls: string[] = []
+    let answer = false
+    ;(window as unknown as { confirm: unknown }).confirm = (msg: string) => {
+      calls.push(msg)
+      return answer
+    }
+    const rp = mount(RightPanel)
+    const recycle = () => rp.findAll('#rtabpanel-bag .row button').find((b) => b.text().includes('回收'))!
+    await recycle().trigger('click')
+    expect(calls.length, '高完美度回收应弹确认').toBe(1)
+    expect(s.equipment.some((e) => e.instanceId === id), '取消后不应回收').toBe(true)
+    answer = true
+    await recycle().trigger('click')
+    expect(s.equipment.some((e) => e.instanceId === id), '确认后应回收').toBe(false)
   })
 })

@@ -128,7 +128,7 @@ describe('UI 卫生（DoD：日常操作不得用系统弹窗）', () => {
       expect(allowed.some((a) => f.endsWith(a)), `${f} 不应使用 confirm`).toBe(true)
     }
     const rp = readFileSync(join(uiDir, 'components', 'RightPanel.vue'), 'utf8')
-    expect((rp.match(/window\.confirm\(/g) ?? []).length).toBeLessThanOrEqual(2)
+    expect((rp.match(/window\.confirm\(/g) ?? []).length).toBeLessThanOrEqual(3) // v3.3：+高价值单件回收
   })
 
   it('主题里存在键盘焦点环规则（focus-visible）', () => {
