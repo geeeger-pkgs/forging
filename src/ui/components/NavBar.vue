@@ -501,6 +501,28 @@ function toggleMute(): void {
     /* v3.2 修正：窄屏触控目标 ≥40px（评审 Major） */
     min-height: 40px;
   }
+  /*
+   * v3.7.9（用户反馈"挖掘两个字竖着了"）：4 列网格下技能项可用宽仅 ~40px
+   * （图标 30 + gap 8 + padding）→ "挖掘 23" 被迫折行成"挖 / 掘 23"。
+   * 技能项改**图标在上、文字在下**（移动端 tab 的标准形态），文字获得整格宽度。
+   * 只作用于顶层技能项；「更多（span 3，宽 272 足够横排）」与「音效（纯图标）」不受影响；
+   * 抽屉内工具项（宽 87、内容 ≤62px）实测无需改。
+   */
+  .nav > .item:not(.tools-toggle):not(.mute) {
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 5px 4px;
+    min-height: 52px;
+  }
+  .nav > .item:not(.tools-toggle):not(.mute) .name {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .nav > .item:not(.tools-toggle):not(.mute) .name em {
+    font-size: 11px;
+    margin-left: 3px;
+  }
   .xpbar {
     display: none;
   }
