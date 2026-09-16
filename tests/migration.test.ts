@@ -4,6 +4,8 @@
 // 说明：v3.0 评审 D6 指出发布文档引用了本文件却不存在 → 本文件补建；
 //       与 tests/persist.test.ts 的分工：那边测"单点迁移细节"，这边测"全链 + 幂等 + 确定性"。
 // ============================================================
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { SAVE_VERSION, deserializeSave } from '../src/app/persist'
 import { codexIds } from '../src/game/codex'
@@ -124,5 +126,59 @@ describe('迁移全链（1 → 13）', () => {
     const s = newGame('空', 0)
     expect(s.codex.bits).toBe(emptyCodex().bits)
     expect(s.codex.fp).toBe(emptyCodex().fp)
+  })
+})
+
+// ============================================================
+// A4（v3.3）：**真实形状**旧档回归
+// 起因：本文件其余用例都是最小可迁移样本（只保留各版本应有的关键字段），
+//       评审指出这不等于真实档 —— 真实档有装备实例/词缀、槽位、符文增益、自动回收、
+//       配装预设、赛季与图鉴位图等一整套字段。fixture 由 v13 内核函数生成（可复现），
+//       本用例断言：载入后**逐项保留**（不是没抛错就算过）。
+// ============================================================
+describe('A4 真实形状 v13 档回归', () => {
+  const raw = readFileSync(join(process.cwd(), 'tests', 'fixtures', 'save-v13.json'), 'utf8')
+
+  it('可载入且版本正确', () => {
+    const s = deserializeSave(raw)
+    expect(s, '真实 v13 档必须可载入').not.toBeNull()
+    expect(s!.version).toBe(SAVE_VERSION)
+  })
+
+  it('装备实例 / 槽位 / 词缀逐项保留', () => {
+    const s = deserializeSave(raw)!
+    expect(s.equipment.length).toBe(2)
+    expect(s.slots.pick).toBe(1)
+    expect(s.slots.hammer).toBe(2)
+    const hammer = s.equipment.find((e) => e.instanceId === 2)!
+    expect(hammer.itemId).toBe('hammer_iron')
+    expect(hammer.affixes).toEqual([{ id: 'affix_speed', value: 0.12 }])
+  })
+
+  it('符文增益 / 自动回收 / 配装预设 / 赛季 / 深渊 逐项保留', () => {
+    const s = deserializeSave(raw)!
+    expect(s.buffs.length).toBe(1)
+    expect(s.meta.autoRecycle?.ore_copper).toBe(50)
+    expect(s.meta.autoRecyclePerfect).toBe(40)
+    expect(s.meta.gearSets?.length).toBe(1)
+    expect(s.meta.gearSets?.[0].name).toBe('挖矿套')
+    expect(s.abyss.bestFloor).toBe(7)
+    expect(s.abyss.crystals).toBe(40)
+    expect(s.abyss.tickets).toBe(3)
+    expect(s.season.renown).toBeGreaterThanOrEqual(0)
+  })
+
+  it('无损 + 幂等：连续两次载入结果一致（防迁移里藏随机/时间依赖）', () => {
+    const a = deserializeSave(raw)!
+    const b = deserializeSave(JSON.stringify(a))!
+    expect(JSON.stringify(b)).toBe(JSON.stringify(a))
+  })
+
+  it('材料与技能等级保留', () => {
+    const s = deserializeSave(raw)!
+    expect(s.materials['ore_copper']).toBe(3210)
+    expect(s.materials['essence']).toBe(240)
+    expect(s.skills.mining).toBe(42)
+    expect(s.skills.enhancing).toBe(11)
   })
 })

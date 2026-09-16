@@ -1,0 +1,170 @@
+{
+ "version": 13,
+ "character": {
+  "name": "老矿工",
+  "createdAt": 1700000000000
+ },
+ "skills": {
+  "mining": 42,
+  "smelting": 25,
+  "forging": 18,
+  "enhancing": 11
+ },
+ "materials": {
+  "ore_copper": 3210,
+  "ingot_copper": 88,
+  "essence": 240,
+  "emberstone": 12,
+  "rune_enhance_1": 1
+ },
+ "equipment": [
+  {
+   "instanceId": 1,
+   "itemId": "pick_copper",
+   "enhanceLevel": 0,
+   "affixes": [
+    {
+     "id": "keen",
+     "value": 0.00687
+    }
+   ]
+  },
+  {
+   "instanceId": 2,
+   "itemId": "hammer_iron",
+   "enhanceLevel": 0,
+   "affixes": [
+    {
+     "id": "affix_speed",
+     "value": 0.12
+    }
+   ]
+  }
+ ],
+ "slots": {
+  "pick": 1,
+  "hammer": 2
+ },
+ "nextInstanceId": 3,
+ "gold": 0,
+ "actions": {
+  "current": null,
+  "queue": []
+ },
+ "queueSlots": 1,
+ "buffs": [
+  {
+   "defId": "rune_enhance_1",
+   "until": 1700000600000
+  }
+ ],
+ "companions": {
+  "apprentice": {
+   "level": 1,
+   "xp": 0,
+   "trait": "diligent"
+  }
+ },
+ "abyss": {
+  "bestFloor": 7,
+  "crystals": 40,
+  "stamina": 12,
+  "staminaAt": 1700000000000,
+  "purchased": {},
+  "tickets": 3,
+  "permanentSpeed": 0,
+  "title": false
+ },
+ "codex": {
+  "bits": "A4BCACAAAAAAAAAAAAEAAAAAAAAAAAAAgAQA",
+  "fp": "216-s5yxwt"
+ },
+ "season": {
+  "index": -1,
+  "renown": 36,
+  "rewardedLevel": 0,
+  "tasks": []
+ },
+ "flags": {
+  "tutorial": {
+   "current": 1,
+   "progress": 0,
+   "completed": [],
+   "claimed": []
+  },
+  "achievements": {
+   "unlocked": []
+  }
+ },
+ "meta": {
+  "lastSeenAt": 1700000000000,
+  "carry": {
+   "items": {}
+  },
+  "tasks": {
+   "dailyDate": "",
+   "daily": [],
+   "rerollsLeft": 1,
+   "paidRerollsLeft": 3,
+   "weekKey": "",
+   "weekly": null
+  },
+  "prestige": {
+   "points": 0,
+   "perks": {}
+  },
+  "autoRecycle": {
+   "ore_copper": 50
+  },
+  "loadouts": [],
+  "affixSalt": 4006403896,
+  "expeditions": {
+   "runs": [],
+   "banner": 0,
+   "nextRunId": 1
+  },
+  "codexMilestones": "",
+  "seasonUnlockedOnce": false,
+  "settings": {
+   "sound": true,
+   "volume": 60,
+   "fx": "auto"
+  },
+  "autoRecyclePerfect": 40,
+  "gearSets": [
+   {
+    "id": "gs_a",
+    "name": "挖矿套",
+    "slots": {
+     "pick": 1,
+     "hammer": 2
+    }
+   }
+  ]
+ },
+ "stats": {
+  "totalCrafts": 0,
+  "totalEnhances": 0,
+  "totalMines": 9000,
+  "totalSmelts": 0,
+  "totalForges": 0,
+  "totalGoldEarned": 500000,
+  "totalCratesOpened": 0,
+  "totalTasksDone": 0,
+  "totalWeekliesDone": 0,
+  "totalJewelryForged": 0,
+  "totalRunesCrafted": 0,
+  "totalPrestiges": 0,
+  "totalPrestigePointsEarned": 0,
+  "totalReforges": 0,
+  "totalEnhancesT4": 0,
+  "totalReforgesT4": 0,
+  "perfectAffixes": 0,
+  "totalExpeditions": 0,
+  "totalRecruits": 0,
+  "totalRelics": 0,
+  "totalTokensEarned": 0,
+  "totalAbyssSweeps": 0,
+  "totalAbyssPurchases": 0
+ }
+}
