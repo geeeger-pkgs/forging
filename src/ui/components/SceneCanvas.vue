@@ -100,14 +100,15 @@ function frame(): void {
   lastProgress = progress
 
   // 背景
+  // v3.7.5：场景底色对齐 v3.7 新色板（panel 系）
   const g = ctx.createLinearGradient(0, 0, 0, H)
-  g.addColorStop(0, '#10152a')
-  g.addColorStop(1, '#0a0d18')
+  g.addColorStop(0, '#121831')
+  g.addColorStop(1, '#080b16')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, W, H)
-  ctx.fillStyle = '#151b30'
+  ctx.fillStyle = '#171d38'
   ctx.fillRect(0, H - 20, W, 20)
-  ctx.strokeStyle = '#232c4a'
+  ctx.strokeStyle = '#2a3358'
   ctx.beginPath()
   ctx.moveTo(0, H - 20)
   ctx.lineTo(W, H - 20)
@@ -153,13 +154,9 @@ function frame(): void {
   }
   ctx.globalAlpha = 1
 
-  // 底部进度细线
-  if (act) {
-    ctx.fillStyle = 'rgba(79,124,255,0.25)'
-    ctx.fillRect(0, H - 3, W, 3)
-    ctx.fillStyle = '#f5a623'
-    ctx.fillRect(0, H - 3, W * progress, 3)
-  }
+  // v3.7.5（用户反馈"两个进度条会不会比较怪"）：删除底部进度细线 ——
+  // 与顶栏的主进度条重复（同一动作显示两次），且场景的进度感已由动作动画本身表达
+  // （镐摆动/炉火/锤击都跟随 progress）。横线与竖线避免双重进度噪音。
 
   recordDraw(performance.now() - t0)
   // 存活粒子/飘字由 FxLayer 上报（本组件只有场景氛围浮尘，不计入交互表现读数）
@@ -225,20 +222,20 @@ function drawMining(ctx: CanvasRenderingContext2D, progress: number): void {
 function drawFurnace(ctx: CanvasRenderingContext2D, progress: number, t: number): void {
   const x = W * 0.34
   const y = H - 64
-  ctx.fillStyle = '#232c4a'
+  ctx.fillStyle = '#2a3358'
   ctx.fillRect(x, y, 64, 44)
-  ctx.fillStyle = '#1a2036'
+  ctx.fillStyle = '#171d38'
   ctx.fillRect(x + 10, y + 14, 44, 30)
   const flick = 0.55 + 0.45 * Math.sin(t * 9) + 0.2 * progress
   ctx.globalAlpha = Math.max(0.15, Math.min(1, flick))
-  ctx.fillStyle = '#f5a623'
+  ctx.fillStyle = '#ffb03a'
   ctx.beginPath()
   ctx.moveTo(x + 22, y + 40)
   ctx.quadraticCurveTo(x + 32, y + 12 - 10 * progress, x + 42, y + 40)
   ctx.closePath()
   ctx.fill()
   ctx.globalAlpha = 1
-  ctx.fillStyle = '#151b30'
+  ctx.fillStyle = '#171d38'
   ctx.fillRect(x + 26, y - 10, 12, 10)
 }
 
@@ -288,13 +285,13 @@ function drawEnhance(ctx: CanvasRenderingContext2D, progress: number, t: number)
   const cy = H * 0.5
   const pulse = 0.5 + 0.5 * Math.sin(t * 5 + progress * Math.PI * 2)
   ctx.globalAlpha = 0.25 + 0.5 * pulse
-  ctx.strokeStyle = '#b48ef0'
+  ctx.strokeStyle = '#a78bfa'
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.arc(cx, cy, 16 + 6 * pulse, 0, Math.PI * 2)
   ctx.stroke()
   ctx.globalAlpha = 1
-  ctx.fillStyle = '#b48ef0'
+  ctx.fillStyle = '#a78bfa'
   ctx.beginPath()
   ctx.moveTo(cx, cy - 12)
   ctx.lineTo(cx + 8, cy)

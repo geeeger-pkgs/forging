@@ -53,15 +53,16 @@ const particles: P[] = []
 const popups: Popup[] = []
 const rings: Ring[] = []
 
+// v3.7.5：粒子/飘字色对齐 v3.7 新 token（金 #ffb03a / 蓝 #6f91ff / 危险 #ff7a6e / 紫 #a78bfa / dim #96a0bd）
 const BURST_COLORS = {
-  spark: ['#f5a623', '#ffd77a', '#e2544a'],
+  spark: ['#ffb03a', '#ffd77a', '#ff7a6e'],
   ore: ['#c98a5b', '#8a5a3a', '#d9b08c'],
-  gold: ['#ffd77a', '#f5a623', '#fff3c4'],
-  gray: ['#6e7690', '#8a93ad', '#454d63'],
-  blue: ['#4f7cff', '#8fb0ff', '#cfe0ff'],
-  abyss: ['#c26ef0', '#7f9bff', '#e0b3ff'],
+  gold: ['#ffd77a', '#ffb03a', '#fff3c4'],
+  gray: ['#6e7690', '#96a0bd', '#454d63'],
+  blue: ['#6f91ff', '#9db4ff', '#cfe0ff'],
+  abyss: ['#a78bfa', '#8fb0ff', '#e0b3ff'],
 } as const
-const POPUP_COLORS: Record<Popup['kind'], string> = { item: '#7fd4c1', xp: '#4f7cff', gold: '#f5a623' }
+const POPUP_COLORS: Record<Popup['kind'], string> = { item: '#7fd4c1', xp: '#6f91ff', gold: '#ffb03a' }
 
 /** 视口尺寸（每帧读，窗口缩放无需额外监听） */
 function viewport(): { w: number; h: number } {
@@ -204,7 +205,7 @@ function frame(): void {
     }
     const k = r.life / r.max
     ctx.globalAlpha = Math.max(0, 0.5 * (1 - k))
-    ctx.strokeStyle = '#f5a623'
+    ctx.strokeStyle = '#ffb03a'
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.arc(r.x, r.y, 6 + k * 60, 0, Math.PI * 2)
