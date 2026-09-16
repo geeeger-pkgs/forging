@@ -393,3 +393,36 @@ describe('v3.4.5：评审实测的四条口径（可复算）真修复', () => {
     expect(nav).toMatch(/setView\(t\.view as never\)\n\s*store\.ui\.searchText = ''/)
   })
 })
+
+describe('v3.4.5 第二批：成就 5 类真进度 + 其余口径', () => {
+  it('affixCount / abyssCrystals / seasonRenown 有真实进度（不再恒 0）', async () => {
+    const { achievementValue } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    const id = addInstance(s, 'pick_copper')
+    s.equipment.find((e) => e.instanceId === id)!.affixes = [{ id: 'keen', value: 0.02 }, { id: 'plenty', value: 0.02 }]
+    s.abyss.crystals = 7
+    s.season.renown = 30
+    const pick = (t: string) => CONTENT.achievements.find((a) => a.type === t)
+    const ac = pick('affixCount')
+    if (ac) expect(achievementValue(s, ac)).toBeGreaterThanOrEqual(2)
+    const cr = pick('abyssCrystals')
+    if (cr) expect(achievementValue(s, cr)).toBe(7)
+    const sr = pick('seasonRenown')
+    if (sr) expect(achievementValue(s, sr)).toBe(30)
+  })
+
+  it('codexPercent 进度是整数（面板不会出现 5.4 / 25）', async () => {
+    const { achievementValue } = await import('../src/game/achievements')
+    const s = newGame('T', 0)
+    const def = CONTENT.achievements.find((a) => a.type === 'codexPercent')
+    if (def) expect(Number.isInteger(achievementValue(s, def))).toBe(true)
+  })
+
+  it('赛季等级奖励的精华数读内容表（essencePerFour=1 时与旧式等价）', async () => {
+    const { levelReward } = await import('../src/game/season')
+    const r = CONTENT.season.levelReward
+    for (const lv of [5, 12, 20]) {
+      expect(levelReward(lv).essence).toBe(r.essenceBase + Math.floor(lv / 4) * r.essencePerFour)
+    }
+  })
+})

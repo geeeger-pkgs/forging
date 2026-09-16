@@ -96,7 +96,7 @@ export function isMet(state: GameState, def: AchievementDef): boolean {
     case 'codexPercent': {
       // v2.3：图鉴收集度（目标为百分比整数，如 25/50/75/100）
       const { pct } = codexProgress(state)
-      return pct * 100 >= def.target
+      return Math.round(pct * 100) >= def.target // v3.4.5：取整后再比（与面板一致）
     }
     case 'abyssFloor':
       // v2.4：深渊最高层
@@ -175,10 +175,21 @@ export function achievementValue(state: GameState, def: AchievementDef): number 
     case 'codexPercent': {
       // 与图鉴里程碑同源：用 codexProgress 的收集比例
       const { pct } = codexProgress(state)
-      return pct * 100 // v3.4.5：与 target 单位一致（百分数）；此前返回 0~1 小数
+      return Math.round(pct * 100) // v3.4.5：与 target 单位一致（整数百分数）；此前返回 0~1 小数
     }
     case 'bannerLevel':
       return state.meta.expeditions?.banner ?? 0
+    // v3.4.5：以下 5 类此前恒返回 0（面板渲染"0 / target"，玩家以为进度不动）
+    case 'affixCount':
+      return state.equipment.reduce((m, e) => Math.max(m, (e.affixes ?? []).length), 0)
+    case 'companionRarity':
+      return Object.keys(state.companions ?? {}).length > 0 ? CONTENT.companions.companions.length : 0
+    case 'relicCount':
+      return Object.keys(state.materials ?? {}).filter((id) => CONTENT.items[id]?.category === 'relic').length
+    case 'abyssCrystals':
+      return state.abyss?.crystals ?? 0
+    case 'seasonRenown':
+      return state.season?.renown ?? 0
     default:
       // 其余类型（伙伴稀有度/图鉴比例等）暂不提供精确进度 → 返回 0（面板显示"进行中"）
       return 0

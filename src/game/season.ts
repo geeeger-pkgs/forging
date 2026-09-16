@@ -174,7 +174,8 @@ export function levelReward(level: number): { gold: number; essence: number; tok
   const r = DEF.levelReward
   return {
     gold: r.goldBase + r.goldPerLevel * level,
-    essence: r.essenceBase + Math.floor(level / 4),
+    // v3.4.5：essencePerFour = "每 4 级 +N 点"（字段语义），故分母固定 4、系数读表
+    essence: r.essenceBase + Math.floor(level / 4) * r.essencePerFour,
     tokens: level >= DEF.levels ? r.maxLevelTokens : level % r.tokenEvery === 0 ? r.tokenAmount : 0,
   }
 }

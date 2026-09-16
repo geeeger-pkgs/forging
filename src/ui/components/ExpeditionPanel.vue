@@ -116,7 +116,7 @@ function togglePick(id: string): void {
 function dispatch(routeId: string): void {
   const team = picked.value.length
     ? [...picked.value]
-    : Object.keys(store.state.companions).slice(0, maxTeam.value)
+    : effectiveSquad(store.state) // v3.4.5：兜底也走 effectiveSquad（此前原始切片，全派出时预览≠实扣）
   cmd({ type: 'dispatchExpedition', routeId, hours: pickHours.value, team })
 }
 
