@@ -367,7 +367,9 @@ for (const cls of Object.keys(scaleByMaturity)) {
   const coef = scaleByMaturity[cls]
   scaledTargets[cls] = {}
   for (const tpl of SEASON.templates) {
-    const scaled = tpl.targets.map((t) => Math.max(1, Math.ceil(t * coef)))
+    // T5：与内核同式的整数运算（避免 204.00000000000003 → 205 的假进位）
+    const c100 = Math.round(coef * 100)
+    const scaled = tpl.targets.map((t) => Math.max(1, Math.ceil((t * c100) / 100)))
     scaledTargets[cls][tpl.counter] = scaled
     if (!(scaled[0] < scaled[1] && scaled[1] < scaled[2])) guards.monotone = false
     if (scaled.some((v, i) => v < tpl.targets[i] * COEF_FLOOR)) guards.floorOk = false

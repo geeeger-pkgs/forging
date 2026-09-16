@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { SAVE_VERSION, deserializeSave } from '../src/app/persist'
 import { CONTENT, validateContent } from '../src/game/content'
 import { milestoneView, xpForLevel } from '../src/game/level'
-import { seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
+import { maturityFromScale, seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
 import { doPrestige, prestigePointsFor } from '../src/game/prestige'
 import { aggregateEquipment } from '../src/game/stats'
 import { addInstance, newGame } from '../src/game/state'
@@ -142,7 +142,7 @@ describe('A6 传承点数：消除反直觉最优解', () => {
     const s = newGame('T', 0)
     const xp30 = xpForLevel(30)
     s.skills = { mining: xp30, smelting: xp30, forging: xp30, enhancing: xp30 } // 总 120
-    expect(prestigePointsFor(s)).toBe(0) // 30 级不满足均衡门槛（最低 ≥0.9×平均）
+    expect(prestigePointsFor(s)).toBe(0) // 30 级 < 首点门槛（最低技能 50）
     const ev = doPrestige(s)
     expect(ev.some((e) => e.type === 'blocked')).toBe(true)
     expect(s.skills.mining, '被拦下时不应重置任何东西').toBe(xp30)
@@ -217,5 +217,27 @@ describe('V6 赛季档位快照（赛季内目标恒定）', () => {
     const s: GameState = newGame('T', 0)
     s.season.scale = 0
     expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.junior)
+  })
+})
+
+describe('三审 T4：maturityFromScale 覆盖（此前零测试）', () => {
+  it('档位名由系数反推：0.34 → 新晋、0.66 → 老手；未知值取最近邻', () => {
+    const j = CONTENT.season.scaleByMaturity.junior
+    const v = CONTENT.season.scaleByMaturity.veteran
+    expect(maturityFromScale(j)).toBe('junior')
+    expect(maturityFromScale(v)).toBe('veteran')
+    expect(maturityFromScale(j + 0.01)).toBe('junior')
+    expect(maturityFromScale(v - 0.01)).toBe('veteran')
+  })
+})
+
+describe('三审 T5：缩放目标的浮点假进位（实机截图发现）', () => {
+  it('600 × 0.34 应为 204（而非 205）', () => {
+    const s = newGame('T', 0)
+    s.season.scale = 0.34
+    const tpl = CONTENT.season.templates.find((x) => x.targets[2] === 600)!
+    const t = seasonTargetsFor(s, tpl.id)
+    expect(t[2]).toBe(204)
+    for (const v of t) expect(Number.isInteger(v)).toBe(true)
   })
 })

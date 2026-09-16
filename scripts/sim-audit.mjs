@@ -419,7 +419,7 @@ console.log('  最优点/满级 比 ' + f(scanRatio, 2) + '× → ' + (scanRatio
 const hoursPerSkill = (target) => ['挖掘', '熔炼', '锻造', '强化'].reduce((sum, k) => sum + capped(k, target), 0)
 const fastHours = hoursPerSkill(30)
 const maxHours = hoursPerSkill(100)
-const fastPoints = 0 // 门槛处：均衡门槛（最低 ≥0.9×平均）下 30 级不达标 → 0 点
+const fastPoints = 0 // 门槛处：最低技能 <50 → 0 点（三审定稿口径）
 const maxPoints = 36 // 三审定稿：min 100 → steps 6 → 36 点
 const fastPerHour = fastPoints / fastHours
 const maxPerHour = maxPoints / maxHours

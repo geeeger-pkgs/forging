@@ -16,7 +16,7 @@ v3.4 是**清账版**：把 2026-09-16 全量盘点出的 **26 条未处置项**
 | # | 事项 | 方案（已按评审修订） | 证据要求 |
 |---|---|---|---|
 | A1 | **丰饶符文/效率精通在线不生效** | ① 新增**共享纯函数** `effectiveEfficiency(state, now)`（`stats.ts` 定义）：`agg.efficiency + buff.efficiency + perk.efficiency`；② 在线触发率改用它（`settle.ts:108` 的 `E`）；③ **面板与详情同源**（`RightPanel.vue:452`、`describe` 路径改用它）；④ `sim-audit` **A 段**的 `procRate` 复用 settle 口径重算（现用 `1/(2−E)` 只在 E≥0.5 成立，**是错的**）；⑤ 文档写明：在线 proc = 整轮重发（含稀有掉落/XP），离线 eff 只乘产量/XP —— 语义不同，分开建模 | `docs/sim-audit-output.json`（本版新增落盘）含 A 段修正前后对照；测试断言"面板值 == 结算用值" |
-| A2 | **Lv76~100 无内容** | 每 5 级一条**永久被动**（Lv80/85/90/95/100）并入 `aggregateEquipment` **单源**；**评审 #5 定稿：新增 `meta.bestSkillLevel`（单调）**，里程碑由它派生 → 传承不掉；`data/levelCurve.json` 是**手写表**（不由生成器管，评审 #3），故里程碑校验进 `validateContent` | `sim-audit` **F 段**（时长对照，读表）+ **堆叠段**重跑；`sim-abyss.mjs`（复制了聚合规则）同步复核；SAVE_VERSION 14 + 迁移 + 真实档回归 |
+| A2 | **Lv76~100 无内容** | 每 5 级一条**永久被动**（Lv80/85/90/95/100）并入 `aggregateEquipment` **单源**；**评审 #5 定稿：新增 `meta.bestSkillLevel`（单调）**，里程碑由它派生 → 传承不掉；`data/levelCurve.json` 是**手写表**（不由生成器管，评审 #3），故里程碑校验进 `validateContent` | `sim-audit` **F 段**（时长对照，读表）+ **堆叠段**重跑；`sim-abyss.mjs`（复制了聚合规则）同步复核；SAVE_VERSION 14→15 + 迁移 + 真实档回归（14 补 bestSkillLevel，15 补赛季档位快照） |
 | A3 | **赛季新晋档下沿无证据** | `sim-season` 增补 **T2 stage** 覆盖 60~85 段；若系数需变，表随脚本输出更新（先脚本后定表） | `sim-season-output.json` 增加 `stageParams.t2` 与相应承诺行；`data/season.json`、`gen-content.mjs`、`tests/season.test.ts`(S12)、`tests/v33-b1.test.ts` 同步 |
 | A6 | **传承快轮回无惩罚**（新发现） | `sim-audit` **D 段**新增"快轮回 vs 满级轮回的**每小时点数**模型"并落 JSON；若快轮回仍显著更优 → 点数改随总等级超线性（形式由脚本反推）；若影响有限 → 正式裁定不改（写入发布说明） | `docs/sim-audit-output.json` 的 `prestige` 段；测试断言"快轮回/小时 ≤ 满级轮回/小时"或裁定记录 |
 | B4 | **任务付费重掷无确认**（新发现） | 免费次数用完后付费重掷加二次确认；**难度分池正式裁定不做**（随机是设计） | 组件用例：确认出现 / 取消不扣金 |
@@ -82,7 +82,7 @@ v3.4 结束时未处置清单归零（完成 / 正式裁定二选一）。v3.5 �
 | 2 | `src/game/settle.ts` | A1：在线 `E` 用 `effectiveEfficiency` |
 | 3 | `src/ui/components/RightPanel.vue` | A1：面板/详情同源显示 |
 | 4 | `src/game/prestige.ts` | A6：点数公式（依据 D 段证据；不改则记录裁定） |
-| 5 | `src/app/persist.ts` | **SAVE_VERSION 14** + 迁移（`meta.bestTotalLevel`，取当前总等级回填） |
+| 5 | `src/app/persist.ts` | **SAVE_VERSION 14→15** + 迁移：v14 补 `meta.bestSkillLevel`（按当前技能等级回填）、v15 补赛季档位快照 `season.scale` |
 | 6 | `src/game/types.ts` / `content.ts` | `meta.bestTotalLevel`；`levelCurve` 校验（milestones 递增/上限/条数）、`cue` 类型闭合 |
 | 7 | `data/levelCurve.json` | 里程碑表（手写；校验在 content.ts，**不由生成器管**） |
 | 8 | `scripts/sim-audit.mjs` | A 段 procRate 口径修正；D 段快轮回模型；F 段里程碑时长对照；**新增落盘 `docs/sim-audit-output.json`** |

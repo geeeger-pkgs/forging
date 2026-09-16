@@ -53,7 +53,10 @@ export function seasonTargetsFor(state: GameState, tplId: string): [number, numb
   const base = (tpl?.targets ?? [0, 0, 0]) as [number, number, number]
   // v3.4 V6：优先用**本季快照**（赛季内恒定）；缺失（老档/异常）时回落到当前档位
   const coef = state.season?.scale > 0 ? state.season.scale : DEF.scaleByMaturity[maturityClassOf(state)]
-  return base.map((t) => Math.max(1, Math.ceil(t * coef))) as [number, number, number]
+  // 三审 T5（实机截图发现）：系数是 2 位小数，直接乘会有浮点尾巴（600×0.34 = 204.00000000000003 → ceil 成 205）。
+  // 改为整数运算：先放大系数到整数（×100），乘完再除，避免假进位。
+  const c100 = Math.round(coef * 100)
+  return base.map((t) => Math.max(1, Math.ceil((t * c100) / 100))) as [number, number, number]
 }
 
 /** 当前缩放系数（UI 展示与测试用） */
