@@ -349,7 +349,8 @@ const season = {
   templates: [
     { id: 's_mine', title: '深层采掘', desc: '挖掘任意矿脉', counter: 'totalMines', unit: '次', targets: [4000, 9000, 18000] },
     { id: 's_craft', title: '炉火不熄', desc: '熔炼或锻造', counter: 'totalCrafts', unit: '次', targets: [1000, 2400, 4800] },
-    { id: 's_gold', title: '财富积累', desc: '累计获得金币', counter: 'totalGoldEarned', unit: '金', targets: [250000, 500000, 800000] },
+    // C10：口径写清是**毛收入**（含任务/成就/卖店/远征；赛季等级奖励同样计入）
+    { id: 's_gold', title: '财富积累', desc: '累计获得金币（毛收入：任务/成就/卖店/远征均计入）', counter: 'totalGoldEarned', unit: '金', targets: [250000, 500000, 800000] },
     { id: 's_enhance', title: '锤炼不止', desc: '强化尝试（需在线）', counter: 'totalEnhances', unit: '次', targets: [120, 320, 600] },
     { id: 's_expedition', title: '远行不辍', desc: '完成远征', counter: 'totalExpeditions', unit: '次', targets: [12, 20, 28] },
     { id: 's_reforge', title: '精益求精', desc: '重铸词缀（需在线）', counter: 'totalReforges', unit: '次', targets: [15, 35, 60] },

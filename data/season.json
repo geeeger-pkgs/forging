@@ -46,7 +46,7 @@
     {
       "id": "s_gold",
       "title": "财富积累",
-      "desc": "累计获得金币",
+      "desc": "累计获得金币（毛收入：任务/成就/卖店/远征均计入）",
       "counter": "totalGoldEarned",
       "unit": "金",
       "targets": [

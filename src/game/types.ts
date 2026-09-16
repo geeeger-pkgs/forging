@@ -871,6 +871,10 @@ export type Command =
   | { type: 'buyPerk'; perkId: string }
   | { type: 'refundPerk'; perkId: string }
   | { type: 'setAutoRecycle'; itemId: ItemId; keep: number | null }
+  /** v3.0 L2：行囊整理（同 id 只留最高完美度） */
+  | { type: 'tidyBag' }
+  /** v3.0 L2：实例级自动回收阈值（0 = 关闭） */
+  | { type: 'setAutoRecyclePerfect'; pct: number }
   | { type: 'saveLoadout'; name: string }
   | { type: 'applyLoadout'; loadoutId: string }
   | { type: 'deleteLoadout'; loadoutId: string }

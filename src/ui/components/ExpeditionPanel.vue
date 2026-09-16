@@ -229,7 +229,8 @@ void levelInfo
         </div>
         <div class="xpbar"><i :style="{ width: r.pct * 100 + '%' }" /></div>
         <div v-if="r.done && r.outcome" class="dim small">
-          结果：{{ r.outcome.success ? '成功' : '保底（成功率未达成）' }} ·
+          <!-- v3.0 C7：离线完成的 run 用"按期望结算"口径（与摘要弹窗一致） -->
+          结果：{{ r.outcome.expected ? '按期望结算' : r.outcome.success ? '成功' : '保底（成功率未达成）' }} ·
           {{ Math.round(r.outcome.gold) }} 金 ·
           <template v-for="m in r.outcome.materials" :key="m.itemId">{{ itemDef(m.itemId).name }} ×{{ Math.floor(m.qty) }} ·</template>
           徽记 ≈{{ r.outcome.tokens.toFixed(2) }}
@@ -249,7 +250,9 @@ void levelInfo
       <p v-if="relics.length" class="dim small">
         遗物收藏：<template v-for="r in relics" :key="r.id">{{ r.name }} ×{{ r.qty }}　</template>
       </p>
-      <p class="dim small">遗物无回收价值（收藏与后续版本用途），远征是唯一来源。</p>
+      <p class="dim small">
+        遗物无回收价值（图鉴收集用），远征是主要来源，<b>深渊商店也可用结晶直接兑换</b>（补齐图鉴 100%）；回收列表不会显示它们，避免误删。
+      </p>
     </section>
   </div>
 </template>

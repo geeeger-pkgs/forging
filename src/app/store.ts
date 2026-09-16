@@ -5,7 +5,7 @@
 // ============================================================
 import { reactive } from 'vue'
 import { checkAchievements } from '../game/achievements'
-import { sweepAutoRecycle } from '../game/automation'
+import { sweepAutoRecycle, sweepInstanceRecycle } from '../game/automation'
 import { pruneBuffs } from '../game/buffs'
 import { audioStatus, installGestureUnlock, playCue, setAudioEnabled, setAudioVolume } from '../ui/audio'
 import { recordTick, noteCue, requestBurst, installFxProbe, attachAudioStatus, attachSceneDropped } from '../ui/fx-probe'
@@ -15,7 +15,7 @@ import { regenStamina } from '../game/abyss'
 import { checkCodexMilestones } from '../game/codex'
 import { checkSeason, refreshSeason } from '../game/season'
 import { advanceExpeditions } from '../game/expeditions'
-import { dispatch } from '../game/commands'
+import { applyCommand, dispatch } from '../game/commands'
 import { CONTENT, skillName } from '../game/content'
 import { settleOffline } from '../game/offline'
 import { systemRng } from '../game/rng'
@@ -163,6 +163,23 @@ function dispatchFx(events: GameEvent[]): void {
   // 否则会把"当前值"覆盖成假数据（v2.5 烟测发现的空读数问题）
 }
 
+/**
+ * v3.0 L2：实例级自动回收清扫（**离线不结算**，只在 boot 后与在线主循环调用）。
+ * 规则见 game/automation.ts（不碰已装备 / 在制消耗件；只卖低于阈值）。
+ */
+function sweepInstances(): void {
+  const ids = sweepInstanceRecycle(store.state)
+  if (ids.length === 0) return
+  let gold = 0
+  for (const id of ids) {
+    // 走命令层：语义与手动回收完全一致（含"已装备/不存在"守卫与金币结算）
+    for (const e of applyCommand(store.state, { type: 'recycleInstance', instanceId: id }, store.now)) {
+      if (e.type === 'goldGained') gold += e.amount
+    }
+  }
+  if (gold > 0) pushToast(`♻ 实例级自动回收：${ids.length} 件（+${gold} 金）`, 'info')
+}
+
 function handleEvents(events: GameEvent[]): void {
   // 设置先同步到音频引擎（与动效档位无关：音效与特效是两个独立开关）
   for (const e of events) {
@@ -244,17 +261,17 @@ function handleEvents(events: GameEvent[]): void {
         pushToast(`🧭 远征队旗帜升至 ${e.level} 级`, 'good')
         break
       case 'abyssCleared':
-        pushToast(`🕳 深渊第 ${e.floor} 层通关（+${e.crystals} 结晶）`, 'good')
+        pushToast(`🕳 连打 ${e.count} 层 → 第 ${e.clearedTo} 层（${e.modName}）+${e.crystals} 结晶`, 'good')
         if (document.hidden) markUnread()
         break
       case 'abyssSwept':
-        pushToast(`🕳 扫荡获得 ${e.crystals} 结晶`, 'info')
+        pushToast(`🕳 扫荡 ×${e.count}：+${e.crystals} 结晶`, 'info')
         break
       case 'abyssItemBought':
         pushToast(`🕳 已购买：${e.name}`, 'good')
         break
       case 'codexMilestone':
-        pushToast(`📖 图鉴里程碑 ${Math.round(e.pct * 100)}%（+${e.gold} 金）`, 'good')
+        pushToast(`📖 图鉴里程碑 ${Math.round(e.pct * 100)}%：称号「${e.title}」（+${e.gold} 金）`, 'good')
         if (document.hidden) markUnread()
         break
       case 'seasonLevelUp':
@@ -383,6 +400,8 @@ export function startLoop(): void {
     events.push(...checkTasks(store.state))
     pruneBuffs(store.state, store.now)
     events.push(...sweepAutoRecycle(store.state))
+    // v3.0 L2：实例级自动回收（仅在线；离线不结算 —— 见 automation.ts 规则 4）
+    sweepInstances()
     if (events.length) handleEvents(events)
     if (Date.now() - lastSaveAt >= CONTENT.config.autosaveSec * 1000) saveNow()
   }, 250)

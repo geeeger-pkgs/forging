@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { activeBuffs } from '../../game/buffs'
-import { RUNE_BY_ID } from '../../game/content'
+import { codexMilestonesClaimed } from '../../game/codex'
+import { CONTENT, RUNE_BY_ID } from '../../game/content'
 import { totalValue } from '../../game/economy'
 import { totalLevel } from '../../game/level'
 import { refLabel } from '../../game/refs'
@@ -15,6 +16,13 @@ const shownQueue = computed(() => queue.value.slice(0, 4))
 const overflow = computed(() => Math.max(0, queue.value.length - 4))
 const tl = computed(() => totalLevel(store.state.skills))
 const tv = computed(() => totalValue(store.state))
+
+/** v3.0 L4：已达成图鉴里程碑的最高档称号 */
+const codexTitle = computed(() => {
+  const claimed = codexMilestonesClaimed(store.state)
+  const hit = CONTENT.season.codexMilestones.filter((m) => claimed.has(String(m.pct)))
+  return hit.length > 0 ? hit[hit.length - 1].title : ''
+})
 
 const buffs = computed(() =>
   activeBuffs(store.state, store.now).map((b) => {
@@ -61,6 +69,8 @@ const buffs = computed(() =>
       </div>
       <span class="pname">{{ store.state.character.name }}</span>
       <span v-if="store.state.abyss?.title" class="title-badge" title="深渊商店购买的称号">深渊行者</span>
+      <!-- v3.0 L4：图鉴四档称号（取已达成的最高档） -->
+      <span v-if="codexTitle" class="title-badge codex" title="图鉴里程碑称号">图鉴·{{ codexTitle }}</span>
       <span class="dim">总等级 {{ tl }}</span>
     </div>
   </header>
@@ -140,6 +150,10 @@ const buffs = computed(() =>
   padding: 1px 8px;
   font-size: 11px;
   color: var(--c-accent);
+}
+.title-badge.codex {
+  border-color: var(--c-accent-2);
+  color: var(--c-accent-2);
 }
 .title-badge {
   font-size: 11px;

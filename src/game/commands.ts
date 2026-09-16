@@ -52,6 +52,7 @@ import type {
   ActionRef,
   ActiveAction,
   Command,
+  EquipInstance,
   GameEvent,
   GameState,
   ItemId,
@@ -145,9 +146,51 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       upgradeBanner(state, events)
       return events
     }
+    case 'tidyBag': {
+      const events: GameEvent[] = []
+      tidyBag(state, events)
+      return events
+    }
+    case 'setAutoRecyclePerfect': {
+      const v = Math.max(0, Math.min(100, Math.round(cmd.pct)))
+      state.meta.autoRecyclePerfect = v
+      return [{ type: 'notice', text: v === 0 ? '已关闭实例级自动回收' : `实例级自动回收：低于完美度 ${v}% 的未装备实例将自动回收` }]
+    }
     case 'setSettings':
       return applySettings(state, cmd.patch)
   }
+}
+
+/**
+ * v3.0 L2：行囊整理 —— 同一 itemId 只保留**最高完美度**的那件（其余回收换金）。
+ * 已装备的实例永不回收；同分保留 instanceId 较小者（确定性）。
+ */
+function tidyBag(state: GameState, events: GameEvent[]): void {
+  const groups = new Map<string, EquipInstance[]>()
+  for (const inst of state.equipment) {
+    if (isEquipped(state, inst.instanceId)) continue
+    const list = groups.get(inst.itemId) ?? []
+    list.push(inst)
+    groups.set(inst.itemId, list)
+  }
+  let sold = 0
+  let gold = 0
+  for (const [, list] of groups) {
+    if (list.length <= 1) continue
+    const sorted = [...list].sort(
+      (a, b) =>
+        perfectScore(b.itemId, b.affixes) - perfectScore(a.itemId, a.affixes) ||
+        (a.enhanceLevel ?? 0) - (b.enhanceLevel ?? 0) ||
+        a.instanceId - b.instanceId,
+    )
+    for (const inst of sorted.slice(1)) {
+      const evs = recycleInstance(state, inst.instanceId)
+      for (const e of evs) if (e.type === 'goldGained') gold += e.amount
+      sold += 1
+    }
+  }
+  if (sold > 0) events.push({ type: 'notice', text: `行囊整理：回收 ${sold} 件低完美度重复装备（+${gold} 金）` })
+  else events.push({ type: 'notice', text: '行囊已是最优：每个原型只保留一件最高完美度装备' })
 }
 
 /**

@@ -2,12 +2,20 @@
 // ============================================================
 // 深渊回廊（v2.4）：战力明细 / 下一层门槛 / 体力 / 挑战与扫荡 / 商店 / 记录
 // ============================================================
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { cmd, store } from '../../app/store'
-import { abyssDef, abyssView } from '../../game/abyss'
+import { abyssDef, abyssModifier, abyssView } from '../../game/abyss'
 
 const DEF = abyssDef()
 const view = computed(() => abyssView(store.state, store.now))
+
+/** v3.0：连打层数（1..challengeMaxFloors）与批量扫荡次数 */
+const chainTarget = ref(1)
+const sweepCount = ref(Math.min(3, DEF.sweepMaxCount))
+/** 本层词条（nextFloor 的词条，决定门槛与有效权重） */
+const mod = computed(() => abyssModifier(view.value.nextFloor))
+/** 下一层词条（预告"墙/喘息"节奏） */
+const modNext = computed(() => abyssModifier(view.value.nextFloor + 1))
 
 const WEIGHT_LABEL: Record<string, string> = {
   speed: '速度',
@@ -24,13 +32,20 @@ const breakdown = computed(() =>
   ORDER.map((k) => ({
     key: k,
     label: WEIGHT_LABEL[k],
-    weight: DEF.weights[k],
+    // v3.0：显示**有效权重**（含本层词条修正），否则玩家按面板推算的差额会与判定不符
+    weight: view.value.score.weights[k],
+    baseWeight: DEF.weights[k],
     value: view.value.score.values[k],
     contribution: view.value.score.contributions[k],
   })).sort((a, b) => b.contribution - a.contribution),
 )
 
 const canChallenge = computed(() => view.value.gap <= 0 && view.value.stamina >= 1)
+/** 连打可选项：受内容表上限与"下一层是否达标"限制（逐层判定，内核会在首个失败层停止） */
+const chainOptions = computed(() => {
+  const max = Math.min(DEF.challengeMaxFloors, 3)
+  return Array.from({ length: max }, (_, i) => i + 1)
+})
 const canSweep = computed(() => view.value.bestFloor >= 1 && view.value.stamina >= 1)
 
 function fmtMs(ms: number): string {
@@ -39,8 +54,14 @@ function fmtMs(ms: number): string {
   return m > 0 ? `${m} 分 ${s % 60} 秒` : `${s} 秒`
 }
 
-/** 扫荡产出（与内核 repeatCrystal 同式） */
+/** 扫荡产出（与内核 repeatCrystal 同式；扫荡不吃层词条倍率） */
 const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DEF.repeatCrystal.perFloor))
+const sweepTotal = computed(() => bestSweepCrystal.value * sweepCount.value)
+const sweepMax = computed(() => Math.min(DEF.sweepMaxCount, Math.max(1, view.value.stamina)))
+
+function sweep(n: number): void {
+  cmd({ type: 'sweepAbyss', count: n })
+}
 </script>
 
 <template>
@@ -53,10 +74,16 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
       <p class="dim">
         即时判定的层数挑战：不占用动作流、不消耗材料，只用战力检验配装。战力为六项属性的加权和（公式见下）。
       </p>
+      <div class="modbar" :class="mod.id">
+        <b>本层词条：{{ mod.name }}</b>
+        <span class="dim small">{{ mod.desc }}</span>
+        <span class="spacer" />
+        <span class="dim small">下一层：{{ modNext.name }}</span>
+      </div>
       <div class="score">
         <div class="total">
           深渊战力 <b>{{ view.score.total.toFixed(2) }}</b>
-          <span class="dim small">（下一层门槛 {{ view.nextRequirement.toFixed(2) }}）</span>
+          <span class="dim small">（第 {{ view.nextFloor }} 层门槛 {{ view.nextRequirement.toFixed(2) }}，含{{ mod.name }}）</span>
         </div>
         <div class="gap" :class="view.gap <= 0 ? 'good' : 'bad'">
           <template v-if="view.gap <= 0">✅ 已达到第 {{ view.nextFloor }} 层门槛</template>
@@ -66,7 +93,10 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
       <div class="rows">
         <div v-for="b in breakdown" :key="b.key" class="row">
           <span class="rlabel">{{ b.label }}</span>
-          <span class="dim small">×{{ b.weight }}</span>
+          <span class="dim small">
+            ×{{ b.weight }}
+            <em v-if="b.weight !== b.baseWeight" class="boost">（词条 ×{{ (b.weight / b.baseWeight).toFixed(1) }}）</em>
+          </span>
           <span class="spacer" />
           <span class="rval">{{ b.value.toFixed(3) }}</span>
           <span class="rcon">= {{ b.contribution.toFixed(2) }}</span>
@@ -83,26 +113,60 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
         <span class="dim">{{ view.stamina }} / {{ view.staminaMax }}<template v-if="view.msToNext > 0">（下一点 {{ fmtMs(view.msToNext) }}）</template></span>
       </h3>
       <div class="bar"><i :style="{ width: (view.stamina / view.staminaMax) * 100 + '%' }" /></div>
-      <p class="dim small">每 {{ DEF.staminaRegenMinutes }} 分钟恢复 1 点；离线照常恢复，满体力期间的时间不累积（上限截断）。</p>
+      <p class="dim small">
+        每 {{ DEF.staminaRegenMinutes }} 分钟恢复 1 点，在线上限 {{ DEF.staminaMax }}（满后不再累积）；
+        <b>离线回体上限 {{ DEF.staminaMax + DEF.offlineCapExtra }}</b>（按真实时长折算，仅离线期间生效）——纯放置玩家每日可打满 24 次。
+      </p>
       <div class="actions">
+        <div class="chain">
+          <span class="dim small">连打</span>
+          <button
+            v-for="n in chainOptions"
+            :key="n"
+            class="btn sm"
+            :class="{ primary: chainTarget === n }"
+            @click="chainTarget = n"
+          >
+            ×{{ n }}
+          </button>
+        </div>
         <button
           class="btn primary"
           :disabled="!canChallenge"
           :title="view.gap > 0 ? '战力不足：不满足门槛时无法发起（也不会消耗体力）' : view.stamina < 1 ? '体力不足' : ''"
-          @click="cmd({ type: 'challengeAbyss' })"
+          @click="cmd({ type: 'challengeAbyss', floors: chainTarget })"
         >
-          挑战第 {{ view.nextFloor }} 层（1 体力）
+          挑战第 {{ view.nextFloor }} 层起（连打 {{ chainTarget }} 层 · 1 体力）
         </button>
+      </div>
+      <div class="actions">
+        <div class="chain">
+          <span class="dim small">扫荡次数</span>
+          <button
+            v-for="n in [1, 3, sweepMax]"
+            :key="n + '-' + sweepMax"
+            class="btn sm"
+            :class="{ primary: sweepCount === n && n !== sweepMax }"
+            :disabled="n > sweepMax"
+            @click="sweepCount = n"
+          >
+            {{ n === sweepMax ? `用尽体力（${sweepMax}）` : `×${n}` }}
+          </button>
+        </div>
         <button
           class="btn"
           :disabled="!canSweep"
           :title="view.bestFloor < 1 ? '尚未通关任何层' : view.stamina < 1 ? '体力不足' : ''"
-          @click="cmd({ type: 'sweepAbyss' })"
+          @click="sweep(sweepCount)"
         >
-          <template v-if="view.bestFloor >= 1">扫荡（+{{ bestSweepCrystal }} 结晶）</template>
+          <template v-if="view.bestFloor >= 1">扫荡 ×{{ sweepCount }}（+{{ sweepTotal }} 结晶）</template>
           <template v-else>扫荡（需先通关）</template>
         </button>
       </div>
+      <p class="dim small">
+        连打 = 从下一层起**逐层判定**：通过就继续，遇到第一个不达标的层停下（整次只花 1 点体力；首通奖励逐层照发）。
+        层词条每 5 层一循环：{{ mod.name }}{{ mod.id === 'rich' ? '（墙：门槛 ×1.06、首通结晶 ×1.5）' : mod.id === 'rift' ? '（喘息：门槛 ×0.94、首通结晶 ×0.8）' : '（该层权重倾斜，重配装有利）' }}。
+      </p>
       <p v-if="view.gap > 0" class="bad small">⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。</p>
     </section>
 
@@ -142,7 +206,9 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
         <template v-if="view.title"><br />称号：<b>深渊行者</b></template>
       </p>
       <p class="dim small">
-        首通奖励 = 10 + 2×层；扫荡奖励 = 1 + ⌊最高层 / 20⌋。战力提升后回廊深度自然延伸（层数无上限）。
+        首通奖励 = (10 + 2×层) × 本层词条结晶倍率（裂隙 ×0.8 / 富矿 ×1.5），向下取整；
+        扫荡奖励 = 1 + ⌊最高层 / 20⌋（不含词条倍率，避免停在裂隙层反而吃亏）。
+        层数**不封顶**：主题每 25 层循环、词条每 5 层轮换，深度由配装决定。
       </p>
     </section>
   </div>
@@ -221,6 +287,33 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
   color: var(--c-accent-2);
   font-variant-numeric: tabular-nums;
 }
+.modbar {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-accent-2);
+  border-radius: 6px;
+  background: var(--c-panel-2);
+  margin: 6px 0 8px;
+  font-size: 13px;
+}
+.modbar.rich {
+  border-left-color: var(--c-accent);
+}
+.modbar.rift {
+  border-left-color: #7f9bff;
+}
+.boost {
+  color: var(--c-accent);
+  font-style: normal;
+}
+.chain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .bar {
   height: 6px;
   background: var(--c-bg-deep);
@@ -267,7 +360,8 @@ const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DE
   .shop {
     grid-template-columns: 1fr;
   }
-  .rows .row:nth-child(n + 3) {
+  /* v3.0 C2：折叠"中间项"，保留**贡献最高 2 项 + 最弱 1 项**（最弱项才是"该补哪"的答案） */
+  .rows .row:nth-child(n + 3):not(:last-child) {
     display: none;
   }
 }
