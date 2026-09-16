@@ -2,7 +2,7 @@
 
 > 测评人：资深玩家测评代理 ｜ 日期：2026-09-15 ｜ 版本：v2.3.0（`package.json:4` = 2.3.0 ✅）
 > 测评对象：仓库 HEAD **`b762edf`**（工作区干净；`git status` 仅本报告未跟踪）
-> 证据：门禁实跑（`npm test` 206/17、`npm run typecheck`、`npm run build`）+ `node scripts/sim-season.mjs` 实跑并逐字段核对 `docs/sim-season-output.json` + 代码走查（file:line）+ 独立复算（临时内核用例 `tests/zz-tmp-review-v23.test.ts` 21 例，跑完已删除；`git status` 复核干净）+ 实机烟测截图 `docs/v23-codex-season.png` 复核
+> 证据：门禁实跑（`npm test` 206/17、`npm run typecheck`、`npm run build`）+ `node scripts/sim-season.mjs` 实跑并逐字段核对 `docs/sim-season-output.json` + 代码走查（file:line）+ 独立复算（临时内核用例 `tests/zz-tmp-review-v23.test.ts` 21 例，跑完已删除；`git status` 复核干净）+ 实机烟测截图 （截图已清理，以省仓库体积） 复核
 > **能力边界声明（影响 §二-5 与 §五）**：本代理为子代理，按运行规约**不得使用浏览器工具**，故 390px 的 `.body.scrollWidth` **未做浏览器实测**；该维度以「截图复核 + CSS 静态几何推算 + 代码可达性推演」替代，并在问题清单中作为**证据缺口**登记（m3）。此项请主代理在终验时补测。
 
 ---
@@ -127,7 +127,7 @@
 
 | # | 现象 | 证据 | 修复建议 |
 |---|---|---|---|
-| m1 | 面板正文渲染出 markdown 字面量 `**只计最高达成**`（截图可证，玩家看到四个星号） | `CodexPanel.vue:122`；`docs/v23-codex-season.png` | 去掉 `**`，用 `<b>`/`<em>` 或纯文本 |
+| m1 | 面板正文渲染出 markdown 字面量 `**只计最高达成**`（截图可证，玩家看到四个星号） | `CodexPanel.vue:122`；（截图已清理，以省仓库体积） | 去掉 `**`，用 `<b>`/`<em>` 或纯文本 |
 | m2 | 未收集项**只列名字**，没有设计 §2.5 承诺的"获取提示"（玩家看到"虚空镐"不知去哪拿） | `CodexPanel.vue:56-63` 的 `missingOf` 只返回 `itemDef(id).name` | 补一行来源（配方等级/矿脉/远征路线），或复用 `inspectItem` 弹窗 |
 | m3 | **缺 v2.3 窄屏烟测截图**（DoD 要求"实机烟测（主 + 边界 + 窄屏）"）；390px `.body.scrollWidth` 我无法实测 | `docs/` 下 v2.3 只有桌面图；子代理不得使用浏览器工具 | 终验补 390px 截图；静态推算不溢出：`App.vue:46-51` 纵排 + `MainPanel.vue:201-207` padding 12px → 卡片内容宽 334px ≥ `.cats/.tasks` 的 `minmax(300px,1fr)` 下限，`.tools` 已 `flex-wrap`（`NavBar.vue:191-203`），第 7 个按钮「设置」在 390px 下换到第二排 |
 | m4 | `importSaveFile` 不跑 `checkCodexBackfill`（导入 v9 档后 codex 为空），仅因调用方 `location.reload()` 会被 `loadGame` 补做才没出事 | `persist.ts:230-238` vs `:208-209`；`SettingsPanel.vue:59-67` | 在 `importSaveFile` 返回前也调用一次 `checkCodexBackfill`（与 `loadGame` 对称） |

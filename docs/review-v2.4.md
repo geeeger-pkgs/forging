@@ -108,8 +108,8 @@
 
 **M6 · 烟测证据不实/不足：三张截图均为 390×844，"桌面面板"标注错误，窄屏工具行与 scrollWidth 无证据**
 
-- **现象**：我实测三张 PNG 的尺寸全部是 **390×844**（`node -e` 读 IHDR），但设计 §7.1 把 `docs/v24-abyss.png` 标为"**桌面面板**"，且提交信息宣称"窄屏 390px：8 个工具按钮换行后全部可达（末位「设置」可见）；`.body scrollWidth === clientWidth = 375`"——**`docs/v24-abyss-mobile.png` 展示的是采矿页 + 材料详情弹窗，既没有深渊面板也没有工具按钮行**，三张图都不含 `.tools` 换行后的状态；1440px 下 AbyssPanel 的双列商店布局（`AbyssPanel.vue:241-245`）也没有任何桌面证据。
-- **复现**：`node -e "const b=require('fs').readFileSync('docs/v24-abyss.png');console.log(b.readUInt32BE(16),b.readUInt32BE(20))"` → `390 844`（三张同）。
+- **现象**：我实测三张 PNG 的尺寸全部是 **390×844**（`node -e` 读 IHDR），但设计 §7.1 把 （截图已清理，以省仓库体积） 标为"**桌面面板**"，且提交信息宣称"窄屏 390px：8 个工具按钮换行后全部可达（末位「设置」可见）；`.body scrollWidth === clientWidth = 375`"——**（截图已清理，以省仓库体积） 展示的是采矿页 + 材料详情弹窗，既没有深渊面板也没有工具按钮行**，三张图都不含 `.tools` 换行后的状态；1440px 下 AbyssPanel 的双列商店布局（`AbyssPanel.vue:241-245`）也没有任何桌面证据。
+- **复现**：`node -e "const b=require('fs').readFileSync('（截图已清理）');console.log(b.readUInt32BE(16),b.readUInt32BE(20))"` → `390 844`（三张同）。
 - **影响**：DoD 要求"实机烟测（主 + 边界 + 窄屏）"，本版的"桌面"路径与"窄屏工具行"两格实际是空的；390px 无横向溢出目前只有静态推算（`.tools` 已 `flex-wrap`，`NavBar.vue:195-204`；面板有 ≤900px 媒体查询）。
 - **建议**：补 1 张 ≥1280px 的深渊面板截图 + 1 张 390px 含工具按钮行的截图（露出「设置」），保留截图原始尺寸；`.body.scrollWidth` 的度量值写进 §7.1 时注明测量方法（控制台输出）。
 

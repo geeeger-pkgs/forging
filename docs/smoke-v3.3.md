@@ -54,5 +54,5 @@ npm run gen:check && npm run audit:fx:check && npm run audit:content
 | 赛季分母（评审 Minor） | `seasonView.maxRenown` 改为满级声望 60；实机截图可见 `声望 0 / 60`（此前 `/120`） |
 | 证据链（评审 Major） | sim 的 `levelReward` 改读内容表并落 JSON（20 行）；新增用例逐行比对"脚本 == 表" |
 | 键盘（评审 Minor） | 槽位/材料/行囊的 Space 由 `keyup` 改 `keydown`（按下瞬间的默认滚动不再发生） |
-| 重截证据（评审 M4） | `docs/v33-mobile-season.png`（375px：赛季面板 + "目标已按你的账号进度调整：老手档 ×0.66" + 缩放后目标 165k/330k/528k 与 80/212/396 + 声望 0/60）、`docs/v33-desktop-season.png` |
+| 重截证据（评审 M4） | （截图已清理，以省仓库体积）（375px：赛季面板 + "目标已按你的账号进度调整：老手档 ×0.66" + 缩放后目标 165k/330k/528k 与 80/212/396 + 声望 0/60）、（截图已清理，以省仓库体积） |
 | 门禁 | `npm test` 463 全绿｜`typecheck` 无错｜`build` gzip 见提交信息｜`gen:check` / `audit:fx:check` / `audit:content` 全通过 |

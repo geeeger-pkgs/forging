@@ -3,7 +3,7 @@
 > 阶段：⑥ 资深游戏玩家评审。对象：v3.2.0（提交 `1ebeef4` 之前的工作树 + `1ebeef4` 的 DoD 修正）。
 > 方法：两名评审员**独立**评估（互不可见对方结论），各自可读代码/文档/截图、可跑只读命令；
 > 评审素材：`docs/design-v3.2.md`（设计与 DoD）、`docs/smoke-v3.2.md`（实机证据）、
-> `docs/v32-mobile-default.png` / `-drawer.png` / `-rightpanel.png` / `v32-desktop.png`（真实浏览器截图）、
+> （截图已清理，以省仓库体积） / `-drawer.png` / `-rightpanel.png` / `v32-desktop.png`（真实浏览器截图）、
 > 上版基线 `docs/review-v3.0-two-players.md` / `-hardcore.md` / `-ux.md`。
 > 评审员 A：硬核放置玩家（信息密度 / 操作效率 / 数值可读性 / 文档-实现一致性）。
 > 评审员 B：新手 + 移动端体验（第一屏可懂性 / 触控 / 误操作 / 文案）。

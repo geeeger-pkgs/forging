@@ -7,3 +7,7 @@ dist/
 .claude
 .zcode
 .agents
+
+# v3.7.14：截图不入库（控制仓库体积；历史截图已清理，文档引用改为文字说明）
+docs/*.png
+reference/*.png

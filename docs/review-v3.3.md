@@ -2,7 +2,7 @@
 
 > 阶段：⑥ 资深游戏玩家评审。对象：v3.3 全部改动（提交 `5b36232` A 组 / `2b2a4fe` C 组 / `b148cc1` B1 / `c266c5c` 烟测）。
 > 素材：`docs/design-v3.3.md`（含 DoD）、`docs/review-v3.3-plan.md`、`docs/smoke-v3.3.md`、
-> 截图 `docs/v33-mobile-season.png` / `v33-desktop-season.png`、上一版终评 `docs/review-v3.2.md`。
+> 截图 （截图已清理，以省仓库体积） / `v33-desktop-season.png`、上一版终评 `docs/review-v3.2.md`。
 > 评审员 A：硬核老玩家（数值口径 / 证据链 / 效率）；评审员 B：新手 + 移动端（可达性 / 文案 / 误操作）。
 
 ## 1. 结论

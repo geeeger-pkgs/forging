@@ -211,7 +211,7 @@ function regenStamina(state, now) {
 | 边界 | 体力 0 时扫荡按钮禁用；战力不足时挑战按钮禁用（两者都不消耗体力）；券选择器仅在持有券时出现，下拉列出该装备原型池 |
 | 入口难度 | 空档战力 0、单件 T7 也不足第 1 层门槛（2.764）→ 深渊由 build 自然门禁，未加人为解锁门槛（测试守护） |
 | 窄屏 390px | 8 个工具按钮换行后全部可达（末位「设置」可见）；.body scrollWidth === clientWidth = 375，无横向溢出 |
-| 证据 | **docs/v24-abyss-desktop.png（1440px 桌面面板）**｜docs/v24-abyss.png（390px）｜docs/v24-abyss-mobile.png（390px 工具行）｜docs/v24-reforge-ticket.png（券重铸结果） |
+| 证据 | **（截图已清理）（1440px 桌面面板）**｜（截图已清理）（390px）｜（截图已清理）（390px 工具行）｜（截图已清理）（券重铸结果） |
 
 ## 8. 范围外（记入 backlog）
 
