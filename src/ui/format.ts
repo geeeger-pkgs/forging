@@ -17,6 +17,8 @@ export function fmtDur(ms: number): string {
   const r = sec % 60
   if (m < 60) return `${m}m ${r}s`
   const h = Math.floor(m / 60)
+  // v3.2 修正（评审 N3）：加"天"档。赛季倒计时 14 天原会显示 "336h 0m"（旧文案 "13 天 23 小时" 更好懂）
+  if (h >= 48) return `${Math.floor(h / 24)}d ${h % 24}h`
   return `${h}h ${m % 60}m`
 }
 

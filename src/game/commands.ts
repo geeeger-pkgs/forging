@@ -82,9 +82,15 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       return []
     case 'equip':
       return equip(state, cmd.instanceId)
-    case 'unequip':
+    case 'unequip': {
+      // v3.2 评审 N2：卸下要给反馈。此前返回空事件 → 弹窗里按钮静默消失；
+      // 若玩家开过实例级自动回收，装备会立刻被卖掉，看起来像"装备凭空消失"
+      const id = state.slots[cmd.slot]
+      const inst = typeof id === 'number' ? instanceById(state, id) : null
+      const name = inst ? itemDef(inst.itemId).name : null
       delete state.slots[cmd.slot]
-      return []
+      return name ? [{ type: 'notice', text: `已卸下「${name}」→ 行囊` }] : []
+    }
     case 'recycleMaterial':
       return recycleMaterial(state, cmd.itemId, cmd.qty)
     case 'recycleInstance':

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
+import { fmtPct } from '../format'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById } from '../../game/state'
 import { SLOT_IDS, aggregateEquipment } from '../../game/stats'
@@ -177,13 +178,25 @@ function tidyBag(): void {
 type RightTab = 'gear' | 'bag' | 'mats'
 const rightTab = ref<RightTab>('gear')
 const rightOpen = ref(false)
-function toggleRightTab(t: RightTab): void {
+/**
+ * v3.2 评审 N1（两名评审共同要求的放行条件）：底栏常驻后，"点开"必须把玩家带到面板。
+ * 面板内容仍在文档末尾（主内容之后），只切换状态的话在页面中部点「资源」→ 视口不动，
+ * 唯一变化是按钮变蓝 → 新手判定"这个按钮是坏的"。故窄屏展开后滚动到该分区。
+ */
+async function toggleRightTab(t: RightTab): Promise<void> {
   if (rightOpen.value && rightTab.value === t) {
     rightOpen.value = false // 再点一次收起
     return
   }
+  const wasOpen = rightOpen.value
   rightTab.value = t
   rightOpen.value = true
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 900px)').matches) return
+  await nextTick()
+  const panel = document.getElementById(`rtabpanel-${t}`)
+  if (!panel) return
+  // 收起→展开时滚动到面板起始处；分区间切换时只保证面板在视口内（避免"跳一下"）
+  panel.scrollIntoView({ block: wasOpen ? 'nearest' : 'start', behavior: 'smooth' })
 }
 
 /** v3.2 B1：材料「…」菜单与自动保留量内联输入（替代系统 prompt） */
@@ -272,7 +285,7 @@ function inspect(instanceId: number | null, itemId?: string): void {
 /** 词缀徽标文本：无词缀返回空串 */
 function affixBadge(count: number, score: number): string {
   if (count <= 0) return ''
-  return `${count}词缀 ${Math.round(score * 100)}%`
+  return `${count}词缀 ${fmtPct(score)}`
 }
 
 /** 高亮阈值统一取自内容表（评审 m4：不再硬编码 0.9） */
@@ -354,6 +367,7 @@ function isTop(score: number): boolean {
               :title="`查看「${s.name}」详情（可卸下 / 重铸）`"
               @click="inspect(s.inst.instanceId)"
               @keyup.enter="inspect(s.inst.instanceId)"
+              @keyup.space.prevent="inspect(s.inst.instanceId)"
             >
               <ItemIcon :item-id="s.inst.itemId" :size="18" />
               <span class="slot-name">{{ s.name }}<em>+{{ s.inst.enhanceLevel }}</em></span>
@@ -623,6 +637,8 @@ h3 {
   align-items: center;
   gap: 5px;
   flex: 1;
+  align-self: stretch; /* v3.2 评审：让热区撑满整行，而不是只有文字那一条 */
+  min-height: 28px;
   cursor: pointer;
 }
 .clickable:hover .name {

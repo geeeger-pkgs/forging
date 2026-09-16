@@ -28,6 +28,15 @@ const ICON: Record<string, string> = { info: '•', good: '✔', bad: '✖' }
   z-index: 80;
   pointer-events: none;
 }
+/* v3.2 评审 N5：窄屏底栏常驻视口底部，提示条要抬到它上面，否则被压住 3 秒 */
+@media (max-width: 900px) {
+  .toasts {
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    right: 12px;
+    align-items: flex-end;
+  }
+}
 .toast {
   display: flex;
   align-items: center;

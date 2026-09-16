@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { store } from '../../app/store'
 import { itemDef, skillName } from '../../game/content'
-import { fmtDur } from '../format'
+import { fmtDur, fmtPct } from '../format'
 import { refLabel } from '../../game/refs'
 
 const s = computed(() => store.summary)
@@ -33,7 +33,7 @@ function close(): void {
           🗓 赛季声望等级 → {{ Math.max(...s.seasonLevels) }} 级（奖励已发放）
         </div>
         <div v-if="s.codexMilestones.length" class="row">
-          📖 图鉴里程碑 {{ s.codexMilestones.map((p) => Math.round(p * 100) + '%').join('、') }}（奖励已发放）
+          📖 图鉴里程碑 {{ s.codexMilestones.map((p) => fmtPct(p)).join('、') }}（奖励已发放）
         </div>
       </section>
 

@@ -48,12 +48,12 @@
 > **核验历程（如实记录）**：第一轮 DoD 复核（375/390/1200px 实机 + 源码契约测试）勾选时发现 3 处不达标（见下"第一轮核验发现"）。
 > 随后进入 ⑥ 资深玩家评审（`docs/review-v3.2.md`），两名独立评审员又抓出 **1 Blocker + 6 Major**，
 > 其中一条明确指出"B1~B7/C1~C3 全部落地"当时**不成立**（卸下不可达 / B3 死选择器 / B4 只有 helper 没有集成 / B6 部分未兑现 / C3 残留）。
-> 修复与复验见 `docs/review-v3.2.md` §2、`docs/smoke-v3.2.md`；下面每条都附**可复查证据**。
+> 修复与复验见 `docs/review-v3.2.md` §2；处置后两名评审员独立复审（7.5 / 8.0，共同放行条件 N1 已修），修正与复验见 §4、`docs/smoke-v3.2.md`；下面每条都附**可复查证据**。
 
 - [x] 390/375px：无横向溢出；工具抽屉可开合；右栏 Tab 可切换且默认不遮挡主内容
   - 375px：`scrollWidth == innerWidth`；抽屉默认收起（`display:none`、`aria-expanded=false`），点「更多」展开 8 个入口、选中任一工具后自动收起（实机）
   - **底部 Tab 条常驻视口底部**（`position: fixed`）：未滚动时 `top=667 / bottom=720`（视口 720）——第一轮用 `sticky` 时它只在页面底部可见，等于没有入口（评审 Major，已改）
-  - 右栏默认零 section 可见（不占高度）；点 Tab 切换分区，再点收起；桌面 1200px：三区分显、Tab 条隐藏、工具区始终全展示
+  - 右栏默认零 section 可见（不占高度）；点 Tab 切换分区（窄屏展开后自动滚动到该分区，见下方评审 N1），再点收起；桌面 1200px：三区分显、Tab 条隐藏、工具区始终全展示
 - [x] 键盘：Tab 可见焦点；工具抽屉与右栏 Tab 可键盘操作（aria-expanded / aria-selected）
   - 焦点环 `:focus-visible { outline: 2px solid var(--c-accent) }` 生效（实测 `outline-style: solid`）；已去掉旧版自带的 `border-radius:4px`（会让按钮聚焦瞬间抖动）
   - **Space 路径实测**：抽屉「更多」开合、右栏 Tab 切换，`aria-expanded`/`aria-selected` 同步；补 `aria-controls` + `role="tabpanel"`
@@ -65,8 +65,8 @@
 - [x] 时长/百分比格式统一（新增 `fmtDur`/`fmtPct` 并在测试中断言边界：59s/60s/60m/1h）
   - `tests/format.test.ts`：0/负数/NaN/∞ 兜底、<10s 一位小数、59s、**59.9s → "1m 0s"（进位修正）**、60s → "1m 0s"、3599s → "59m 59s"、3600s → "1h 0m"；`fmtPct` 一位小数与 `—` 兜底
   - **集成已完成**（评审 Major：此前只测了尺子没量身高）：`icons.ts` 改为转出口 `format.ts`，ActionDialog / MainPanel / ProgressBar / Expedition / Offline / Tasks / Codex 全部迁移；守卫测试禁止在 `format.ts` 之外自带 `toFixed` 取整
-- [x] `npm test` 全绿（414，DoD 原定 ≥390）｜typecheck｜build｜实机烟测（桌面 + 390/375 + 键盘路径）
-  - 414 项 / 24 文件全绿（含 `tests/v32-review.test.ts` 的评审处置回归 21 项）；`vue-tsc --noEmit` 无错；`vite build` gzip **106.08KB**（≤110KB 修订预算）
+- [x] `npm test` 全绿（421，DoD 原定 ≥390）｜typecheck｜build｜实机烟测（桌面 + 390/375 + 键盘路径）
+  - 421 项 / 24 文件全绿（含 `tests/v32-review.test.ts` 的评审处置回归 29 项）；`vue-tsc --noEmit` 无错；`vite build` gzip **106.39KB**（≤110KB 修订预算）
   - 实机：375/390/1200 三档布局 + 抽屉开合 + 底栏常驻 + 右栏 Tab 切换 + 卸下可达 + 材料菜单行内 + 键盘聚焦
 
 ### 第一轮核验发现（DoD 复核本身抓出的 3 项）

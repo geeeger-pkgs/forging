@@ -251,6 +251,13 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
   cursor: pointer;
   font-size: 13px;
 }
+/* v3.2 评审 M3 残余：分区标题是展开/收起入口，窄屏给足触控高度 */
+@media (max-width: 900px) {
+  .chead {
+    min-height: 40px;
+    align-items: center;
+  }
+}
 .bar {
   height: 5px;
   background: var(--c-bg-deep);

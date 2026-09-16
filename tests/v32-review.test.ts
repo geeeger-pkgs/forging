@@ -7,13 +7,14 @@
 // 说明：项目测试环境是 node（无 DOM、无 @vue/test-utils），组件渲染类的回归
 // 由"源码契约 + 实机烟测"共同覆盖——因此断言写成对文件内容的精确约束。
 // ============================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { applyCommand } from '../src/game/commands'
 import { mulberry32 } from '../src/game/rng'
 import { simulate } from '../src/game/settle'
 import { addInstance, instanceById, newGame } from '../src/game/state'
+import { fmtDur } from '../src/ui/format'
 import type { GameState } from '../src/game/types'
 
 const src = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
@@ -76,25 +77,27 @@ describe('Major 处置：B4 时长/百分比只有一个实现', () => {
     expect(icons).not.toMatch(/export function fmt(Duration|Pct)/)
   })
 
-  it('除 format.ts 外，src/ui 不再自定义时长/百分比格式化函数', () => {
-    const files = [
-      'icons.ts',
-      'components/ActionDialog.vue',
-      'components/MainPanel.vue',
-      'components/ProgressBar.vue',
-      'components/TasksPanel.vue',
-      'components/CodexPanel.vue',
-      'components/ExpeditionPanel.vue',
-      'components/OfflineModal.vue',
-      'components/AbyssPanel.vue',
-    ]
-    for (const f of files) {
-      const s = src(`src/ui/${f}`)
-      // 允许薄包装（如 ProgressBar 的 "完成中" 特例），但函数体内不得再自带取整/小数运算
-      for (const m of s.matchAll(/function (fmtPct|fmtDuration|fmtDur|fmtLeft|fmtMin|formatRemain)\([\s\S]{0,240}?\n\}/g)) {
-        expect(m[0], `${f} 的 ${m[1]} 不应自带取整/百分比运算`).not.toContain('toFixed(')
+  it('除 format.ts 外，src/ui 不再出现"非一位小数"的百分比写法', () => {
+    // 评审（复审 N3）：原先按函数名白名单扫描，`pct()`/`qualityPct` 这类"没起 fmt 名"的实现全部漏检（实际漏了 4 处）。
+    // 改为**形态匹配**：任何 `* 100).toFixed(0)`（零位小数）或 `Math.round(<x> * 100)`（取整百分比）都判失败；
+    // `Math.round(x * 100) / 100` 是"两位小数取整"工具（AbyssPanel.fmtW 的权重显示），允许。
+    const walk = (dir: string): string[] => {
+      const out: string[] = []
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name)
+        if (e.isDirectory()) out.push(...walk(p))
+        else if (e.name.endsWith('.vue') || e.name.endsWith('.ts')) out.push(p)
       }
+      return out
     }
+    const offenders: string[] = []
+    for (const f of walk(join(process.cwd(), 'src', 'ui'))) {
+      if (f.endsWith('format.ts')) continue
+      const s = readFileSync(f, 'utf8')
+      for (const m of s.matchAll(/\*\s*100\)\.toFixed\(0\)/g)) offenders.push(`${f} → ${m[0]}`)
+      for (const m of s.matchAll(/Math\.round\([^)]*\*\s*100\)(?!\s*\/\s*100)/g)) offenders.push(`${f} → ${m[0]}`)
+    }
+    expect(offenders.map((x) => x.replace(process.cwd(), ''))).toEqual([])
   })
 
   it('高流量界面（动作弹窗）已改用统一格式', () => {
@@ -235,9 +238,55 @@ describe('Minor 处置：交互收口', () => {
     expect(ab).toContain('只留贡献最高 2 项与最弱 1 项')
   })
 
-  it('槽位是可点入口：有 role/tabindex/Enter 与"正在查看"高亮', () => {
+  it('槽位是可点入口：有 role/tabindex/Enter+Space 与"正在查看"高亮', () => {
     const rp = ui('RightPanel.vue')
     expect(rp).toContain('@keyup.enter="inspect(s.inst.instanceId)"')
+    expect(rp).toContain('@keyup.space.prevent="inspect(s.inst.instanceId)"')
     expect(rp).toContain(':class="{ inspecting: inspectedSlot === s.id }"')
+  })
+
+  // ---- 复审（第二轮）新增：两名评审共同要求的放行条件 + 复审新发现问题 ----
+
+  it('N1 底栏点开后必须把玩家带到面板（scrollIntoView，仅窄屏）', () => {
+    const rp = ui('RightPanel.vue')
+    expect(rp).toMatch(/async function toggleRightTab\(/)
+    expect(rp).toContain('scrollIntoView(')
+    expect(rp).toContain("window.matchMedia('(max-width: 900px)').matches")
+    expect(rp).toContain('await nextTick()')
+  })
+
+  it('N2 卸下有反馈：命令返回 notice（此前返回空事件，弹窗里按钮静默消失）', () => {
+    const s = newGame('T', 0)
+    const id = addInstance(s, 'pick_copper')
+    applyCommand(s, { type: 'equip', instanceId: id }, 0)
+    const events = applyCommand(s, { type: 'unequip', slot: 'pick' }, 0)
+    const notice = events.find((e) => e.type === 'notice') as { text: string } | undefined
+    expect(notice, '卸下应给出提示事件').toBeTruthy()
+    expect(notice!.text).toContain('已卸下')
+    expect(s.slots.pick ?? null).toBeNull()
+  })
+
+  it('N3 fmtDur 有天档（赛季/每日倒计时不再显示 336h 0m）', () => {
+    expect(fmtDur(14 * 24 * 3_600_000)).toBe('14d 0h')
+  })
+
+  it('N4 抽屉收起时显示当前分区（"我在哪"可见）', () => {
+    const nav = ui('NavBar.vue')
+    expect(nav).toContain('const currentToolLabel = computed(')
+    expect(nav).toContain('更多<em v-if="!toolsOpen && currentToolLabel"> · {{ currentToolLabel }}</em>')
+    expect(nav).toContain(':class="{ active: currentToolLabel !== null }"')
+  })
+
+  it('N5 窄屏提示条抬到常驻底栏之上', () => {
+    const t = ui('Toasts.vue')
+    const mq = t.slice(t.indexOf('@media (max-width: 900px)'))
+    expect(mq).toContain('bottom: calc(66px + env(safe-area-inset-bottom, 0px))')
+  })
+
+  it('M3 残余：窄屏行内可点文字撑满行高；图鉴分区标题 ≥40px', () => {
+    const rp = ui('RightPanel.vue')
+    expect(rp).toMatch(/\.clickable \{[\s\S]{0,220}?align-self: stretch/)
+    const cp = ui('CodexPanel.vue')
+    expect(cp).toMatch(/@media \(max-width: 900px\) \{[\s\S]{0,120}?min-height: 40px/)
   })
 })

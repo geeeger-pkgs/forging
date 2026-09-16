@@ -206,7 +206,7 @@ void levelInfo
           </div>
           <div class="dim small">
             成功率 <b :class="{ good: r.rate >= 1 }">{{ fmtPct(r.rate) }}</b>（编队战力 {{ Math.round(r.power) }}）
-            · 失败仍有 {{ (CONTENT.expeditions.failYieldShare * 100).toFixed(0) }}% 保底
+            · 失败仍有 {{ fmtPct(CONTENT.expeditions.failYieldShare) }} 保底
           </div>
           <p v-if="r.lockReason" class="bad small">🔒 {{ r.lockReason }}</p>
           <p v-else-if="r.running" class="dim small">已有远征在进行</p>

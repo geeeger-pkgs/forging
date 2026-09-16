@@ -4,6 +4,7 @@ import { cmd, setView, store } from '../../app/store'
 import { CONTENT, TUTORIAL_BY_STEP } from '../../game/content'
 import { levelInfo } from '../../game/level'
 import { skillIcon } from '../icons'
+import { fmtPct } from '../format'
 
 const skills = computed(() =>
   CONTENT.skills.map((s) => {
@@ -62,7 +63,7 @@ function goalLabel(g: { type: string; itemId?: string; counter?: string; target:
     case 'abyssFloor':
       return `深渊回廊通关 ${g.target} 层`
     case 'codexPct':
-      return `图鉴收集达到 ${Math.round(g.target * 100)}%`
+      return `图鉴收集达到 ${fmtPct(g.target)}`
     case 'seasonLevel':
       return `赛季声望等级达到 ${g.target}`
     default:
@@ -114,8 +115,19 @@ function claim(): void {
  *   ② 曾有一条"进入工具页自动展开"的 watch，与"选完收起"互相打架（watch 后跑，把收起又顶开）
  *      —— 已删除：抽屉状态完全交给用户（「更多」开合 / 选中任一工具后自动收起）。
  */
-const TOOL_VIEWS = ['prestige', 'tasks', 'expedition', 'codex', 'abyss', 'shop', 'achievements', 'settings']
-const toolsOpen = ref(TOOL_VIEWS.includes(store.ui.view))
+const TOOL_LABEL: Record<string, string> = {
+  prestige: '传承',
+  tasks: '任务',
+  expedition: '远征',
+  codex: '图鉴',
+  abyss: '深渊',
+  shop: '商店',
+  achievements: '成就',
+  settings: '设置',
+}
+/** 当前是否停在某个工具分区（收起时用它显示"更多 · 图鉴"） */
+const currentToolLabel = computed(() => TOOL_LABEL[store.ui.view] ?? null)
+const toolsOpen = ref(currentToolLabel.value !== null)
 function pickTool(v: string): void {
   setView(v as never)
   toolsOpen.value = false
@@ -144,15 +156,23 @@ function toggleMute(): void {
       </span>
     </button>
 
+    <!-- v3.2 评审 N4：抽屉收起时"我在哪"不可见 —— 开关本身显示当前分区名并加 active 态 -->
     <button
       class="item tools-toggle"
+      :class="{ active: currentToolLabel !== null }"
       :aria-expanded="toolsOpen"
       aria-controls="nav-tools"
-      :title="toolsOpen ? '收起工具' : '展开工具（传承/任务/远征/图鉴/深渊/商店/成就）'"
+      :title="
+        toolsOpen
+          ? '收起工具'
+          : currentToolLabel
+            ? `当前分区：${currentToolLabel}（点开切换）`
+            : '展开工具（传承/任务/远征/图鉴/深渊/商店/成就）'
+      "
       @click="toolsOpen = !toolsOpen"
     >
       <span class="icon">{{ toolsOpen ? '▾' : '▸' }}</span>
-      <span class="body"><span class="name">更多</span></span>
+      <span class="body"><span class="name">更多<em v-if="!toolsOpen && currentToolLabel"> · {{ currentToolLabel }}</em></span></span>
     </button>
 
     <div id="nav-tools" class="tools" :class="{ collapsed: !toolsOpen }">

@@ -27,6 +27,12 @@ describe('fmtDur 边界（DoD：59s / 60s / 60m / 1h）', () => {
     expect(fmtDur(5_400_000)).toBe('1h 30m')
   })
 
+  it('天级：≥48h 起用 "Xd Yh"（评审 N3：赛季倒计时曾显示 "336h 0m"，可读性倒退）', () => {
+    expect(fmtDur(47 * 3_600_000 + 59 * 60_000)).toBe('47h 59m')
+    expect(fmtDur(48 * 3_600_000)).toBe('2d 0h')
+    expect(fmtDur(14 * 24 * 3_600_000)).toBe('14d 0h') // 赛季周期 14 天
+  })
+
   it('非有限值兜底（不产生 NaN 文案）', () => {
     expect(fmtDur(Number.NaN)).toBe('0s')
     expect(fmtDur(Number.POSITIVE_INFINITY)).toBe('0s')
@@ -72,9 +78,10 @@ describe('窄屏默认状态（DoD §3：抽屉/右栏默认收起）', () => {
   const right = comp('RightPanel.vue')
 
   it('NavBar：工具抽屉默认收起（技能页），初始即工具页时才展开，选中工具后自动收起', () => {
-    expect(nav).toContain('const toolsOpen = ref(TOOL_VIEWS.includes(store.ui.view))')
+    // 初始值由"当前视图是否工具分区"决定（曾写反成 !includes → 技能页默认为 true，窄屏首屏被占满）
+    expect(nav).toContain('const toolsOpen = ref(currentToolLabel.value !== null)')
     expect(nav).not.toContain('ref(!TOOL_VIEWS.includes(store.ui.view))')
-    // v3.2 修正：删掉"进入工具页自动展开"的 watch（它与"选完收起"打架：watch 后跑又把抽屉顶开）
+    // 删除"进入工具页自动展开"的 watch（它与"选完收起"打架：watch 后跑又把抽屉顶开）
     expect(nav).not.toMatch(/watch\(\s*\(\) => store\.ui\.view/)
     expect(nav).toMatch(/function pickTool\([\s\S]{0,120}?toolsOpen\.value = false/)
   })

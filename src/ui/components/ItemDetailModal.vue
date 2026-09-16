@@ -8,6 +8,7 @@ import { affixDef, affixQuality, maxLocks, perfectScore, poolOf, reforgeCost } f
 import { reforgeBlockReason } from '../../game/commands'
 import { CONTENT, itemDef } from '../../game/content'
 import { instanceById, isEquipped, materialCount } from '../../game/state'
+import { fmtPct } from '../format'
 import type { ItemDef, SlotId } from '../../game/types'
 import ItemIcon from './ItemIcon.vue'
 
@@ -73,7 +74,7 @@ function quality(i: number): number {
 }
 
 function qualityPct(i: number): string {
-  return `${Math.round(quality(i) * 100)}%`
+  return fmtPct(quality(i)) // v3.2 评审：统一一位小数（此前 Math.round 到整数）
 }
 
 function isPerfect(i: number): boolean {
