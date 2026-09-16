@@ -109,6 +109,22 @@ body {
     max-width: calc(100vw - 24px);
   }
 }
+/* v3.1：窄屏下动作弹窗的按钮行吸底（测评 B-10：长内容时主按钮会滚出屏） */
+@media (max-width: 900px) {
+  .dialog {
+    display: flex;
+    flex-direction: column;
+  }
+  .dialog > .actions,
+  .dialog > footer,
+  .dialog > .footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--c-panel);
+    padding-top: 8px;
+    margin-top: auto;
+  }
+}
 .dialog .dim {
   color: var(--c-text-dim);
 }

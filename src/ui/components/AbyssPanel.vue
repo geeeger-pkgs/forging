@@ -192,7 +192,7 @@ function sweep(n: number): void {
           一件 T3+ 强化装备 + 少量速度/稀有词缀即可起步；再往上才需要整套 build。
         </template>
         <template v-else>
-          <br />补强建议（按本层有效权重排序）：优先提升 {{ topGapLabels }}。
+          <br />补强方向：按本层有效权重，当前贡献最低的三项是 {{ topGapLabels }}（先补它们性价比最高）。
         </template>
       </p>
     </section>
