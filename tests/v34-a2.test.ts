@@ -145,3 +145,24 @@ describe('A6 传承点数：消除反直觉最优解', () => {
     expect(s.skills.mining, '被拦下时不应重置任何东西').toBe(xp30)
   })
 })
+
+describe('A2 自愈：bestSkillLevel 不因旧值永久停留', () => {
+  it('载入时按当前技能等级单调修复（v14 档里字段被写成 1 也能恢复）', () => {
+    const s = newGame('T', 0)
+    s.version = 14
+    s.skills.mining = xpForLevel(88)
+    s.meta.bestSkillLevel = 1 // 模拟"字段被写成默认值、之后技能继续升级"
+    const back = deserializeSave(JSON.stringify(s))!
+    expect(back.meta.bestSkillLevel).toBe(88)
+    expect(milestoneView(back.meta.bestSkillLevel).filter((m) => m.unlocked).length).toBe(2) // Lv80/85
+  })
+
+  it('不回退：字段高于当前技能等级时保持原值', () => {
+    const s = newGame('T', 0)
+    s.version = 14
+    s.skills.mining = xpForLevel(10)
+    s.meta.bestSkillLevel = 95
+    const back = deserializeSave(JSON.stringify(s))!
+    expect(back.meta.bestSkillLevel).toBe(95)
+  })
+})

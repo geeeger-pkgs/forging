@@ -1,0 +1,19 @@
+# Forging v3.4 实机烟测报告 ·「清账」
+
+> 阶段：⑤ 测试（实机烟测）。设计：docs/design-v3.4.md（修订版）。
+
+## 1. 结果
+
+| # | 测什么 | 实测 | 判定 |
+|---|---|---|---|
+| S1 | Lighthouse（生产构建 + preview，headless） | performance 99 / accessibility 100 / best-practices 100 / seo 100；FCP 1.5s、LCP 1.9s、TBT 60ms、CLS 0 | ✅（v3.0 的"待补"结案） |
+| S2 | 里程碑顶栏显示 | 顶栏实机读到 （截图 v34-desktop-topbar.png） | ✅ |
+| S3 | bestSkillLevel 自愈（烟测暴露） | 实机发现字段一旦是旧值会永久停留（里程碑永远锁着）→ 载入时按当前技能等级**单调修复**，并补 2 条用例（修复 / 不回退） | ✅（本轮修复） |
+| S4 | 赛季缩放标注 | 图鉴页显示"目标已按你的账号进度调整"；新晋档系数已随 T2 证据从 0.67 → **0.34**（缩放后挖掘目标 1400/3150/6300） | ✅ |
+| S5 | 付费重掷确认 | 组件用例覆盖两条分支（免费不打扰 / 付费确认且取消不扣金） | ✅（组件级） |
+| S6 | 门禁 | 测试 489 全绿｜typecheck｜build gzip 108.4KB（≤110KB）｜gen:check｜audit:fx:check（含 E3b burst）｜audit:content 零发现 | ✅ |
+
+## 2. 说明
+
+- Lighthouse 三项未满分均为 13.x 的诊断型审计（unused-javascript / 依赖树 / render-blocking insight），不参与分类得分。
+- 本轮烟测暴露的 S3 属字段老化类问题：v3.3 建立的组件层测不到，靠实机复现才抓到 —— 与 v3.2 的抽屉默认态同类。

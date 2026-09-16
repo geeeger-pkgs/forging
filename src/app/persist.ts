@@ -254,6 +254,15 @@ export function sanitizeSettings(raw: unknown): SettingsState {
  */
 function ensureFields(s: GameState): GameState {
   let out = s
+  // v3.4 A2：bestSkillLevel 是**单调**口径，载入时按当前技能等级自愈（防旧值永久停留：
+  // 例如字段先被写成默认 1、之后技能升级但字段未更新，里程碑会永远锁着）
+  {
+    let best = (out.meta as { bestSkillLevel?: number }).bestSkillLevel ?? 1
+    for (const xp of Object.values(out.skills)) best = Math.max(best, levelInfo(Number(xp) || 0).level)
+    if (best !== (out.meta as { bestSkillLevel?: number }).bestSkillLevel) {
+      out = { ...out, meta: { ...out.meta, bestSkillLevel: best } }
+    }
+  }
   if (typeof out.meta.affixSalt !== 'number') {
     out = { ...out, meta: { ...out.meta, affixSalt: newAffixSalt() } }
   }
