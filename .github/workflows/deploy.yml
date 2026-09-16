@@ -1,0 +1,55 @@
+# 自动部署到 GitHub Pages
+#
+# 用法：仓库 Settings → Pages → Build and deployment → Source 选 "GitHub Actions"，
+# 然后推送到 main（或 master）即自动：测试 → 构建（按仓库名计算子路径 base）→ 发布。
+#
+# base 规则：
+#   项目页（https://<user>.github.io/<repo>/）→ VITE_BASE=/<repo>/
+#   用户主页仓库（名为 <user>.github.io）→ VITE_BASE=/
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test（质量门禁：532 用例）
+        run: npm test
+      - name: Build
+        env:
+          # 项目页用 /<repo>/；用户主页仓库（<user>.github.io）用 /
+          VITE_BASE: ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner) && '/' || format('/{0}/', github.event.repository.name) }}
+        run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

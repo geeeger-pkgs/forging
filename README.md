@@ -28,6 +28,50 @@ npm run audit:fx      # 特效/事件覆盖审计（audit:fx:check 为校验模�
 
 ---
 
+## 部署到 GitHub Pages
+
+纯前端、无后端，可直接部署为静态站点。仓库**已内置自动部署流程**
+（`.github/workflows/deploy.yml`），配置一次后每次推送自动发布。
+
+### 方式一：GitHub Actions（推荐，开箱即用）
+
+1. 把仓库推到 GitHub；
+2. 打开 **Settings → Pages**，把 **Source** 设为 **GitHub Actions**；
+3. 推送到 `main`（或 `master`）——工作流会自动：**跑测试（532 用例门禁）→ 构建
+   （按仓库名自动计算 `VITE_BASE=/<repo>/`）→ 发布**到 `https://<user>.github.io/<repo>/`。
+
+> 仓库名为 `<user>.github.io`（用户主页仓库）时，工作流自动改用根路径 base，无需改动。
+
+### 方式二：手动构建 + gh-pages 分支
+
+```bash
+# 项目页部署（子路径）：base 必须为 /<repo>/，否则静态资源全部 404
+VITE_BASE=/forging/ npm run build                       # macOS / Linux / CI
+MSYS_NO_PATHCONV=1 VITE_BASE=/forging/ npm run build    # Windows Git Bash（防 POSIX 路径转换）
+
+npx gh-pages -d dist                                    # 或用你习惯的方式把 dist/ 推到 gh-pages 分支
+```
+
+然后在 **Settings → Pages** 选择 `gh-pages` 分支。根路径部署则直接 `npm run build`（默认 base `/`）。
+
+### 为什么需要 base
+
+GitHub Pages 的项目页位于 `https://<user>.github.io/<repo>/` **子路径**下；若 base 仍是默认的 `/`，
+产物会引用 `/assets/...`（指向站点根）→ 全部 404。`vite.config.ts` 读取环境变量 `VITE_BASE`，CI 已自动处理。
+
+配套已适配（v3.7.13）：
+
+- `index.html` 的 PWA 资源（manifest / icon / apple-touch-icon）改为**相对路径**引用，两种部署都正确；
+- `public/manifest.webmanifest` 的 `start_url` / `scope` / icons 用相对路径（相对清单文件自身解析）；
+- Service Worker 注册走 `import.meta.env.BASE_URL`，子路径下同样能注册。
+
+### 其他静态托管
+
+Cloudflare Pages / Vercel / Netlify / 自建 nginx 等都是根路径托管：直接 `npm run build`，
+把 `dist/` 作为站点根即可，**无需设置 base**。
+
+---
+
 ## 玩法一览
 
 ### 核心循环
