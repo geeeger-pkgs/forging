@@ -456,6 +456,7 @@ describe('v3.4 处置回归：重掷与审计', () => {
     // 付费档：应弹确认，取消则金币不变
     t.rerollsLeft = 0
     t.paidRerollsLeft = 3
+    s.gold = 1000 // W4：金币不足时不弹确认，故这里给足
     const goldBefore = s.gold
     calls = []
     ;(window as unknown as { confirm: unknown }).confirm = (m: string) => { calls.push(String(m)); return false }
@@ -466,6 +467,19 @@ describe('v3.4 处置回归：重掷与审计', () => {
     expect(calls.length, '付费重掷应弹确认').toBe(1)
     expect(calls[0]).toContain('花费 100 金')
     expect(s.gold, '取消后不应扣金').toBe(goldBefore)
+
+    // W4 新增：金币不足时不弹确认（交给内核拦，避免确认了却被拦）
+    s.gold = 0
+    calls = []
+    const w3 = mount(mod.default)
+    await w3.findAll('button').find((b) => b.text() === '重掷')!.trigger('click')
+    expect(calls.length, '金币不足不应弹确认').toBe(0)
+
+    // W4 新增：两池耗尽时按钮禁用
+    t.paidRerollsLeft = 0
+    const w4 = mount(mod.default)
+    const btn4 = w4.findAll('button').find((b) => b.text() === '重掷')
+    if (btn4) expect(btn4.attributes('disabled'), '两池耗尽应禁用').toBeDefined()
   })
 })
 
@@ -492,14 +506,23 @@ describe('V7 组件矩阵补漏', () => {
   it('深渊：AbyssPanel 有可点的挑战入口，触发后体力减少', async () => {
     const s = boot()
     s.abyss.stamina = 12
-    s.abyss.bestFloor = 3
+    s.abyss.bestFloor = 0 // 从第 1 层开始（门槛最低）
     store.ui.view = 'abyss'
     const mod = await import('../../src/ui/components/AbyssPanel.vue')
     const w = mount(mod.default)
     const btn = w.findAll('button').find((b) => /挑战|连打|扫荡/.test(b.text()))
     expect(btn, '深渊面板应有挑战入口').toBeTruthy()
-    const before = s.abyss.stamina
-    await btn!.trigger('click')
-    expect(s.abyss.stamina, '挑战后体力应减少（或被弹窗确认）').toBeLessThanOrEqual(before)
+    // W6（复审：原断言 <= 太弱，no-op 也能过）：入口必须**可用**，且点击后出现实质变化
+    const disabled = btn!.attributes('disabled')
+    const before = { stamina: s.abyss.stamina, floor: s.abyss.bestFloor, dialog: store.ui.dialogRef }
+    if (disabled === undefined) {
+      await btn!.trigger('click')
+      const acted = s.abyss.stamina < before.stamina || store.ui.dialogRef !== before.dialog
+      expect(acted, '可用状态下点击应产生实质变化（扣体力或打开确认）').toBe(true)
+    } else {
+      // 禁用是合法状态（战力/体力不满足），但必须给出可读原因
+      const title = btn!.attributes('title') ?? ''
+      expect(title.length, '禁用时必须给出原因（title）').toBeGreaterThan(0)
+    }
   })
 })

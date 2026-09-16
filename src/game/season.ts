@@ -62,6 +62,16 @@ export function seasonScaleCoef(state: GameState): number {
   return state.season?.scale > 0 ? state.season.scale : DEF.scaleByMaturity[maturityClassOf(state)]
 }
 
+/**
+ * v3.4 W3：由**快照系数**反推档位名（面板展示用）。
+ * 与系数取最接近的一档；系数表若将来扩充，这里取最近邻仍成立。
+ */
+export function maturityFromScale(scale: number): 'junior' | 'veteran' {
+  const j = DEF.scaleByMaturity.junior
+  const v = DEF.scaleByMaturity.veteran
+  return Math.abs(scale - j) <= Math.abs(scale - v) ? 'junior' : 'veteran'
+}
+
 /** 轮换时冻结本季档位（由 refreshSeason 调用） */
 export function snapshotSeasonScale(state: GameState): void {
   state.season.scale = DEF.scaleByMaturity[maturityClassOf(state)]
@@ -177,7 +187,8 @@ export function refreshSeason(state: GameState, now: number): GameEvent[] {
   }
   const rotated = state.season.index >= 0
   // v3.4 V6：轮换即冻结本季档位（赛季内目标恒定，跨档不再改变已得档位）
-  state.season = { index: idx, renown: 0, rewardedLevel: 0, tasks, scale: DEF.scaleByMaturity[maturityClassOf(state)] }
+  state.season = { index: idx, renown: 0, rewardedLevel: 0, tasks, scale: 0 }
+  snapshotSeasonScale(state) // v3.4 W6：改用导出的快照函数（此前是内联写入，导出成了死代码）
   if (rotated) events.push({ type: 'seasonRotated', index: idx })
   return events
 }
@@ -290,9 +301,9 @@ export function seasonView(state: GameState, now: number): SeasonView {
     maxRenown: DEF.levels * DEF.renownPerLevel,
     level,
     maxLevel: DEF.levels,
-    /** v3.3 B1：当前账号档位与目标缩放系数（UI 如实标注） */
+    /** v3.3 B1 / v3.4 W3：缩放的**快照系数**与由此反推的档位名（二者同源，避免"老手档 ×0.34"这类错配） */
     scale: seasonScaleCoef(state),
-    maturity: maturityClassOf(state),
+    maturity: maturityFromScale(seasonScaleCoef(state)),
     pct: DEF.levels > 0 ? level / DEF.levels : 0,
     msLeft: msToSeasonEnd(now),
     tasks: slots,

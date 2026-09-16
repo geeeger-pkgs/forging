@@ -63,7 +63,8 @@ function pct(r: Row): number {
  */
 function reroll(index: number): void {
   const t = store.state.meta.tasks
-  if (t.rerollsLeft <= 0 && t.paidRerollsLeft > 0) {
+  // v3.4 W4：金币不足时不弹确认（否则"确认了却被拦"——正是 V5 想消灭的体验）
+  if (t.rerollsLeft <= 0 && t.paidRerollsLeft > 0 && store.state.gold >= PAID_REROLL_COST) {
     const msg = `免费重掷已用完：花费 ${PAID_REROLL_COST} 金重掷本条？\n（今日还剩 ${t.paidRerollsLeft} 次付费重掷）`
     if (!window.confirm(msg)) return
   }
@@ -91,7 +92,16 @@ function reroll(index: number): void {
         <span class="dim">{{ r.desc }} {{ r.slot.target }} {{ r.unit }}</span>
         <span class="spacer" />
         <span class="reward">{{ rewardText(r.slot) }}</span>
-        <button v-if="!r.slot.done" class="btn sm" @click="reroll(i)">重掷</button>
+        <!-- v3.4 W4：两池都耗尽时禁用并说明（此前点了才被内核拦下） -->
+        <button
+          v-if="!r.slot.done"
+          class="btn sm"
+          :disabled="tasks.rerollsLeft <= 0 && tasks.paidRerollsLeft <= 0"
+          :title="tasks.rerollsLeft <= 0 && tasks.paidRerollsLeft <= 0 ? '今日重掷次数已用完' : '重掷本条任务'"
+          @click="reroll(i)"
+        >
+          重掷
+        </button>
       </div>
       <div class="bar"><i :style="{ width: pct(r) + '%' }" /></div>
       <div class="prog">{{ Math.min(r.progress, r.slot.target) }} / {{ r.slot.target }}</div>

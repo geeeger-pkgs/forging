@@ -16,12 +16,12 @@ v3.4 是**清账版**：把 2026-09-16 全量盘点出的 **26 条未处置项**
 | # | 事项 | 方案（已按评审修订） | 证据要求 |
 |---|---|---|---|
 | A1 | **丰饶符文/效率精通在线不生效** | ① 新增**共享纯函数** `effectiveEfficiency(state, now)`（`stats.ts` 定义）：`agg.efficiency + buff.efficiency + perk.efficiency`；② 在线触发率改用它（`settle.ts:108` 的 `E`）；③ **面板与详情同源**（`RightPanel.vue:452`、`describe` 路径改用它）；④ `sim-audit` **A 段**的 `procRate` 复用 settle 口径重算（现用 `1/(2−E)` 只在 E≥0.5 成立，**是错的**）；⑤ 文档写明：在线 proc = 整轮重发（含稀有掉落/XP），离线 eff 只乘产量/XP —— 语义不同，分开建模 | `docs/sim-audit-output.json`（本版新增落盘）含 A 段修正前后对照；测试断言"面板值 == 结算用值" |
-| A2 | **Lv76~100 无内容** | 每 5 级一条**永久被动**（Lv80/85/90/95/100）并入 `aggregateEquipment` **单源**；**评审 #5 定稿：新增 `meta.bestTotalLevel`（单调）**，里程碑由它派生 → 传承不掉；`data/levelCurve.json` 是**手写表**（不由生成器管，评审 #3），故里程碑校验进 `validateContent` | `sim-audit` **F 段**（时长对照，读表）+ **堆叠段**重跑；`sim-abyss.mjs`（复制了聚合规则）同步复核；SAVE_VERSION 14 + 迁移 + 真实档回归 |
+| A2 | **Lv76~100 无内容** | 每 5 级一条**永久被动**（Lv80/85/90/95/100）并入 `aggregateEquipment` **单源**；**评审 #5 定稿：新增 `meta.bestSkillLevel`（单调）**，里程碑由它派生 → 传承不掉；`data/levelCurve.json` 是**手写表**（不由生成器管，评审 #3），故里程碑校验进 `validateContent` | `sim-audit` **F 段**（时长对照，读表）+ **堆叠段**重跑；`sim-abyss.mjs`（复制了聚合规则）同步复核；SAVE_VERSION 14 + 迁移 + 真实档回归 |
 | A3 | **赛季新晋档下沿无证据** | `sim-season` 增补 **T2 stage** 覆盖 60~85 段；若系数需变，表随脚本输出更新（先脚本后定表） | `sim-season-output.json` 增加 `stageParams.t2` 与相应承诺行；`data/season.json`、`gen-content.mjs`、`tests/season.test.ts`(S12)、`tests/v33-b1.test.ts` 同步 |
 | A6 | **传承快轮回无惩罚**（新发现） | `sim-audit` **D 段**新增"快轮回 vs 满级轮回的**每小时点数**模型"并落 JSON；若快轮回仍显著更优 → 点数改随总等级超线性（形式由脚本反推）；若影响有限 → 正式裁定不改（写入发布说明） | `docs/sim-audit-output.json` 的 `prestige` 段；测试断言"快轮回/小时 ≤ 满级轮回/小时"或裁定记录 |
 | B4 | **任务付费重掷无确认**（新发现） | 免费次数用完后付费重掷加二次确认；**难度分池正式裁定不做**（随机是设计） | 组件用例：确认出现 / 取消不扣金 |
 | B3 | **组件矩阵 5 缺口** | 配装**应用/删除**、材料**回收 10 / 全部回收**、**强化动作**、**深渊挑战**、**远征领取** 各 1 条"交互后 store 变化"断言 | 组件用例（挂载级） |
-| C1 | **Lighthouse 从未跑** | ✅ **已补跑成功**（v3.0 的"待补"结案）：headless Chrome + 生产构建预览，四类 **performance 99 / accessibility 100 / best-practices 100 / seo 100**（判据 ≥95 全部达标；FCP 1.5s、LCP 1.9s、TBT 60ms、CLS 0） | `docs/lighthouse-v3.4.json` + `.html`（Lighthouse 13.4.1） |
+| C1 | **Lighthouse 从未跑** | ✅ **已补跑成功**（v3.0 的"待补"结案）：headless Chrome + 生产构建预览，四类 **performance 99 / accessibility 100 / best-practices 100 / seo 100**（判据 ≥95 全部达标；FCP 1.5s、LCP 1.9s、TBT 68.5ms、CLS 0） | `docs/lighthouse-v3.4.json` + `.html`（Lighthouse 13.4.1） |
 | C5 | fx 类型与审计覆盖 | 暴露的 `cue?: string` 类型收窄为闭合联合；`audit-fx` **E3 覆盖 burst 扫描**（现只扫 cue） | `audit:fx:check` 通过 + 类型收窄 |
 
 ### B. 正式裁定不做（写进 `docs/release-v3.5.md` 已知取舍）
