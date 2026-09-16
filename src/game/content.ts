@@ -347,6 +347,23 @@ export function validateContent(t: ContentTables): string[] {
   if (!shopIds.has('permanent_speed')) errs.push('深渊商店缺少永久速度')
 
   // 视听与手感（v2.5）
+  // v3.0：深渊层词条与离线参数（评审 M2：所有新参数都必须进表并被校验）——并入既有深渊校验段
+  const mods = ab.mods ?? []
+  if (mods.length !== 5) errs.push('深渊层词条必须恰好 5 种（覆盖 %5 的 0~4）')
+  if (new Set(mods.map((m) => m.mod)).size !== mods.length) errs.push('深渊层词条 mod 重复')
+  for (const m of mods) {
+    if (!(m.mod >= 0 && m.mod <= 4)) errs.push(`层词条 mod 越界: ${m.id}`)
+    if (!(m.reqMul > 0.8 && m.reqMul < 1.25)) errs.push(`层词条门槛倍率越界: ${m.id} -> ${m.reqMul}`)
+    if (!(m.crystalMul > 0 && m.crystalMul <= 2)) errs.push(`层词条结晶倍率越界: ${m.id} -> ${m.crystalMul}`)
+    for (const [k, v] of Object.entries(m.weightMul ?? {})) {
+      if (!(v > 0 && v <= 2)) errs.push(`层词条权重修正越界: ${m.id}.${k} -> ${v}`)
+    }
+  }
+  if (ab.rounding !== 'floor' && ab.rounding !== 'round') errs.push('结晶取整方式非法')
+  if (!(ab.challengeMaxFloors >= 1 && ab.challengeMaxFloors <= 5)) errs.push('连打上限越界')
+  if (!(ab.sweepMaxCount >= 1 && ab.sweepMaxCount <= 50)) errs.push('批量扫荡上限越界')
+  if (!(ab.offlineCapExtra >= 0 && ab.offlineCapExtra <= ab.staminaMax)) errs.push('离线回体上限提升越界')
+
   const fxd = t.fx
   const cueIds = new Set<string>()
   for (const cue of fxd.cues) {

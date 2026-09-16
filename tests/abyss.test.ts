@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ABYSS_REGEN_MS,
+  abyssModifier,
   abyssRequirement,
   abyssScore,
   abyssView,
@@ -38,8 +39,9 @@ function withCrystals(s: GameState, n: number): void {
 
 describe('战力口径（A1/A2）', () => {
   it('A2：门槛曲线与内容表一致；abyssScore 是注入 now 的纯函数', () => {
-    expect(abyssRequirement(1)).toBeCloseTo(DEF.base, 10)
-    expect(abyssRequirement(9)).toBeCloseTo(DEF.base * Math.pow(DEF.growth, 8), 10)
+    // v3.0：门槛含层词条倍率（abyssRequirement 内部已乘）
+    expect(abyssRequirement(1)).toBeCloseTo(DEF.base * abyssModifier(1).reqMul, 10)
+    expect(abyssRequirement(9)).toBeCloseTo(DEF.base * Math.pow(DEF.growth, 8) * abyssModifier(9).reqMul, 10)
     const s = newGame('T', 0)
     const a = abyssScore(s, 1000)
     const b = abyssScore(s, 1000)
@@ -163,6 +165,7 @@ describe('挑战与扫荡（A3/A4/A6）', () => {
     const ev = emptyEvents()
     sweepAbyss(s, 0, ev)
     expect(s.abyss.crystals).toBe(repeatCrystal(35))
+    // v3.0：扫荡结晶**不吃层词条倍率**（倍率只作用首通；否则 bestFloor 词条会造成 1:3 收益悬崖）
     expect(repeatCrystal(35)).toBe(1 + Math.floor(35 / 20))
     expect(s.abyss.stamina).toBe(4)
     expect(s.stats.totalAbyssSweeps).toBe(1)
@@ -315,14 +318,32 @@ describe('视图与成就（A11/A12/A13）', () => {
     for (const [floor, req] of Object.entries(sim.reqAt)) {
       expect(abyssRequirement(Number(floor))).toBeCloseTo(req, 6)
     }
-    // 商店价格一致
+    // 商店价格一致（v3.0：shop 在表与证据里都是**数组**，按 id 取名比对）
     const ticket = shopItem('reroll_ticket')!
-    expect(ticket.crystal).toBe(sim.abyss.shop.rerollTicket.crystal)
-    expect(ticket.max).toBe(sim.abyss.shop.rerollTicket.max)
-    expect(ticket.priceGrowth).toBe(sim.abyss.shop.rerollTicket.priceGrowth)
-    expect(shopItem('permanent_speed')!.perLevel).toBe(sim.abyss.shop.permanentSpeed.perLevel)
+    const simTicket = (sim.abyss.shop as { id: string; crystal: number; max: number; priceGrowth: number }[]).find((x) => x.id === 'reroll_ticket')!
+    expect(ticket.crystal).toBe(simTicket.crystal)
+    expect(ticket.max).toBe(simTicket.max)
+    expect(ticket.priceGrowth).toBe(simTicket.priceGrowth)
+    const simPerm = (sim.abyss.shop as { id: string; perLevel?: number }[]).find((x) => x.id === 'permanent_speed')!
+    expect(shopItem('permanent_speed')!.perLevel).toBe(simPerm.perLevel)
     // 内容表校验通过
     expect(validateContent(CONTENT)).toEqual([])
+  })
+
+  it('A12b（V1）：层词条与离线参数在表与证据中逐字段一致', () => {
+    const s = sim as { abyss: { mods: { mod: number; id: string; reqMul: number; crystalMul: number }[]; rounding: string; challengeMaxFloors: number; sweepMaxCount: number; offlineCapExtra: number } }
+    expect(DEF.mods.length).toBe(s.abyss.mods.length)
+    for (const m of DEF.mods) {
+      const sm = s.abyss.mods.find((x) => x.id === m.id)!
+      expect(sm, m.id).toBeTruthy()
+      expect(sm.mod).toBe(m.mod)
+      expect(sm.reqMul).toBe(m.reqMul)
+      expect(sm.crystalMul).toBe(m.crystalMul)
+    }
+    expect(DEF.rounding).toBe(s.abyss.rounding)
+    expect(DEF.challengeMaxFloors).toBe(s.abyss.challengeMaxFloors)
+    expect(DEF.sweepMaxCount).toBe(s.abyss.sweepMaxCount)
+    expect(DEF.offlineCapExtra).toBe(s.abyss.offlineCapExtra)
   })
 
   it('A13：UI 覆盖——深渊页签与面板注册', () => {
@@ -418,7 +439,8 @@ describe('补充边界（DoD 覆盖）', () => {
 
   it('首通奖励公式与内容表一致（10 + 2×层）', () => {
     expect(firstClearCrystal(1)).toBe(DEF.firstClearCrystal.base + DEF.firstClearCrystal.perFloor)
-    expect(firstClearCrystal(35)).toBe(DEF.firstClearCrystal.base + DEF.firstClearCrystal.perFloor * 35)
+    // 第 35 层 = 富矿层 → (10+2×35) × 1.5 = 120
+    expect(firstClearCrystal(35)).toBe(Math.floor((DEF.firstClearCrystal.base + DEF.firstClearCrystal.perFloor * 35) * abyssModifier(35).crystalMul))
   })
 })
 

@@ -125,12 +125,12 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
     }
     case 'challengeAbyss': {
       const events: GameEvent[] = []
-      challengeAbyss(state, now, events)
+      challengeAbyss(state, now, events, cmd.floors ?? 1)
       return events
     }
     case 'sweepAbyss': {
       const events: GameEvent[] = []
-      sweepAbyss(state, now, events)
+      sweepAbyss(state, now, events, cmd.count ?? 1)
       return events
     }
     case 'buyAbyssItem': {

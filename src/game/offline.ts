@@ -8,6 +8,7 @@ import { advanceExpeditions } from './expeditions'
 import { checkSeason } from './season'
 import { perkBonuses } from './prestige'
 import { simulate } from './settle'
+import { offlineCapExtra, regenStamina } from './abyss'
 import type { ActionRef, GameEvent, GameState, OfflineSummary, SkillId } from './types'
 
 function refKey(ref: ActionRef): string {
@@ -48,6 +49,7 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   if (state.actions.queue.length !== qBefore) notes.push('队列中的强化动作不参与离线结算，已跳过')
 
   const events: GameEvent[] = []
+  let staminaBonus = false
   // v2.2：远征推进（离线规则 1：只结算「完成时刻落在 cap 窗口内」的 run；规则 2：不自动续派）
   advanceExpeditions(state, state.meta.lastSeenAt + counted, 'expectation', null, events)
   // v1.4：临时增益（符文）不参与离线结算——结算期间临时清空 buffs，结束后恢复（照常计时/过期）
@@ -56,6 +58,16 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
   simulate(state, state.meta.lastSeenAt + counted, { mode: 'expectation', events, maxRounds: 200_000 })
   state.buffs = buffsBackup
   state.meta.lastSeenAt = now // 超出 cap 的时长不结转
+  // v3.0 L8：离线回体（上限提升 offlineCapExtra，**时间比例**：前拨 2h 只得 2h 的量，不产生额外收益）
+  const extra = offlineCapExtra()
+  const staminaBefore = state.abyss?.stamina ?? 0
+  if (extra > 0 && state.abyss) {
+    regenStamina(state, now, extra)
+    if (state.abyss.stamina > staminaBefore) {
+      notes.push(`离线回体：体力 ${staminaBefore} → ${state.abyss.stamina}（离线可攒至 ${CONTENT.abyss.staminaMax + extra}）`)
+      staminaBonus = true
+    }
+  }
   // v2.3：赛季进度与图鉴里程碑（计数器单调递增，天然含离线产出；强化/重铸离线不增长）
   events.push(...checkSeason(state))
   events.push(...checkCodexMilestones(state))
@@ -120,6 +132,7 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
     expeditions: exped,
     seasonLevels,
     codexMilestones,
+    staminaBonus,
     notes,
   }
   // 无任何结算内容时不弹摘要（但 lastSeenAt 已推进）
@@ -131,6 +144,7 @@ export function settleOffline(state: GameState, now: number): OfflineSummary | n
     summary.items.length === 0 &&
     summary.xp.length === 0 &&
     summary.levels.length === 0 &&
+    !summary.staminaBonus &&
     summary.notes.length === 0
   return empty ? null : summary
 }

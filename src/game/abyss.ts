@@ -20,6 +20,7 @@ import { perkBonuses } from './prestige'
 import { aggregateEquipment } from './stats'
 import { addMaterial } from './state'
 import type {
+  AbyssModDef,
   AbyssShopItemDef,
   AbyssState,
   AbyssWeightKey,
@@ -46,21 +47,31 @@ export function shopItem(id: string): AbyssShopItemDef | undefined {
  *   1) now ≤ staminaAt → 不动（回拨/异常时钟）
  *   2) ticks = ⌊(now − staminaAt) / REGEN_MS⌋，≤0 不动
  *   3) staminaAt 按 raw tick 推进（余数保留）
- *   4) stamina 上限截断 → **满体力期间的时间被丢弃**（离线 8h 也只补到上限）
+ *   4) cap = staminaMax + capExtra；已满只停止累积，**绝不截断**存量
+ *      （v3.0 评审 BL1：原实现 Math.min(cap, …) 会在 capExtra 结束后静默删掉超上限部分）
+ *
+ * capExtra 仅由**离线结算**传入（设计 §2.3d）：离线回体上限 12+12=24，时间比例、不可刷。
  */
-export function regenStamina(state: GameState, now: number): void {
+export function regenStamina(state: GameState, now: number, capExtra = 0): void {
   const a = state.abyss
   if (now <= a.staminaAt) return
   const ticks = Math.floor((now - a.staminaAt) / REGEN_MS)
   if (ticks <= 0) return
   a.staminaAt += ticks * REGEN_MS
-  a.stamina = Math.min(DEF.staminaMax, a.stamina + ticks)
+  const cap = DEF.staminaMax + Math.max(0, capExtra)
+  if (a.stamina >= cap) return // 满了就不再累积，也不动存量
+  a.stamina = Math.min(cap, a.stamina + ticks)
 }
 
-/** 距下一点体力的毫秒数 */
+/** 距下一点体力的毫秒数（"已满"按**在线上限**判定：离线超额部分是临时量） */
 export function msToNextStamina(state: GameState, now: number): number {
   if (state.abyss.stamina >= DEF.staminaMax) return 0
   return Math.max(0, state.abyss.staminaAt + REGEN_MS - now)
+}
+
+/** 离线结算用：回体上限提升量（0 表示内容表未启用） */
+export function offlineCapExtra(): number {
+  return DEF.offlineCapExtra ?? 0
 }
 
 // ---------------- 战力（六项加权和） ----------------
@@ -68,16 +79,18 @@ export function msToNextStamina(state: GameState, now: number): number {
 export interface AbyssScoreBreakdown {
   /** 各项原始值 */
   values: Record<AbyssWeightKey, number>
-  /** 各项贡献（权重 × 原值） */
+  /** 各项贡献（有效权重 × 原值） */
   contributions: Record<AbyssWeightKey, number>
   total: number
+  /** 本次使用的有效权重（含层词条修正；无功时即内容表权重） */
+  weights: Record<AbyssWeightKey, number>
 }
 
 /**
  * 深渊战力（纯函数，注入 now 以便符文增益可复现）。
  * 六项口径见文件头注释；召唤方传入的 agg 由调用点提供以免重复计算。
  */
-export function abyssScore(state: GameState, now: number): AbyssScoreBreakdown {
+export function abyssScore(state: GameState, now: number, floor?: number): AbyssScoreBreakdown {
   const agg = aggregateEquipment(state)
   const buff = buffBonuses(state, now)
   const perk = perkBonuses(state)
@@ -90,21 +103,48 @@ export function abyssScore(state: GameState, now: number): AbyssScoreBreakdown {
     wisdom: agg.wisdom + perk.wisdom,
     enhanceRate: agg.enhanceRate + buff.enhanceRate,
   }
+  // 层词条生效时用**同一份有效权重**算贡献与合计（面板明细必须自洽）
+  const weights = floor === undefined ? DEF.weights : abyssWeights(floor)
   const contributions = {} as Record<AbyssWeightKey, number>
   let total = 0
   for (const k of Object.keys(values) as AbyssWeightKey[]) {
-    const c = values[k] * (DEF.weights[k] ?? 0)
+    const c = values[k] * (weights[k] ?? 0)
     contributions[k] = c
     total += c
   }
-  return { values, contributions, total }
+  return { values, contributions, total, weights }
 }
 
 
+// ---------------- 层词条（v3.0 L6） ----------------
+
+/** 该层的词条（确定性：floor % 5；floor 1 = 迅捷层，新玩家第一层不受惩罚） */
+export function abyssModifier(floor: number): AbyssModDef {
+  const m = DEF.mods.find((x) => x.mod === floor % 5)
+  // 内容表由 validateContent 保证五态完备；兜底返回"无修正"以免运行期抛错
+  return m ?? { mod: floor % 5, id: 'none', name: '寻常层', desc: '', reqMul: 1, crystalMul: 1, weightMul: {} }
+}
+
+/** 该层的有效权重（层词条修正后） */
+export function abyssWeights(floor: number): Record<AbyssWeightKey, number> {
+  const mod = abyssModifier(floor)
+  const out = {} as Record<AbyssWeightKey, number>
+  for (const k of Object.keys(DEF.weights) as AbyssWeightKey[]) {
+    out[k] = (DEF.weights[k] ?? 0) * (mod.weightMul[k] ?? 1)
+  }
+  return out
+}
+
+/** 结晶取整（内容表声明；脚本与内核同源） */
+function roundCrystal(v: number): number {
+  return DEF.rounding === 'floor' ? Math.floor(v) : Math.round(v)
+}
+
 // ---------------- 层数与门槛 ----------------
 
+/** 层门槛 = base × growth^(层−1) × 层词条门槛倍率 */
 export function abyssRequirement(floor: number): number {
-  return DEF.base * Math.pow(DEF.growth, floor - 1)
+  return DEF.base * Math.pow(DEF.growth, floor - 1) * abyssModifier(floor).reqMul
 }
 
 export function abyssTheme(floor: number): string {
@@ -112,9 +152,15 @@ export function abyssTheme(floor: number): string {
 }
 
 export function firstClearCrystal(floor: number): number {
-  return DEF.firstClearCrystal.base + DEF.firstClearCrystal.perFloor * floor
+  return roundCrystal((DEF.firstClearCrystal.base + DEF.firstClearCrystal.perFloor * floor) * abyssModifier(floor).crystalMul)
 }
 
+/**
+ * 扫荡结晶：**不吃层词条倍率**。
+ * 原因（开发期自检）：扫荡以 bestFloor 为基准，若乘该层词条倍率，停在第 34 层（裂隙 ×0.8）
+ * 与第 35 层（富矿 ×1.5）会得到 1 : 3 的悬崖式差异 —— 玩家无法选择停在哪层，
+ * 却要为一个不可控因素承受 3 倍收益波动。故倍率只作用于**首通**。
+ */
 export function repeatCrystal(floor: number): number {
   return DEF.repeatCrystal.base + Math.floor(floor / DEF.repeatCrystal.perFloor)
 }
@@ -122,17 +168,25 @@ export function repeatCrystal(floor: number): number {
 // ---------------- 挑战 / 扫荡 ----------------
 
 /**
- * 挑战下一层：战力不足 → blocked（**不消耗体力**，评审复审 ① 统一语义）。
- * 成功 → bestFloor+1 + 首通结晶（幂等：仅 floor > bestFloor 时发放）。
+ * 挑战（v3.0 L7 连打）：从 bestFloor+1 起**逐层判定**，最多连打 challengeMaxFloors 层，
+ * 遇到首个不达标的层就停下。
+ *   - 整次连打只消耗 **1 点体力**（与单层挑战一致）
+ *   - 战力不足 → blocked 且**不消耗体力**（既有规则）
+ *   - 首通奖励**逐层补发**（不存在"跳过层"，故无奖励黑洞）
+ *   - 只发 **1 条** abyssCleared（含 clearedTo 与总结晶）
  */
-export function challengeAbyss(state: GameState, now: number, events: GameEvent[]): void {
+export function challengeAbyss(state: GameState, now: number, events: GameEvent[], floors = 1): void {
   regenStamina(state, now)
   const a = state.abyss
-  const next = a.bestFloor + 1
-  const need = abyssRequirement(next)
-  const score = abyssScore(state, now).total
-  if (score < need) {
-    events.push({ type: 'blocked', reason: `战力不足：第 ${next} 层需要 ${need.toFixed(2)}（当前 ${score.toFixed(2)}，还差 ${(need - score).toFixed(2)}）` })
+  const want = Math.max(1, Math.min(Math.floor(floors), DEF.challengeMaxFloors))
+  const first = a.bestFloor + 1
+  const need0 = abyssRequirement(first)
+  const score0 = abyssScore(state, now, first).total
+  if (score0 < need0) {
+    events.push({
+      type: 'blocked',
+      reason: `战力不足：第 ${first} 层（${abyssModifier(first).name}）需要 ${need0.toFixed(2)}（当前 ${score0.toFixed(2)}，还差 ${(need0 - score0).toFixed(2)}）`,
+    })
     return
   }
   if (a.stamina < 1) {
@@ -140,14 +194,43 @@ export function challengeAbyss(state: GameState, now: number, events: GameEvent[
     return
   }
   a.stamina -= 1
-  a.bestFloor = next
-  const gain = firstClearCrystal(next)
-  a.crystals += gain
-  events.push({ type: 'abyssCleared', floor: next, crystals: gain })
+
+  let cleared = 0
+  let gainTotal = 0
+  for (let i = 0; i < want; i++) {
+    const floor = a.bestFloor + 1
+    const score = abyssScore(state, now, floor).total
+    if (score < abyssRequirement(floor)) break
+    const gain = firstClearCrystal(floor)
+    a.bestFloor = floor
+    a.crystals += gain
+    gainTotal += gain
+    cleared += 1
+  }
+  if (cleared === 0) {
+    // 兜底（上面已判过 first 层；理论不可达）——保持不消耗体力的语义
+    a.stamina += 1
+    events.push({ type: 'blocked', reason: '战力不足' })
+    return
+  }
+  const top = a.bestFloor
+  events.push({
+    type: 'abyssCleared',
+    floor: top,
+    crystals: gainTotal,
+    clearedTo: top,
+    count: cleared,
+    modName: abyssModifier(top).name,
+  })
 }
 
-/** 扫荡：仅当已通关至少 1 层 */
-export function sweepAbyss(state: GameState, now: number, events: GameEvent[]): void {
+/**
+ * 扫荡（v3.0 L7 批量）：一次结算 count 次（上限 sweepMaxCount，且受体力截断）。
+ *   - **逐次累加** stats.totalAbyssSweeps（成就依赖它）
+ *   - 只发 **1 条** abyssSwept 汇总事件（crystals 为总量，count 为次数）
+ *   - 单次收益不变（批量只是省点击，不改变经济）
+ */
+export function sweepAbyss(state: GameState, now: number, events: GameEvent[], count = 1): void {
   regenStamina(state, now)
   const a = state.abyss
   if (a.bestFloor < 1) {
@@ -158,11 +241,13 @@ export function sweepAbyss(state: GameState, now: number, events: GameEvent[]): 
     events.push({ type: 'blocked', reason: `体力不足（${a.stamina}/${DEF.staminaMax}）` })
     return
   }
-  a.stamina -= 1
-  const gain = repeatCrystal(a.bestFloor)
+  const n = Math.max(1, Math.min(Math.floor(count), DEF.sweepMaxCount, a.stamina))
+  const per = repeatCrystal(a.bestFloor)
+  const gain = per * n
+  a.stamina -= n
   a.crystals += gain
-  state.stats.totalAbyssSweeps += 1
-  events.push({ type: 'abyssSwept', crystals: gain })
+  state.stats.totalAbyssSweeps += n
+  events.push({ type: 'abyssSwept', crystals: gain, count: n })
 }
 
 // ---------------- 商店 ----------------

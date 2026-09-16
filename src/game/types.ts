@@ -390,6 +390,20 @@ export interface AbyssShopItemDef {
   itemId?: ItemId
 }
 
+/** v3.0 层词条：按 floor % 5 取值（mod 为取模余数） */
+export interface AbyssModDef {
+  mod: number
+  id: string
+  name: string
+  desc: string
+  /** 该层门槛倍率 */
+  reqMul: number
+  /** 该层结晶倍率（首通与扫荡都乘，取整见 AbyssDef.rounding） */
+  crystalMul: number
+  /** 该层的有效权重修正（缺省项按 1） */
+  weightMul: Partial<Record<AbyssWeightKey, number>>
+}
+
 export interface AbyssDef {
   staminaMax: number
   staminaRegenMinutes: number
@@ -397,6 +411,16 @@ export interface AbyssDef {
   base: number
   growth: number
   themes: string[]
+  /** v3.0：层词条表（五种，覆盖 %5 的 0~4） */
+  mods: AbyssModDef[]
+  /** v3.0：结晶取整方式（脚本与内核同源） */
+  rounding: 'floor'
+  /** v3.0：一次挑战最多连打层数 */
+  challengeMaxFloors: number
+  /** v3.0：批量扫荡单次上限 */
+  sweepMaxCount: number
+  /** v3.0：离线结算时体力上限的提升量（仅离线段生效） */
+  offlineCapExtra: number
   firstClearCrystal: { base: number; perFloor: number }
   repeatCrystal: { base: number; perFloor: number }
   shop: AbyssShopItemDef[]
@@ -849,8 +873,8 @@ export type Command =
   | { type: 'claimExpedition'; runId: number }
   | { type: 'upgradeBanner' }
   /** v2.4：深渊回廊 */
-  | { type: 'challengeAbyss' }
-  | { type: 'sweepAbyss' }
+  | { type: 'challengeAbyss'; floors?: number }
+  | { type: 'sweepAbyss'; count?: number }
   | { type: 'buyAbyssItem'; itemId: string }
   /** v2.5：设置（音效 / 音量 / 特效档位）—— 只写 meta.settings，不触碰任何数值 */
   | { type: 'setSettings'; patch: Partial<SettingsState> }
@@ -876,8 +900,10 @@ export type GameEvent =
   | { type: 'codexMilestone'; pct: number; gold: number }
   | { type: 'seasonLevelUp'; level: number }
   | { type: 'seasonRotated'; index: number }
-  | { type: 'abyssCleared'; floor: number; crystals: number }
-  | { type: 'abyssSwept'; crystals: number }
+  /** v3.0：连打后 floor/clearedTo 为最高层，count 为本次通过层数 */
+  | { type: 'abyssCleared'; floor: number; crystals: number; clearedTo: number; count: number; modName: string }
+  /** v3.0 批量：crystals 为总量、count 为次数（原 floors 字段已删除：扫荡不改层） */
+  | { type: 'abyssSwept'; crystals: number; count: number }
   | { type: 'abyssItemBought'; name: string }
   | { type: 'tutorialGoalMet'; step: number }
   | { type: 'tutorialRewarded'; step: number }
@@ -904,6 +930,8 @@ export interface OfflineSummary {
   /** v2.3：离线期间达到的赛季等级 / 图鉴里程碑（pct 0~1） */
   seasonLevels: number[]
   codexMilestones: number[]
+  /** v3.0：本次离线是否触发了回体上限提升（面板据此提示） */
+  staminaBonus: boolean
   elapsedMs: number
   countedMs: number
   rounds: { ref: ActionRef; count: number }[]

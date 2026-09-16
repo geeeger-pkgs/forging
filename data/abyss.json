@@ -18,6 +18,64 @@
     "无光深渊",
     "虚空之喉"
   ],
+  "mods": [
+    {
+      "mod": 1,
+      "id": "swift",
+      "name": "迅捷层",
+      "desc": "速度权重 ×1.5",
+      "reqMul": 1,
+      "crystalMul": 1,
+      "weightMul": {
+        "speed": 1.5
+      }
+    },
+    {
+      "mod": 2,
+      "id": "bounty",
+      "name": "丰饶层",
+      "desc": "产量与稀有权重 ×1.5",
+      "reqMul": 1,
+      "crystalMul": 1,
+      "weightMul": {
+        "quantity": 1.5,
+        "rareFind": 1.5
+      }
+    },
+    {
+      "mod": 3,
+      "id": "trial",
+      "name": "试炼层",
+      "desc": "强化率权重 ×1.5",
+      "reqMul": 1,
+      "crystalMul": 1,
+      "weightMul": {
+        "enhanceRate": 1.5
+      }
+    },
+    {
+      "mod": 4,
+      "id": "rift",
+      "name": "裂隙层",
+      "desc": "门槛 ×0.94（墙前的喘息层），结晶 ×0.8",
+      "reqMul": 0.94,
+      "crystalMul": 0.8,
+      "weightMul": {}
+    },
+    {
+      "mod": 0,
+      "id": "rich",
+      "name": "富矿层",
+      "desc": "门槛 ×1.06（每 5 层一道墙），结晶 ×1.5",
+      "reqMul": 1.06,
+      "crystalMul": 1.5,
+      "weightMul": {}
+    }
+  ],
+  "rounding": "floor",
+  "challengeMaxFloors": 3,
+  "sweepMaxCount": 12,
+  "offlineCapExtra": 12,
   "firstClearCrystal": {
     "base": 10,
     "perFloor": 2

@@ -162,7 +162,8 @@ describe('传承系统（v1.5）', () => {
     }
     const summary = settleOffline(s, 10 * 3_600_000)!
     expect(summary.countedMs).toBe(10 * 3_600_000)
-    expect(summary.notes.some((n) => n.includes('上限'))).toBe(false)
+    // 只针对"离线时长上限"那条提示（v3.0 新增的离线回体提示含"离线可攒至"，不含"小时上限"）
+    expect(summary.notes.some((n) => n.includes('小时上限'))).toBe(false)
   })
 
   it('精通数据表校验（6 条）', () => {

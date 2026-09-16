@@ -19,37 +19,113 @@
       "无光深渊",
       "虚空之喉"
     ],
-    "shop": {
-      "rerollTicket": {
+    "shop": [
+      {
+        "id": "reroll_ticket",
+        "name": "定向重铸券",
+        "desc": "重铸时指定一条词缀 id 保底出现（可重复购买，价格递增）",
         "crystal": 100,
         "max": 12,
-        "priceGrowth": 1.3,
-        "note": "定向重铸券：重铸时指定一条词缀 id 保底出现（可重复购买，价格递增）"
+        "priceGrowth": 1.3
       },
-      "permanentSpeed": {
+      {
+        "id": "permanent_speed",
+        "name": "永久速度",
+        "desc": "永久 +1% 速度 / 级（可重复购买，价格递增）",
         "crystal": 150,
         "max": 8,
         "priceGrowth": 1.3,
-        "perLevel": 0.01,
-        "note": "永久 +1% 速度 / 级（可重复购买，价格递增）"
+        "perLevel": 0.01
       },
-      "relicExchange": {
-        "crystal": 200,
-        "max": 3,
-        "priceGrowth": 1,
-        "note": "遗物兑换（各 1 次，补齐图鉴 100%）"
-      },
-      "title": {
+      {
+        "id": "relic_gear",
+        "name": "遗物·锈蚀齿轮",
+        "desc": "直接兑换该遗物（补齐图鉴 100%）",
         "crystal": 200,
         "max": 1,
         "priceGrowth": 1,
-        "note": "称号「深渊行者」"
+        "itemId": "relic_gear"
+      },
+      {
+        "id": "relic_shard",
+        "name": "遗物·铭文碎片",
+        "desc": "直接兑换该遗物（补齐图鉴 100%）",
+        "crystal": 200,
+        "max": 1,
+        "priceGrowth": 1,
+        "itemId": "relic_shard"
+      },
+      {
+        "id": "relic_core",
+        "name": "遗物·深渊之核",
+        "desc": "直接兑换该遗物（补齐图鉴 100%）",
+        "crystal": 200,
+        "max": 1,
+        "priceGrowth": 1,
+        "itemId": "relic_core"
+      },
+      {
+        "id": "title",
+        "name": "称号「深渊行者」",
+        "desc": "顶栏展示称号",
+        "crystal": 200,
+        "max": 1,
+        "priceGrowth": 1
       }
-    },
+    ],
     "firstClearCrystalBase": 10,
     "firstClearCrystalPerFloor": 2,
     "repeatCrystalBase": 1,
-    "repeatCrystalPerFloor": 20
+    "repeatCrystalPerFloor": 20,
+    "mods": [
+      {
+        "mod": 1,
+        "id": "swift",
+        "reqMul": 1,
+        "crystalMul": 1,
+        "weightMul": {
+          "speed": 1.5
+        }
+      },
+      {
+        "mod": 2,
+        "id": "bounty",
+        "reqMul": 1,
+        "crystalMul": 1,
+        "weightMul": {
+          "quantity": 1.5,
+          "rareFind": 1.5
+        }
+      },
+      {
+        "mod": 3,
+        "id": "trial",
+        "reqMul": 1,
+        "crystalMul": 1,
+        "weightMul": {
+          "enhanceRate": 1.5
+        }
+      },
+      {
+        "mod": 4,
+        "id": "rift",
+        "reqMul": 0.94,
+        "crystalMul": 0.8,
+        "weightMul": {}
+      },
+      {
+        "mod": 0,
+        "id": "rich",
+        "reqMul": 1.06,
+        "crystalMul": 1.5,
+        "weightMul": {}
+      }
+    ],
+    "rounding": "floor",
+    "challengeMaxFloors": 3,
+    "sweepMaxCount": 12,
+    "offlineCapExtra": 12,
+    "tableFingerprint": 1692
   },
   "scores": {
     "novice": 0.2135,
@@ -93,6 +169,12 @@
   },
   "reach": {
     "novice": 0,
+    "early": 9,
+    "mid": 24,
+    "end": 34
+  },
+  "reachFlat": {
+    "novice": 0,
     "early": 10,
     "mid": 26,
     "end": 35
@@ -115,30 +197,122 @@
       38
     ]
   },
-  "baseSearchHits": 34,
+  "baseSearchHits": 33,
   "singleStatReach": {
     "novice": 0,
     "early": 5,
     "mid": 5,
     "end": 5
   },
+  "rhythm": [
+    {
+      "floor": 1,
+      "mod": "swift",
+      "ratio": 1
+    },
+    {
+      "floor": 2,
+      "mod": "bounty",
+      "ratio": 1.031
+    },
+    {
+      "floor": 3,
+      "mod": "trial",
+      "ratio": 1.031
+    },
+    {
+      "floor": 4,
+      "mod": "rift",
+      "ratio": 0.96914
+    },
+    {
+      "floor": 5,
+      "mod": "rich",
+      "ratio": 1.162617
+    },
+    {
+      "floor": 6,
+      "mod": "swift",
+      "ratio": 0.972642
+    },
+    {
+      "floor": 7,
+      "mod": "bounty",
+      "ratio": 1.031
+    },
+    {
+      "floor": 8,
+      "mod": "trial",
+      "ratio": 1.031
+    },
+    {
+      "floor": 9,
+      "mod": "rift",
+      "ratio": 0.96914
+    },
+    {
+      "floor": 10,
+      "mod": "rich",
+      "ratio": 1.162617
+    },
+    {
+      "floor": 11,
+      "mod": "swift",
+      "ratio": 0.972642
+    },
+    {
+      "floor": 12,
+      "mod": "bounty",
+      "ratio": 1.031
+    }
+  ],
+  "avgFirstClearCrystalMul": 1.06,
+  "offline": {
+    "onlineCap": 12,
+    "offlineCap": 24,
+    "perDay": {
+      "online24h": 48,
+      "login1": 24,
+      "login2": 24,
+      "login3": 36
+    }
+  },
+  "firstClearAtReach": {
+    "early": 180,
+    "mid": 870,
+    "end": 1595
+  },
+  "daysToClearShop": {
+    "online": 8.1,
+    "login2": 16.3,
+    "login1": 16.3
+  },
+  "auditedLiterals": [
+    2.736,
+    1.031,
+    12,
+    30,
+    3,
+    12,
+    12
+  ],
   "reqAt": {
     "1": 2.736,
-    "9": 3.492894073636329,
-    "15": 4.19505256505803,
-    "24": 5.521605754612455,
-    "30": 6.631585698220598,
-    "35": 7.725217447599991,
-    "40": 8.999202804348364
+    "9": 3.2833204292181493,
+    "15": 4.446755718961512,
+    "24": 5.190309409335708,
+    "30": 7.029480840113834,
+    "35": 8.18873049445599,
+    "40": 9.539154972609266
   },
   "crystalToFloor": {
     "9": 180,
-    "15": 390,
-    "24": 840,
-    "30": 1230,
-    "35": 1610,
-    "40": 2040
+    "15": 417,
+    "24": 870,
+    "30": 1311,
+    "35": 1715,
+    "40": 2172
   },
-  "firstTier": 2776,
-  "shopTotal": 11812
+  "firstTier": 2376,
+  "shopTotal": 11412
 }

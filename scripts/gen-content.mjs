@@ -369,10 +369,30 @@ const abyss = {
   staminaRegenMinutes: 30,
   /** 战力权重（六项加权和；口径逐项见 abyss.ts abyssScore） */
   weights: { speed: 1.0, efficiency: 1.5, quantity: 1.0, rareFind: 0.7, wisdom: 0.5, enhanceRate: 2.0 },
-  /** 门槛 = base × growth^(层−1) */
+  /** 门槛 = base × growth^(层−1) × 层词条门槛倍率 */
   base: 2.736,
   growth: 1.031,
   themes: ['矿脉裂隙', '熔岩回廊', '符文甬道', '无光深渊', '虚空之喉'],
+  /**
+   * v3.0 层词条（L6）：按 floor % 5 取值，floor 1 = 迅捷层（新玩家第一层不受惩罚）。
+   * 设计期实算（docs/design-v3.0.md §2.3a）：可达层 10/26/35 → 9/24/34；
+   * 门槛环比：裂隙→富矿 ×1.1626（墙）、富矿→迅捷 ×0.9726（喘息）、其余 ×1.0310。
+   */
+  mods: [
+    { mod: 1, id: 'swift', name: '迅捷层', desc: '速度权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { speed: 1.5 } },
+    { mod: 2, id: 'bounty', name: '丰饶层', desc: '产量与稀有权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { quantity: 1.5, rareFind: 1.5 } },
+    { mod: 3, id: 'trial', name: '试炼层', desc: '强化率权重 ×1.5', reqMul: 1.0, crystalMul: 1.0, weightMul: { enhanceRate: 1.5 } },
+    { mod: 4, id: 'rift', name: '裂隙层', desc: '门槛 ×0.94（墙前的喘息层），结晶 ×0.8', reqMul: 0.94, crystalMul: 0.8, weightMul: {} },
+    { mod: 0, id: 'rich', name: '富矿层', desc: '门槛 ×1.06（每 5 层一道墙），结晶 ×1.5', reqMul: 1.06, crystalMul: 1.5, weightMul: {} },
+  ],
+  /** 结晶取整（脚本与内核同源，避免 ×1.5/×0.8 产生小数） */
+  rounding: 'floor',
+  /** 连打：一次挑战最多连打几层（逐层判定，首个失败层停止） */
+  challengeMaxFloors: 3,
+  /** 批量扫荡：一次最多扫荡次数（UI「用尽体力」按体力上限取 min） */
+  sweepMaxCount: 12,
+  /** 离线回体上限提升（仅离线段有效；时间比例，不可刷） */
+  offlineCapExtra: 12,
   /** 首通结晶 = base + perFloor × 层 */
   firstClearCrystal: { base: 10, perFloor: 2 },
   /** 扫荡结晶 = base + ⌊层 / perFloor⌋ */
