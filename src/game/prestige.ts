@@ -41,20 +41,23 @@ export function prestigeUnlocked(state: GameState): boolean {
  * 为什么这么改：评审用全域扫描证明"点数随总等级"必然留下边界最优（单技能冲高 + 其余躺平，
  * 如 [51,37,36,36] → 3.30×、[100,60,60,60] → 2.1×）。改成只看最低技能后：
  *   点/h 随最低技能**单调递增** → 满级（100×4）严格最优，任何"偏科/浅均衡"策略收益为 0。
- * 口径：min < 70 → 0 点；否则 steps = ⌊(min − 60)/10⌋（1..4），点数 = steps² × 4（4/16/36/64）。
+ * 口径（三审定稿）：min < 50 → 0 点；否则 steps = ⌊(min − 40)/10⌋，点数 = steps²（1/4/9/16/25/36）。
  */
 export const PRESTIGE_MIN_SKILL = 60
 
 /** 拿到第 1 点所需的最低技能等级（min ≥ 此值才有点数） */
-export const PRESTIGE_FIRST_POINT_SKILL = 70
+export const PRESTIGE_FIRST_POINT_SKILL = 50
 
 export function prestigePointsFor(state: GameState): number {
   const ids = Object.keys(state.skills) as SkillId[]
   const levels = ids.map((id) => levelInfo(state.skills[id]).level)
   const minLv = Math.min(...levels)
   if (minLv < PRESTIGE_FIRST_POINT_SKILL) return 0
-  const steps = Math.floor((minLv - PRESTIGE_MIN_SKILL) / 10)
-  const points = steps * steps * 4
+  // 三审建议参数：steps = ⌊(min − 40)/10⌋，点数 = steps²（min 50/60/70/80/90/100 → 1/4/9/16/25/36）
+  // 选择理由（评审复算）：点/h 仍严格单调、全域最优仍是满级，且毕业回到 2.17 次满级轮回、
+  // 消除"差一级全归零"的断崖（此前 min70+4×steps² 把首点门槛抬了 32 倍）
+  const steps = Math.floor((minLv - 40) / 10)
+  const points = steps * steps
   return points
 }
 

@@ -21,17 +21,17 @@ describe('传承系统（v1.5）', () => {
     expect(prestigeUnlocked(s)).toBe(true)
   })
 
-  it('精通点结算（v3.4 W1）：点数 = f(最低技能) —— 70/80/90/100 → 4/16/36/64', () => {
+  it('精通点结算（v3.4 三审）：点数 = f(最低技能) —— 50/60/70/80/90/100 → 1/4/9/16/25/36', () => {
     const s = newGame('T', 0)
     setSkillLevel(s, 30) // 总等级 120 = 门槛 → 0 点（旧式给 12 点，是"快轮回最优"的根源）
-    expect(prestigePointsFor(s)).toBe(0) // 均衡 35 → 最低 35 < 70 → 0
+    expect(prestigePointsFor(s)).toBe(0) // 均衡 35 → 最低 35 < 50 → 0
+    setSkillLevel(s, 50)
+    expect(prestigePointsFor(s)).toBe(1) // steps=1
     setSkillLevel(s, 70)
-    expect(prestigePointsFor(s)).toBe(4) // steps=1
-    setSkillLevel(s, 90)
-    expect(prestigePointsFor(s)).toBe(36) // steps=3
+    expect(prestigePointsFor(s)).toBe(9) // steps=3
     setSkillLevel(s, 100)
-    expect(prestigePointsFor(s)).toBe(64) // steps=4
-    s.skills.smelting = xpForLevel(60) // 偏科：最低 60 < 70 → 0
+    expect(prestigePointsFor(s)).toBe(36) // steps=6
+    s.skills.smelting = xpForLevel(40) // 偏科：最低 40 < 50 → 0
     expect(prestigePointsFor(s)).toBe(0)
   })
 
@@ -40,12 +40,12 @@ describe('传承系统（v1.5）', () => {
     setSkillLevel(s, 30)
     const ev = doPrestige(s)
     expect(ev[0]?.type).toBe('blocked')
-    expect((ev[0] as { reason: string }).reason).toContain('最低技能需达到 Lv70')
+    expect((ev[0] as { reason: string }).reason).toContain('最低技能需达到 Lv50')
   })
 
   it('传承：重置技能/动作/队列；保留材料/金币/装备/成就/队列位/增益', () => {
     const s = newGame('T', 0)
-    setSkillLevel(s, 70) // v3.4 W1：最低技能 70 → 4 点
+    setSkillLevel(s, 70) // v3.4 三审：最低技能 70 → 9 点
     s.materials['ore_copper'] = 99
     s.gold = 500
     s.queueSlots = 2
@@ -67,7 +67,7 @@ describe('传承系统（v1.5）', () => {
     })
 
     const ev = doPrestige(s)
-    expect(ev.some((e) => e.type === 'prestigeDone' && e.points === 4)).toBe(true)
+    expect(ev.some((e) => e.type === 'prestigeDone' && e.points === 9)).toBe(true)
     // 重置项
     expect(s.skills.mining).toBe(0)
     expect(s.actions.current).toBeNull()
@@ -79,9 +79,9 @@ describe('传承系统（v1.5）', () => {
     expect(s.flags.achievements.unlocked).toContain('mine_10')
     expect(s.buffs).toHaveLength(1)
     // 点数与统计
-    expect(s.meta.prestige.points).toBe(4)
+    expect(s.meta.prestige.points).toBe(9)
     expect(s.stats.totalPrestiges).toBe(1)
-    expect(s.stats.totalPrestigePointsEarned).toBe(4)
+    expect(s.stats.totalPrestigePointsEarned).toBe(9)
   })
 
   it('未达阈值传承被阻塞', () => {
@@ -157,7 +157,7 @@ describe('传承系统（v1.5）', () => {
     const s = newGame('T', 0)
     s.meta.prestige.points = 2
     buyPerk(s, 'headstart') // 起始等级 +2 → Lv3
-    setSkillLevel(s, 70) // v3.4 W1：最低技能 70 → 4 点
+    setSkillLevel(s, 70) // v3.4 三审：最低技能 70 → 9 点
     doPrestige(s)
     expect(s.skills.mining).toBe(xpForLevel(3))
   })

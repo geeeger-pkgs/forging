@@ -129,13 +129,13 @@ describe('A6 传承点数：消除反直觉最优解', () => {
     expect(scan.acceptable).toBe(true)
   })
 
-  it('实现与证据同式：门槛处 0 点、满级（最低技能 100）×4 = 64 点', () => {
+  it('实现与证据同式：门槛处 0 点、满级（最低技能 100）= 36 点', () => {
     expect(simD.d.prestige.fast.points).toBe(0)
-    expect(simD.d.prestige.maxed.points).toBe(64) // W1：steps=4 → 4²×4
+    expect(simD.d.prestige.maxed.points).toBe(36) // 三审：min 100 → steps 6 → 36 点
     const s = newGame('T', 0)
     const xp100 = xpForLevel(100)
     s.skills = { mining: xp100, smelting: xp100, forging: xp100, enhancing: xp100 }
-    expect(prestigePointsFor(s)).toBe(64)
+    expect(prestigePointsFor(s)).toBe(36)
   })
 
   it('门槛处不给点也不再"白轮回"：doPrestige 被拦下且提示可执行', () => {
@@ -175,7 +175,8 @@ describe('v3.4 处置回归（评审 V2~V5）', () => {
 
   it('V4：传承面板文案与公式一致（满级技能 ×4，不是 +1）', () => {
     const p = src('src/ui/components/PrestigePanel.vue')
-    expect(p).toContain('点数随**最低技能**提升')
+    expect(p).toContain('点数随<b>最低技能</b>提升')
+    expect(p, '不得残留 markdown 强调语法（曾把 **最低技能** 原样渲染给玩家）').not.toContain('**最低技能**')
     expect(p).not.toContain('满级技能 +1')
   })
 
