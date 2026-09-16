@@ -68,7 +68,7 @@ export function resolveFxLevel(fx: FxSetting | undefined): FxLevel {
 }
 
 export interface FxPlan {
-  cue?: string
+  cue?: CueId
   burst?: BurstKind
   ring?: boolean
   popup?: { text: string; kind: 'item' | 'xp' | 'gold' }

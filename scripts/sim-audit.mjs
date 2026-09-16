@@ -85,7 +85,10 @@ const abyssPermSpeed = permDef.perLevel * permDef.max
 console.log(`词缀（v2.1，10 槽完美上限）：速度 +${affixSpeedCap}（另有效率 +0.096 / 产量 +0.272 / 稀有 +0.68）`)
 console.log(`深渊永久速度（v3.1，${permDef.max} 级 × ${permDef.perLevel}）：+${abyssPermSpeed.toFixed(2)}`)
 console.log('')
-const speedMaxAll = speedMaxMine + affixSpeedCap + abyssPermSpeed
+// v3.4 V8：满配上限须含 Lv76~100 里程碑（allSpeed +2%）——首次声称已补但未落地，复审抓出
+const lcMs = rd('levelCurve.json').milestones ?? []
+const milestoneSpeed = lcMs.filter((m) => m.stat === 'allSpeed').reduce((a, m) => a + m.value, 0)
+const speedMaxAll = speedMaxMine + affixSpeedCap + abyssPermSpeed + milestoneSpeed
 console.log(`速度合计（采矿·终局满配）: +${f(speedMaxMine, 3)} → 时长 ×${f(1 / (1 + speedMaxMine), 3)}`)
 console.log(`速度合计（含 v2.1 词缀 + v2.4 深渊永久）: +${f(speedMaxAll, 3)} → 时长 ×${f(1 / (1 + speedMaxAll), 3)}`)
 for (const s of ores.slice(0, 8)) {
