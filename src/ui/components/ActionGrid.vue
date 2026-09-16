@@ -27,7 +27,12 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
 <style scoped>
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 140px);
+  /*
+   * v3.7.10（用户反馈"每两个占一行、右侧空旷"）：原先列宽写死 140px ——
+   * 手机 366px 可用宽只放得下 2 列（290px），右侧空 76px；桌面同理空 124px。
+   * 改 minmax(140px, 1fr)：列数不变（140 为下限），但列宽**自适应铺满**。
+   */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
   align-content: start;
 }
