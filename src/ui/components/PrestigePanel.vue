@@ -53,7 +53,7 @@ function confirmPrestige(): void {
       <!-- v3.4 处置 V5：0 点时直接禁用并说明（此前先弹破坏性确认、确认后才被内核拦下） -->
       <!-- 3.4.1（终审 Major）：解锁前也可预览首点门槛与档位表 —— 此前两者都在 unlocked 之后渲染，中期玩家会误按"总 120 即有点"规划 -->
       <p v-if="!unlocked" class="dim small">
-        提示：解锁后点数取决于<b>最低技能</b>——最低技能达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（50/60/70/80/90/100 → 2/6/12/20/30/42 点）
+        提示：解锁后点数取决于<b>最低技能（四项中最低者）</b>——最低技能达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（50/60/70/80/90/100 → 2/6/12/20/30/42 点）
       </p>
       <p v-if="unlocked && willGain === 0" class="dim small">
         当前 0 点：<b>最低技能</b>需达到 Lv{{ PRESTIGE_FIRST_POINT_SKILL }} 才有首点（2 点；现 Lv{{ minSkill }}）

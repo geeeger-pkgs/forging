@@ -37,7 +37,7 @@ export function msToSeasonEnd(now: number): number {
 
 // ---------------- v3.3 B1：目标按账号分档缩放 ----------------
 /**
- * 账号分档：新晋（总等级 ≤ juniorMaxTotalLevel）/ 老手。
+ * 账号分档（3.4.2 起）：**已传承过**的号按"生涯最高技能×4"取档，未传承号按当前总等级。
  * 系数取自内容表 `scaleByMaturity`，**由 `scripts/sim-season.mjs` 反推**（脚本先出结论、表照抄；
  * 测试断言"表 == 脚本输出"）。承诺口径与推导见 `docs/design-v3.3.md` §1-B1。
  *

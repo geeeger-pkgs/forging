@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { SAVE_VERSION, deserializeSave } from '../src/app/persist'
 import { CONTENT, validateContent } from '../src/game/content'
 import { milestoneView, xpForLevel } from '../src/game/level'
-import { maturityFromScale, seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
+import { maturityClassOf, maturityFromScale, seasonScaleCoef, seasonTargetsFor } from '../src/game/season'
 import { doPrestige, prestigePointsFor } from '../src/game/prestige'
 import { aggregateEquipment } from '../src/game/stats'
 import { addInstance, newGame } from '../src/game/state'
@@ -254,6 +254,18 @@ describe('3.4.2：面板档位表必须与实现逐数字一致（防「只查�
       s.skills = { mining: xp, smelting: xp, forging: xp, enhancing: xp }
       expect(prestigePointsFor(s), '最低技能 ' + lv + ' 应得 ' + pts + ' 点').toBe(pts)
     }
+  })
+})
+
+describe('3.4.3 区分性断言：取档只在"已传承"时才用生涯最高（回退即红）', () => {
+  it('未传承的偏科号（单技能高、总等级 ≤119）必须判新晋——3.4.1 的宽口径会误判老手', () => {
+    const s: GameState = newGame('T', 0)
+    s.meta.bestSkillLevel = 60 // 单技能 60 → ×4 = 240 会被误判老手
+    s.skills = { mining: xpForLevel(60), smelting: xpForLevel(20), forging: xpForLevel(20), enhancing: 0 }
+    s.stats.totalPrestiges = 0 // 从未传承
+    expect(maturityClassOf(s)).toBe('junior')
+    s.stats.totalPrestiges = 1 // 已传承 → 生涯最高生效
+    expect(maturityClassOf(s)).toBe('veteran')
   })
 })
 
