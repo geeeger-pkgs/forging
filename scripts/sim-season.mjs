@@ -25,19 +25,34 @@ const f = (x, d = 2) => Number(x).toFixed(d)
 const pct = (x, d = 1) => `${(x * 100).toFixed(d)}%`
 
 // ── 唯一数值源 ────────────────────────────────────────────────
-const TIER_RENOWN = { bronze: 10, silver: 20, gold: 40 }
+// v3.0 三件套：赛季数值一律读内容表（AUDITED_LITERALS 供反向静态检查）
+const SEASON = read('season.json')
+const TIER_RENOWN = SEASON.tierRenown
+const TIER_IDX = { bronze: 0, silver: 1, gold: 2 }
+/** 计数器 → 三档目标（与内容表同源；键名沿用脚本既有口径） */
+const T = Object.fromEntries(SEASON.templates.map((t) => [t.counter, t.targets]))
 const SEASON_TARGETS = {
-  mine: { bronze: 4000, silver: 9000, gold: 18000 },
-  craft: { bronze: 1000, silver: 2400, gold: 4800 },
-  gold: { bronze: 250000, silver: 500000, gold: 800000 },
-  enhance: { bronze: 120, silver: 320, gold: 600 },
-  expedition: { bronze: 12, silver: 20, gold: 28 },
-  reforge: { bronze: 15, silver: 35, gold: 60 },
+  mine: { bronze: T.totalMines[0], silver: T.totalMines[1], gold: T.totalMines[2] },
+  craft: { bronze: T.totalCrafts[0], silver: T.totalCrafts[1], gold: T.totalCrafts[2] },
+  gold: { bronze: T.totalGoldEarned[0], silver: T.totalGoldEarned[1], gold: T.totalGoldEarned[2] },
+  enhance: { bronze: T.totalEnhances[0], silver: T.totalEnhances[1], gold: T.totalEnhances[2] },
+  expedition: { bronze: T.totalExpeditions[0], silver: T.totalExpeditions[1], gold: T.totalExpeditions[2] },
+  reforge: { bronze: T.totalReforges[0], silver: T.totalReforges[1], gold: T.totalReforges[2] },
 }
-const LEVELS = 20
-const RENOWN_PER_LEVEL = 4
+
+const LEVELS = SEASON.levels
+const RENOWN_PER_LEVEL = SEASON.renownPerLevel
 const FULL_LEVEL_RENOWN = LEVELS * RENOWN_PER_LEVEL
-const SEASON_DAYS = 14
+const SEASON_DAYS = SEASON.days
+// v3.0 三件套：AUDITED_LITERALS 声明"这些数值必须来自内容表"，测试反向静态检查
+export const AUDITED_LITERALS = {
+  tierRenown: TIER_RENOWN,
+  levels: LEVELS,
+  renownPerLevel: RENOWN_PER_LEVEL,
+  days: SEASON_DAYS,
+  epoch: SEASON.epoch,
+}
+
 const OFFLINE_FACTORS = [
   { key: 'always', label: '常驻在线(离线<8h)', factor: 1.0 },
   { key: 'twice', label: '每日上线 2 次', factor: 16 / 24 },

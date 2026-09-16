@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { CONTENT, itemDef } from '../../game/content'
@@ -45,16 +45,27 @@ const materials = computed(() =>
     .map(([id, qty]) => ({ id, qty, name: itemDef(id).name })),
 )
 
+/** v3.0 L2：行囊排序键（完美度 / 强化 / 档位），默认按完美度降序 */
+const bagSort = ref<'perfect' | 'enhance' | 'tier'>('perfect')
 const bagItems = computed(() => {
   const equipped = new Set(Object.values(store.state.slots))
-  return store.state.equipment
+  const list = store.state.equipment
     .filter((e) => !equipped.has(e.instanceId))
     .map((e) => ({
       inst: e,
       name: itemDef(e.itemId).name,
       affix: e.affixes.length,
       score: perfectScore(e.itemId, e.affixes),
+      tier: itemDef(e.itemId).tier ?? 0,
     }))
+  const key = bagSort.value
+  return list.sort((a, b) =>
+    key === 'enhance'
+      ? (b.inst.enhanceLevel ?? 0) - (a.inst.enhanceLevel ?? 0) || b.score - a.score
+      : key === 'tier'
+        ? (b.tier ?? 0) - (a.tier ?? 0) || b.score - a.score
+        : b.score - a.score || (b.inst.enhanceLevel ?? 0) - (a.inst.enhanceLevel ?? 0),
+  )
 })
 
 const agg = computed(() => aggregateEquipment(store.state))
@@ -104,6 +115,11 @@ function unequip(slot: SlotId): void {
 function equipInstance(instanceId: number): void {
   cmd({ type: 'equip', instanceId })
 }
+/** v3.0：是否可回收（0 收益的遗物/徽记不可回收，避免误删图鉴进度） */
+function recyclable(itemId: string): boolean {
+  return (CONTENT.items[itemId]?.value ?? 0) > 0
+}
+
 function recycleMaterial(itemId: string, qty: number): void {
   cmd({ type: 'recycleMaterial', itemId, qty })
 }
@@ -191,17 +207,29 @@ function isTop(score: number): boolean {
         <span class="qty">×{{ m.qty }}</span>
         <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
         <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
-        <button class="btn sm" :class="{ primary: autoKeep(m.id) !== undefined }" @click="toggleAuto(m.id)">
-          {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '自动' }}
-        </button>
-        <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
-        <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
-        <button class="btn sm" @click="recycleAll(m.id, m.qty)">全部</button>
+        <!-- v3.0：0 收益物品（遗物/徽记）不出现在回收入口（防误删图鉴进度） -->
+        <template v-if="recyclable(m.id)">
+          <button class="btn sm" :class="{ primary: autoKeep(m.id) !== undefined }" @click="toggleAuto(m.id)">
+            {{ autoKeep(m.id) !== undefined ? `自动·留${autoKeep(m.id)}` : '自动' }}
+          </button>
+          <button class="btn sm" @click="recycleMaterial(m.id, 1)">回收1</button>
+          <button class="btn sm" @click="recycleMaterial(m.id, Math.min(10, m.qty))">×10</button>
+          <button class="btn sm" @click="recycleAll(m.id, m.qty)">全部</button>
+        </template>
+        <span v-else class="dim small" title="图鉴收集品：无回收价值，也不参与自动回收">收藏品</span>
       </div>
     </section>
 
     <section>
       <h3>行囊（装备）</h3>
+      <div class="bagbar">
+        <span class="dim small">排序</span>
+        <button class="btn sm" :class="{ primary: bagSort === 'perfect' }" @click="bagSort = 'perfect'">完美度</button>
+        <button class="btn sm" :class="{ primary: bagSort === 'enhance' }" @click="bagSort = 'enhance'">强化</button>
+        <button class="btn sm" :class="{ primary: bagSort === 'tier' }" @click="bagSort = 'tier'">档位</button>
+        <span class="spacer" />
+        <button class="btn sm" title="同一原型只保留最高完美度的一件，其余回收换金" @click="cmd({ type: 'tidyBag' })">整理</button>
+      </div>
       <div v-if="bagItems.length === 0" class="dim">暂无</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">
         <span class="clickable" @click="inspect(b.inst.instanceId)">
@@ -237,6 +265,12 @@ function isTop(score: number): boolean {
 </template>
 
 <style scoped>
+.bagbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
 .right {
   width: 300px;
   min-width: 300px;

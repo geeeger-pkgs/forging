@@ -1,0 +1,114 @@
+{
+  "version": "3.0.0",
+  "tableFingerprint": 1599,
+  "sizes": {
+    "items": 104,
+    "recipes": 92,
+    "affixes": 9,
+    "companions": 6,
+    "relics": 3,
+    "ores": 8
+  },
+  "total": 222,
+  "milestones": [
+    {
+      "pct": 0.25,
+      "title": "初识万象",
+      "req": {
+        "items": 0.4,
+        "recipes": 0.3,
+        "affixes": 0.34,
+        "companions": 0.34,
+        "relics": 0.34,
+        "ores": 0.5
+      },
+      "need": {
+        "items": 42,
+        "recipes": 28,
+        "affixes": 4,
+        "companions": 3,
+        "relics": 2,
+        "ores": 4
+      },
+      "sum": 83,
+      "linear": 0.3739,
+      "oldLinearNeed": 56
+    },
+    {
+      "pct": 0.5,
+      "title": "博览群书",
+      "req": {
+        "items": 0.7,
+        "recipes": 0.6,
+        "affixes": 0.67,
+        "companions": 0.67,
+        "relics": 0.67,
+        "ores": 0.75
+      },
+      "need": {
+        "items": 73,
+        "recipes": 56,
+        "affixes": 7,
+        "companions": 5,
+        "relics": 3,
+        "ores": 6
+      },
+      "sum": 150,
+      "linear": 0.6757,
+      "oldLinearNeed": 111
+    },
+    {
+      "pct": 0.75,
+      "title": "格物致知",
+      "req": {
+        "items": 0.9,
+        "recipes": 0.85,
+        "affixes": 1,
+        "companions": 1,
+        "relics": 1,
+        "ores": 1
+      },
+      "need": {
+        "items": 94,
+        "recipes": 79,
+        "affixes": 9,
+        "companions": 6,
+        "relics": 3,
+        "ores": 8
+      },
+      "sum": 199,
+      "linear": 0.8964,
+      "oldLinearNeed": 167
+    },
+    {
+      "pct": 1,
+      "title": "万物归一",
+      "req": {
+        "items": 1,
+        "recipes": 1,
+        "affixes": 1,
+        "companions": 1,
+        "relics": 1,
+        "ores": 1
+      },
+      "need": {
+        "items": 104,
+        "recipes": 92,
+        "affixes": 9,
+        "companions": 6,
+        "relics": 3,
+        "ores": 8
+      },
+      "sum": 222,
+      "linear": 1,
+      "oldLinearNeed": 222
+    }
+  ],
+  "relicIds": [
+    "relic_gear",
+    "relic_shard",
+    "relic_core"
+  ],
+  "monotonic": true,
+  "lastIsFull": true
+}

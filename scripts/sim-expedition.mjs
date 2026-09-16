@@ -5,13 +5,17 @@
 // 分母口径（评审 B2）：以各路线「解锁时预期采矿金/时」为锚点（sim-audit B 段实测值），
 //   不随玩家配装漂移；远征产出按「锚点 × ratio」定义，ratio 落进内容表可校验
 // ============================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const ITEMS = JSON.parse(readFileSync(join(root, 'data/items.json'), 'utf8'))
-const RECIPES = JSON.parse(readFileSync(join(root, 'data/recipes.json'), 'utf8'))
+const read = (f) => JSON.parse(readFileSync(join(root, 'data', f), 'utf8'))
+const ITEMS = read('items.json')
+const RECIPES = read('recipes.json')
+// v3.0 三件套：路线/伙伴/远征数值**一律读内容表**（此前硬编码，会与表静默漂移）
+const EXP = read('expeditions.json')
+const COMPANIONS = read('companions.json')
 
 const f = (x, d = 2) => Number(x).toFixed(d)
 const pct = (x, d = 1) => `${(x * 100).toFixed(d)}%`
@@ -34,13 +38,25 @@ console.log('═'.repeat(78))
 console.log('A. 分母锚点与产出定位（评审 B2：锚点口径，不随配装漂移）')
 console.log('═'.repeat(78))
 
-// 路线定义（提案值，落 data/expeditions.json）
-const ROUTES = [
-  { id: 'outskirts', name: '近郊勘探', unlock: '伙伴 ≥1', tier: 1, anchor: GOLD_PER_HOUR[1], ratio: 0.09, supplyTier: 1, supplyPer8h: 16, tokenPer8h: 1.0, relic: null, xpPerHour: 25 },
-  { id: 'oldmine', name: '废弃矿道', unlock: '挖掘 Lv20', tier: 3, anchor: GOLD_PER_HOUR[3], ratio: 0.09, supplyTier: 2, supplyPer8h: 24, tokenPer8h: 0.6, relic: 'relic_gear', xpPerHour: 45 },
-  { id: 'ruins', name: '古代遗迹', unlock: '锻造 Lv35', tier: 4, anchor: GOLD_PER_HOUR[4], ratio: 0.09, supplyTier: 5, supplyPer8h: 8, tokenPer8h: 0.5, relic: 'relic_shard', xpPerHour: 90 },
-  { id: 'abyss', name: '深渊前哨', unlock: '总等级 ≥150', tier: 7, anchor: GOLD_PER_HOUR[7], ratio: 0.09, supplyTier: 7, supplyPer8h: 8, tokenPer8h: 0.4, relic: 'relic_core', xpPerHour: 150 },
-]
+// 路线定义：**读内容表**（只补脚本侧需要的分母锚点 GOLD_PER_HOUR，来自 sim-audit 实测）
+const tierOfItem = (itemId) => ITEMS[itemId]?.tier ?? 0
+const ROUTES = EXP.routes.map((r) => ({
+  ...r,
+  anchor: r.anchorGoldPerHour, // 表内锚点（与 sim-audit 实测一致）
+  supplyTier: tierOfItem(r.supply.itemId),
+  supplyPer8h: r.supply.qtyPer8h,
+  materialTier: tierOfItem(r.materialItemId),
+}))
+/** 供测试反向断言：这些数值必须来自内容表 */
+export const AUDITED_LITERALS = {
+  routeIds: ROUTES.map((r) => r.id),
+  ratios: ROUTES.map((r) => r.ratio),
+  hours: EXP.hours,
+  team: EXP.team,
+  starter: EXP.starter,
+  companions: COMPANIONS.companions.length,
+  traitCount: EXP.traits.length,
+}
 
 console.log(['路线'.padEnd(12), '锚点金/时'.padStart(11), '产出占比'.padStart(9), '毛产出/时'.padStart(11), '补给/时'.padStart(9), '补给价值/时'.padStart(12), '净产出/时'.padStart(11)].join(' | '))
 let grossTotal = 0
@@ -198,3 +214,37 @@ console.log(`4. 时长档：速率与补给均按小时齐平 → 无"只派 8h"
 console.log(`5. 成长曲线：单人满级 ≈ ${f(runs4h, 0)} 次 4h 派遣；低档路线成长慢 → 有"往上打"的动机 ✅`)
 console.log(`6. 徽记稳定来源（近郊保底 + 成就），招募不依赖任务 schema 扩展 ✅`)
 console.log(`7. 重铸石远征供给占采矿 ${pct(stonePerHour / 11.5)} → 不击穿 v2.1 设计 ✅`)
+
+// ── v3.0 三件套第 2 件：落盘 JSON（供测试逐字段断言；含内容表指纹） ──
+const out = {
+  version: '3.0.0',
+  tableFingerprint: JSON.stringify(EXP).length,
+  routes: ROUTES.map((r) => ({
+    id: r.id,
+    name: r.name,
+    tier: r.tier,
+    anchorGoldPerHour: r.anchor,
+    ratio: r.ratio,
+    reqPower: r.reqPower,
+    supplyItemId: r.supply.itemId,
+    supplyPer8h: r.supplyPer8h,
+    tokenPer8h: r.tokenPer8h,
+    relic: r.relic ?? null,
+    xpPerHour: r.xpPerHour,
+    materialItemId: r.materialItemId,
+  })),
+  hours: EXP.hours,
+  team: EXP.team,
+  starter: EXP.starter,
+  companions: COMPANIONS.companions.map((c) => ({ id: c.id, rarity: c.rarity, startLevel: c.startLevel })),
+  traits: EXP.traits.map((t) => ({ id: t.id, effect: t.effect, value: t.value })),
+  tokenPerDay: Number(tokenPerDay.toFixed(2)),
+  grossTotal: Number(grossTotal.toFixed(0)),
+  netTotal: Number(netTotal.toFixed(0)),
+  shareOfEndAnchor: Number((grossTotal / GOLD_PER_HOUR[7]).toFixed(4)),
+  stonePerHour,
+  auditedLiterals: AUDITED_LITERALS,
+}
+writeFileSync(join(root, 'docs', 'sim-expedition-output.json'), JSON.stringify(out, null, 2) + String.fromCharCode(10))
+console.log('')
+console.log('机器校验输出：docs/sim-expedition-output.json')

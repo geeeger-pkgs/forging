@@ -1,0 +1,157 @@
+{
+  "version": "3.0.0",
+  "tableFingerprint": 1982,
+  "routes": [
+    {
+      "id": "outskirts",
+      "name": "近郊勘探",
+      "tier": 1,
+      "anchorGoldPerHour": 2812,
+      "ratio": 0.09,
+      "reqPower": 3,
+      "supplyItemId": "ingot_copper",
+      "supplyPer8h": 16,
+      "tokenPer8h": 1,
+      "relic": null,
+      "xpPerHour": 25,
+      "materialItemId": "ore_copper"
+    },
+    {
+      "id": "oldmine",
+      "name": "废弃矿道",
+      "tier": 3,
+      "anchorGoldPerHour": 18527,
+      "ratio": 0.09,
+      "reqPower": 30,
+      "supplyItemId": "ingot_iron",
+      "supplyPer8h": 24,
+      "tokenPer8h": 0.6,
+      "relic": "relic_gear",
+      "xpPerHour": 45,
+      "materialItemId": "ore_silver"
+    },
+    {
+      "id": "ruins",
+      "name": "古代遗迹",
+      "tier": 4,
+      "anchorGoldPerHour": 30590,
+      "ratio": 0.09,
+      "reqPower": 120,
+      "supplyItemId": "ingot_mithril",
+      "supplyPer8h": 8,
+      "tokenPer8h": 0.5,
+      "relic": "relic_shard",
+      "xpPerHour": 90,
+      "materialItemId": "ore_gold"
+    },
+    {
+      "id": "abyss",
+      "name": "深渊前哨",
+      "tier": 7,
+      "anchorGoldPerHour": 74845,
+      "ratio": 0.09,
+      "reqPower": 300,
+      "supplyItemId": "ingot_void",
+      "supplyPer8h": 8,
+      "tokenPer8h": 0.4,
+      "relic": "relic_core",
+      "xpPerHour": 150,
+      "materialItemId": "ore_void"
+    }
+  ],
+  "hours": [
+    1,
+    4,
+    8
+  ],
+  "team": {
+    "base": 2,
+    "maxPerBanner": 1
+  },
+  "starter": "apprentice",
+  "companions": [
+    {
+      "id": "apprentice",
+      "rarity": "common",
+      "startLevel": 1
+    },
+    {
+      "id": "prospector",
+      "rarity": "common",
+      "startLevel": 1
+    },
+    {
+      "id": "ranger",
+      "rarity": "elite",
+      "startLevel": 1
+    },
+    {
+      "id": "scholar",
+      "rarity": "elite",
+      "startLevel": 1
+    },
+    {
+      "id": "warden",
+      "rarity": "legend",
+      "startLevel": 1
+    },
+    {
+      "id": "seer",
+      "rarity": "legend",
+      "startLevel": 1
+    }
+  ],
+  "traits": [
+    {
+      "id": "diligent",
+      "effect": "supply",
+      "value": -0.25
+    },
+    {
+      "id": "greedy",
+      "effect": "gold",
+      "value": 0.2
+    },
+    {
+      "id": "scholar",
+      "effect": "xp",
+      "value": 0.25
+    },
+    {
+      "id": "seeker",
+      "effect": "find",
+      "value": 0.3
+    }
+  ],
+  "tokenPerDay": 7.5,
+  "grossTotal": 11410,
+  "netTotal": 10970,
+  "shareOfEndAnchor": 0.1524,
+  "stonePerHour": 0.375,
+  "auditedLiterals": {
+    "routeIds": [
+      "outskirts",
+      "oldmine",
+      "ruins",
+      "abyss"
+    ],
+    "ratios": [
+      0.09,
+      0.09,
+      0.09,
+      0.09
+    ],
+    "hours": [
+      1,
+      4,
+      8
+    ],
+    "team": {
+      "base": 2,
+      "maxPerBanner": 1
+    },
+    "starter": "apprentice",
+    "companions": 6,
+    "traitCount": 4
+  }
+}
