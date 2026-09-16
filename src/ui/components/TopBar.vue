@@ -40,7 +40,7 @@ const buffs = computed(() =>
   <header class="top">
     <div class="left">
       <span class="gold">💰 {{ fmtNum(store.state.gold) }}</span>
-      <span class="dim">总价值 {{ fmtNum(tv) }}</span>
+      <span class="dim tv">总价值 {{ fmtNum(tv) }}</span>
     </div>
 
     <div class="center">
@@ -49,7 +49,7 @@ const buffs = computed(() =>
         <span v-if="cur.remaining !== null" class="count">×{{ cur.remaining }}</span>
         <!-- v2.5：剩余时间由进度条自带（0.1s 粒度，短动作也能看清倒数） -->
         <ProgressBar :started-at="cur.startedAt" :duration-ms="cur.durationMs" />
-        <button class="btn danger sm" @click="cmd({ type: 'stopAction' })">停止</button>
+        <button class="btn sm stop" @click="cmd({ type: 'stopAction' })">停止</button>
       </div>
       <div v-else class="idle">无所事事……</div>
 
@@ -71,7 +71,7 @@ const buffs = computed(() =>
       <span v-if="store.state.abyss?.title" class="title-badge" title="深渊商店购买的称号">深渊行者</span>
       <!-- v3.0 L4：图鉴四档称号（取已达成的最高档） -->
       <span v-if="codexTitle" class="title-badge codex" title="图鉴里程碑称号">图鉴·{{ codexTitle }}</span>
-      <span class="dim">总等级 {{ tl }}</span>
+      <span class="dim tl">总等级 {{ tl }}</span>
     </div>
   </header>
 </template>
@@ -117,6 +117,15 @@ const buffs = computed(() =>
   color: var(--c-text-dim);
   font-size: 12px;
   min-width: 44px;
+}
+/* v3.2 B5：停止不再是全屏唯一危险色 —— 平时描边、hover 才显红（改档位/清档才是真危险操作） */
+.stop {
+  border-color: var(--c-border);
+  color: var(--c-text-dim);
+}
+.stop:hover {
+  border-color: var(--c-danger);
+  color: var(--c-danger);
 }
 .idle {
   color: var(--c-text-dim);
@@ -170,6 +179,13 @@ const buffs = computed(() =>
   font-size: 12px;
 }
 
+/* v3.2 A4：窄屏精简——总价值/总等级移出（信息在设置页与成就页可取） */
+@media (max-width: 640px) {
+  .tv,
+  .tl {
+    display: none;
+  }
+}
 /* v1.8：窄屏换行布局 */
 @media (max-width: 900px) {
   .top {

@@ -152,6 +152,23 @@ function tidyBag(): void {
   cmd({ type: 'tidyBag' })
 }
 
+/**
+ * v3.2 A2：窄屏右栏 Tab。
+ * 窄屏下右栏原本整块沉在动作网格之后（卖矿/换装要滚过整页，测评 B-10）；
+ * 现在默认收起，用底部一排 Tab 切换三个分区；桌面端（>900px）三块始终全展示。
+ */
+type RightTab = 'gear' | 'bag' | 'mats'
+const rightTab = ref<RightTab>('gear')
+const rightOpen = ref(false)
+function toggleRightTab(t: RightTab): void {
+  if (rightOpen.value && rightTab.value === t) {
+    rightOpen.value = false // 再点一次收起
+    return
+  }
+  rightTab.value = t
+  rightOpen.value = true
+}
+
 /** v3.1 装备预设：3 套一键换装（深渊层词条要求为某层重配装；此前约 20 击/轮） */
 const gearSets = computed(() => store.state.meta.gearSets ?? [])
 function saveGearSet(): void {
@@ -214,8 +231,26 @@ function isTop(score: number): boolean {
 </script>
 
 <template>
-  <aside class="right">
-    <section>
+  <aside class="right" :class="{ 'tab-open': rightOpen }" :data-tab="rightTab">
+    <!-- v3.2 A2：窄屏 Tab 条（桌面隐藏） -->
+    <nav class="rtabs" role="tablist" aria-label="右侧面板分区">
+      <button
+        v-for="t in ([
+          { id: 'gear', label: '装备' },
+          { id: 'bag', label: '行囊' },
+          { id: 'mats', label: '资源' },
+        ] as const)"
+        :key="t.id"
+        class="rtab"
+        role="tab"
+        :aria-selected="rightOpen && rightTab === t.id"
+        :class="{ active: rightOpen && rightTab === t.id }"
+        @click="toggleRightTab(t.id)"
+      >
+        {{ t.label }}
+      </button>
+    </nav>
+    <section data-sec="gear">
       <h3>装备</h3>
       <div class="gearsets">
         <button
@@ -262,7 +297,7 @@ function isTop(score: number): boolean {
       </div>
     </section>
 
-    <section>
+    <section data-sec="mats">
       <h3>资源</h3>
       <div v-if="materials.length === 0" class="dim">暂无</div>
       <div v-for="m in materials" :key="m.id" class="row">
@@ -288,7 +323,7 @@ function isTop(score: number): boolean {
       </div>
     </section>
 
-    <section>
+    <section data-sec="bag">
       <h3>行囊（装备）</h3>
       <div class="bagbar">
         <span class="dim small">排序</span>
@@ -345,6 +380,26 @@ function isTop(score: number): boolean {
   align-items: center;
   gap: 6px;
   margin: 4px 0 6px;
+}
+/* v3.2 A2：Tab 条（桌面隐藏） */
+.rtabs {
+  display: none;
+  gap: 6px;
+}
+.rtab {
+  flex: 1;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+}
+.rtab.active {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
 }
 .right {
   width: 300px;
@@ -490,6 +545,27 @@ h3 {
     border-left: none;
     border-top: 1px solid var(--c-border);
     overflow-y: visible;
+  }
+  /* v3.2 A2：窄屏用 Tab 切换分区；未展开时不占高度 */
+  .rtabs {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    background: var(--c-panel);
+    padding: 6px 0;
+    z-index: 5;
+  }
+  .right > section {
+    display: none;
+  }
+  .right.tab-open[data-tab='gear'] > section[data-sec='gear'],
+  .right.tab-open[data-tab='mats'] > section[data-sec='mats'],
+  .right.tab-open[data-tab='bag'] > section[data-sec='bag'] {
+    display: block;
+  }
+  /* 详情弹层（点击装备查看）始终可显示 */
+  .right > section.inspect {
+    display: block;
   }
   .slots {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

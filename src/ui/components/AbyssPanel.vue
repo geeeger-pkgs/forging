@@ -123,6 +123,7 @@ function sweep(n: number): void {
       </div>
       <p class="dim small">
         口径：速度 = 采矿速度（工具/全速/符文/精通/深渊永久）；产量不含符文与精通、经验不含符文、强化率不含精通——与结算内核完全一致。
+        <span class="fold-note">（窄屏下中间几项会折叠，合计以上方总战力为准）</span>
       </p>
     </section>
 
@@ -314,6 +315,10 @@ function sweep(n: number): void {
   color: var(--c-accent-2);
   font-variant-numeric: tabular-nums;
 }
+/* v3.2 A3：折叠说明只在窄屏显示 */
+.fold-note {
+  display: none;
+}
 .modbar {
   display: flex;
   align-items: baseline;
@@ -386,6 +391,10 @@ function sweep(n: number): void {
   }
   .shop {
     grid-template-columns: 1fr;
+  }
+  /* v3.2 A3：折叠时给出说明（否则玩家看到的行之和 ≠ 总战力） */
+  .fold-note {
+    display: inline;
   }
   /* v3.0 C2：折叠"中间项"，保留**贡献最高 2 项 + 最弱 1 项**（最弱项才是"该补哪"的答案） */
   .rows .row:nth-child(n + 3):not(:last-child) {

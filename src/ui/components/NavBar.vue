@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { cmd, setView, store } from '../../app/store'
 import { CONTENT, TUTORIAL_BY_STEP } from '../../game/content'
 import { levelInfo } from '../../game/level'
@@ -105,6 +105,20 @@ function claim(): void {
   if (t) cmd({ type: 'claimTutorial', step: t.step.step })
 }
 
+/**
+ * v3.2 A1：窄屏工具抽屉。
+ * 390px 下把 8 个工具入口 + 静音 + 教程卡全平铺会吃掉半个首屏（测评 B-10）；
+ * 桌面端（>900px）始终展开，窄屏默认收起，点「更多」展开；当前视图在工具区时自动展开。
+ */
+const TOOL_VIEWS = ['prestige', 'tasks', 'expedition', 'codex', 'abyss', 'shop', 'achievements', 'settings']
+const toolsOpen = ref(!TOOL_VIEWS.includes(store.ui.view))
+watch(
+  () => store.ui.view,
+  (v) => {
+    if (TOOL_VIEWS.includes(v)) toolsOpen.value = true
+  },
+)
+
 /** 快捷静音（测评 M1）：音效要有一个"随手按掉"的入口，而不是非进设置页不可 */
 const soundOn = computed(() => store.state.meta.settings?.sound ?? true)
 function toggleMute(): void {
@@ -128,7 +142,18 @@ function toggleMute(): void {
       </span>
     </button>
 
-    <div class="tools">
+    <button
+      class="item tools-toggle"
+      :aria-expanded="toolsOpen"
+      aria-controls="nav-tools"
+      :title="toolsOpen ? '收起工具' : '展开工具（传承/任务/远征/图鉴/深渊/商店/成就）'"
+      @click="toolsOpen = !toolsOpen"
+    >
+      <span class="icon">{{ toolsOpen ? '▾' : '▸' }}</span>
+      <span class="body"><span class="name">更多</span></span>
+    </button>
+
+    <div id="nav-tools" class="tools" :class="{ collapsed: !toolsOpen }">
       <button class="item" :class="{ active: store.ui.view === 'prestige' }" @click="setView('prestige')">
         <span class="icon">🔮</span>
         <span class="body"><span class="name">传承</span></span>
@@ -248,6 +273,10 @@ function toggleMute(): void {
   height: 100%;
   background: var(--c-accent-2);
 }
+/* 桌面端不需要抽屉开关（>900px 时隐藏，见媒体查询） */
+.tools-toggle {
+  display: none;
+}
 .tools {
   margin-top: 6px;
   border-top: 1px solid var(--c-border);
@@ -302,6 +331,10 @@ function toggleMute(): void {
   .xpbar {
     display: none;
   }
+  .tools-toggle {
+    display: flex;
+    flex: 0 0 auto;
+  }
   .tools {
     margin-top: 0;
     border-top: none;
@@ -309,6 +342,14 @@ function toggleMute(): void {
     flex-direction: row;
     /* v2.2 测评 M5：6 个工具按钮在 390px 下会溢出（设置不可达）→ 允许换行 */
     flex-wrap: wrap;
+    flex: 1 1 100%;
+  }
+  /* v3.2 A1：抽屉收起（默认） */
+  .tools.collapsed {
+    display: none;
+  }
+  .tools.collapsed + .tools-toggle,
+  .tools.collapsed ~ .tutorial {
     flex: 1 1 100%;
   }
   .tools .item {
