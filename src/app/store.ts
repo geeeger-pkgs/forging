@@ -57,6 +57,8 @@ export const store = reactive({
   toasts: [] as Toast[],
   ui: {
     view: 'mining' as UiView,
+    /** v3.4.4：一次性请求——让右栏切换到指定分区（教程「前往」用；右栏消费后置回 null） */
+    rightTabWanted: null as null | 'gear' | 'bag' | 'mats',
     dialogRef: null as ActionRef | null,
     forgeCategory: 'tool' as ForgeCategory,
     searchText: '',

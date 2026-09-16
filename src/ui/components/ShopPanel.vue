@@ -28,6 +28,16 @@ const sellable = computed(() =>
     .sort(([, a], [, b]) => b - a)
     .map(([id, qty]) => ({ id, qty, name: itemDef(id).name, value: itemDef(id).value, total: itemDef(id).value * qty })),
 )
+
+/** v3.4.4：速度上限从内容表推导（此前写死 T5 的 1.05；T7 实际 1.35） */
+const maxToolSpeed = computed(() => {
+  let m = 0
+  for (const it of Object.values(CONTENT.items)) {
+    const sp = (it as { stats?: { speed?: number } }).stats?.speed
+    if ((it as { category?: string }).category === 'tool' && sp) m = Math.max(m, sp)
+  }
+  return m || 1.05
+})
 </script>
 
 <template>
@@ -71,7 +81,7 @@ const sellable = computed(() =>
     <section class="card">
       <h3>属性速记</h3>
       <p class="dim">
-        工具（镐/坩埚/锤）→ 对应技能速度（{{ pct(0.15) }} → {{ pct(1.05) }}）；剑 → 效率；战锤 → 全技能速度；头盔 →
+        工具（镐/坩埚/锤）→ 对应技能速度（{{ pct(0.15) }} → {{ pct(maxToolSpeed) }}）；剑 → 效率；战锤 → 全技能速度；头盔 →
         经验；胸甲 → 产量；腿甲 → 稀有掉落；靴甲 → 效率；<b>项链 → 强化成功率；戒指 → 效率</b>。
       </p>
     </section>

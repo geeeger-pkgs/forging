@@ -7,7 +7,7 @@ import { startBlockReason } from '../game/commands'
 import { levelInfo } from '../game/level'
 import { baseTimeOf, durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf } from '../game/rules'
 import { freeInstances, instanceById, materialCount } from '../game/state'
-import { aggregateEquipment } from '../game/stats'
+import { aggregateEquipment, effectiveStats } from '../game/stats'
 import type { ActionRef, GameState, ItemId, SkillId } from '../game/types'
 
 export interface InputInfo {
@@ -46,7 +46,8 @@ export interface ActionDesc {
   blockReason?: string
 }
 
-export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
+/** v3.4.4：now 可注入（与 speedFor 同风格）——符文等临时增益是时间函数 */
+export function describeAction(state: GameState, ref: ActionRef, now: number = Date.now()): ActionDesc {
   const agg = aggregateEquipment(state)
   const blockReason = startBlockReason(state, ref) ?? undefined
   const dur = durationOf(state, ref)
@@ -127,9 +128,18 @@ export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
     okLevel: true,
     durationMs: dur,
     baseTimeMs: baseTimeOf(ref),
-    xp: step.xpBase,
+    // v3.4.4（全应用扫描）：三处口径此前与内核不一致，现按 settle.performEnhance 对齐
+    //   ① 经验：内核乘 (1 + wisdom + perk.wisdom)（settle.ts:277），弹窗此前只给 xpBase
+    //   ② 成功率：内核含 技能等级加成 ⌊enhancingLv/10⌋×1%（settle.ts:249-250），弹窗漏了（Lv100 差 10pp）
+    xp: step.xpBase * (1 + effectiveStats(state, now).wisdom),
     xpSuccessDoubled: true,
-    enhanceRate: Math.min(1, step.successRate + agg.enhanceRate + buffBonuses(state, Date.now()).enhanceRate),
+    enhanceRate: Math.min(
+      1,
+      step.successRate +
+        agg.enhanceRate +
+        buffBonuses(state, now).enhanceRate +
+        Math.floor(levelInfo(state.skills.enhancing).level / 10) * 0.01,
+    ),
     inputs,
     outputs: [],
     drops: [],
@@ -138,10 +148,10 @@ export function describeAction(state: GameState, ref: ActionRef): ActionDesc {
   }
 }
 
-function dropsInfo(ref: ActionRef, rareFind: number): DropInfo[] {
-  return rareDropsOf(ref).map((d) => ({
-    itemId: d.itemId,
-    name: itemDef(d.itemId).name,
-    rate: d.rate * (1 + rareFind),
-  }))
+function dropsInfo(ref: ActionRef, rareFind: number, stoneFind = 0): DropInfo[] {
+  // v3.4.4：重铸石额外享受勘探词缀加成（settle.grantRareDrops 的 extra 口径）
+  return rareDropsOf(ref).map((d) => {
+    const extra = d.itemId === 'emberstone' ? stoneFind : 0
+    return { itemId: d.itemId, name: itemDef(d.itemId).name, rate: d.rate * (1 + rareFind + extra) }
+  })
 }

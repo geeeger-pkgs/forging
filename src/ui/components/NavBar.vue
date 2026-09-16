@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { cmd, setView, store } from '../../app/store'
 import { CONTENT, TUTORIAL_BY_STEP } from '../../game/content'
 import { levelInfo } from '../../game/level'
+import { FORGE_CATEGORIES } from '../types'
 import { skillIcon } from '../icons'
 import { fmtPct } from '../format'
 
@@ -111,9 +112,22 @@ function goalView(g: { type: string; itemId?: string; counter?: string }): strin
   return 'mining'
 }
 
+/**
+ * v3.4.4（全应用扫描）：教程「前往」此前只切**视图**，第 4/7/9 步会落到"没有目标卡"的分区
+ * （锻造页默认停在"工具"分区、装备入口在右栏）→ 观感等同按钮坏了。
+ * 现在同时切换锻造分区 / 打开右栏对应页签。
+ */
 function gotoStep(): void {
   const t = tutorial.value
-  if (t) setView(t.view as never)
+  if (!t) return
+  setView(t.view as never)
+  const g = t.step.goal as { type: string; itemId?: string; slotId?: string }
+  if (g.type === 'craftItem' && g.itemId) {
+    const r = CONTENT.recipes.find((x) => x.outputs.some((o) => o.itemId === g.itemId))
+    const cats = FORGE_CATEGORIES.map((c) => c.id) as string[]
+    if (r && cats.includes(r.category)) store.ui.forgeCategory = r.category as never
+  }
+  if (g.type === 'equipSlot') store.ui.rightTabWanted = 'bag' // 右栏切到行囊（装备入口）
 }
 
 function claim(): void {

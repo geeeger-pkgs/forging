@@ -171,6 +171,8 @@ export interface EffectiveStats {
   efficiency: number
   rareFind: number
   wisdom: number
+  /** v3.4.4：强化成功率（装备 + 符文） */
+  enhanceRate: number
   /** 三技能的动作速度（已含 allSpeed + 符文 + 精通） */
   toolSpeed: { mining: number; smelting: number; forging: number }
 }
@@ -192,6 +194,8 @@ export function effectiveStats(state: GameState, now: number = Date.now()): Effe
     efficiency: agg.efficiency + buff.efficiency + perk.efficiency,
     rareFind: agg.rareFind + buff.rareFind + perk.rareFind,
     wisdom: agg.wisdom + perk.wisdom,
+    // v3.4.4：强化成功率也并入有效属性（agg + 符文；精通无该效果）——此前面板只读装备侧
+    enhanceRate: agg.enhanceRate + buff.enhanceRate,
     toolSpeed: {
       mining: agg.toolSpeed.mining + allSpeed,
       smelting: agg.toolSpeed.smelting + allSpeed,

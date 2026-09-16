@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
 import { recycleGain } from '../../game/economy'
@@ -187,6 +187,15 @@ const RIGHT_TABS = [
 ] as const satisfies readonly { id: RightTab; label: string }[]
 const rightTab = ref<RightTab>('gear')
 const rightOpen = ref(false)
+/** v3.4.4：外部（如教程「前往」）请求切到某个分区并展开 */
+watch(
+  () => store.ui.rightTabWanted,
+  (t) => {
+    if (!t) return
+    void selectRightTab(t as RightTab)
+    store.ui.rightTabWanted = null
+  },
+)
 
 /**
  * v3.3 C2：tablist 的 roving tabindex + 方向键。
@@ -460,7 +469,7 @@ function isTop(score: number): boolean {
         <span :class="{ hot: isMineView }">挖速 {{ pct(eff.toolSpeed.mining) }}</span> ·
         <span :class="{ hot: store.ui.view === 'smelting' }">熔速 {{ pct(eff.toolSpeed.smelting) }}</span> ·
         <span :class="{ hot: store.ui.view === 'forging' }">锻速 {{ pct(eff.toolSpeed.forging) }}</span><br />
-        <span :class="{ hot: isEnhanceView }">强化成功率 {{ pct(agg.enhanceRate) }}</span> · 套装 {{ setText }}
+        <span :class="{ hot: isEnhanceView }">强化成功率 {{ pct(eff.enhanceRate) }}</span> · 套装 {{ setText }}
       </div>
     </section>
 

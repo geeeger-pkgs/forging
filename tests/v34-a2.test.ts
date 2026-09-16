@@ -284,3 +284,41 @@ describe('3.4.1 终审处置：赛季档位按生涯最高技能等级取档', (
     expect(seasonScaleCoef(s)).toBe(CONTENT.season.scaleByMaturity.junior)
   })
 })
+
+describe('v3.4.4 全应用扫描处置：describe 口径与内核对齐（数字级）', () => {
+  it('强化弹窗成功率含技能等级加成（Lv100 → +10pp）', async () => {
+    const { describeAction } = await import('../src/app/describe')
+    const s = newGame('T', 0)
+    const id = addInstance(s, 'pick_copper')
+    const inst = s.equipment.find((e) => e.instanceId === id)!
+    inst.affixes = []
+    const ref = { kind: 'enhance' as const, instanceId: id, targetLevel: 2 }
+    s.skills.enhancing = xpForLevel(1)
+    const low = describeAction(s, ref, 0).enhanceRate ?? 0
+    s.skills.enhancing = xpForLevel(100)
+    const high = describeAction(s, ref, 0).enhanceRate ?? 0
+    expect(high - low, '技能等级应贡献 +10pp（⌊100/10⌋×1%）').toBeCloseTo(0.1, 6)
+  })
+
+  it('强化弹窗经验含 wisdom 乘区（与内核一致）', async () => {
+    const { describeAction } = await import('../src/app/describe')
+    const s = newGame('T', 0)
+    const id = addInstance(s, 'pick_copper')
+    s.equipment.find((e) => e.instanceId === id)!.affixes = []
+    const ref = { kind: 'enhance' as const, instanceId: id, targetLevel: 2 }
+    const base = describeAction(s, ref, 0).xp
+    const pick = CONTENT.perks.find((p) => p.effect === 'wisdom')
+    if (pick) {
+      s.meta.prestige.perks[pick.id] = 2
+      const boosted = describeAction(s, ref, 0).xp
+      expect(boosted, '经验应随 wisdom 提升').toBeGreaterThan(base)
+    }
+  })
+
+  it('面板与弹窗的强化成功率同源（都含符文；RightPanel 用 effectiveStats）', () => {
+    const rp = readFileSync(join(process.cwd(), 'src/ui/components/RightPanel.vue'), 'utf8')
+    expect(rp).toContain('强化成功率 {{ pct(eff.enhanceRate) }}')
+    const st = readFileSync(join(process.cwd(), 'src/game/stats.ts'), 'utf8')
+    expect(st).toContain('enhanceRate: agg.enhanceRate + buff.enhanceRate')
+  })
+})
