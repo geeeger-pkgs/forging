@@ -39,6 +39,16 @@ const maxToolSpeed = computed(() => {
   return m || 1.05
 })
 
+/** v3.4.6：下限同理（此前写死 pct(0.15)；B 评审列为公式型漏网） */
+const minToolSpeed = computed(() => {
+  let m = Number.POSITIVE_INFINITY
+  for (const it of Object.values(CONTENT.items)) {
+    const sp = (it as { stats?: { speed?: number } }).stats?.speed
+    if ((it as { category?: string }).category === 'tool' && sp) m = Math.min(m, sp)
+  }
+  return Number.isFinite(m) ? m : 0.15
+})
+
 /** v3.4.4：下一个队列位的价格（内核同源，供标价与置灰） */
 const nextSlotCost = computed(() => nextQueueSlotCost(store.state))
 
@@ -94,7 +104,7 @@ const goldGrowth = computed(() => CONTENT.goldShop[0]?.growth ?? 1)
     <section class="card">
       <h3>属性速记</h3>
       <p class="dim">
-        工具（镐/坩埚/锤）→ 对应技能速度（{{ pct(0.15) }} → {{ pct(maxToolSpeed) }}）；剑 → 效率；战锤 → 全技能速度；头盔 →
+        工具（镐/坩埚/锤）→ 对应技能速度（{{ pct(minToolSpeed) }} → {{ pct(maxToolSpeed) }}）；剑 → 效率；战锤 → 全技能速度；头盔 →
         经验；胸甲 → 产量；腿甲 → 稀有掉落；靴甲 → 效率；<b>项链 → 强化成功率；戒指 → 效率</b>。
       </p>
     </section>

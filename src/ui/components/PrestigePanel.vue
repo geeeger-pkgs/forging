@@ -29,6 +29,16 @@ const perks = computed(() =>
   })),
 )
 
+/**
+ * v3.4.6：深造示例从内容表推导（此前写死"迅捷 20 → 40 级"；
+ * B 评审指出本批刚编辑过这一行、只插值了倍率，把 20/40 留在原地是同类漏网）。
+ */
+const overdriveExample = computed(() => {
+  const p = CONTENT.perks.find((x) => x.effect === 'speed') ?? CONTENT.perks[0]
+  if (!p) return ''
+  return `${p.name} ${p.max} → ${p.max * PERK_OVERDRIVE_MULT} 级`
+})
+
 function confirmPrestige(): void {
   if (!unlocked.value) return
   const p = willGain.value
@@ -70,7 +80,7 @@ function confirmPrestige(): void {
       <h3>精通殿堂 <span class="pts">可用精通点 {{ points }}</span></h3>
       <p class="dim">购买/退款即时生效，退款免费；效果永久保留，跨传承累计。</p>
       <p class="dim">
-        深造：基础上限后可继续购买至 {{ PERK_OVERDRIVE_MULT }} 倍，深造部分每级价格 ×{{ PERK_OVERDRIVE_COST_MULT }}（例：迅捷 20 → 40 级）。
+        深造：基础上限后可继续购买至 {{ PERK_OVERDRIVE_MULT }} 倍，深造部分每级价格 ×{{ PERK_OVERDRIVE_COST_MULT }}（例：{{ overdriveExample }}）。
       </p>
       <div class="grid">
         <div

@@ -105,7 +105,7 @@ export function pickSeasonTasks(index: number): SeasonSlot[] {
     return h % n
   }
   let guard = 0
-  while (picked.length < Math.min(3, n) && guard < 200) {
+  while (picked.length < Math.min(SEASON_TASKS_PER_DAY, n) && guard < 200) {
     guard++
     const id = pool[next()].id
     if (picked.some((p) => p.defId === id)) continue
@@ -168,6 +168,12 @@ export function levelForRenown(renown: number): number {
 export function renownForLevel(level: number): number {
   return level * DEF.renownPerLevel
 }
+
+/**
+ * 每日任务条数（v3.4.6：从字面量提为导出常量）。
+ * 面板文案「每 N 天轮换：3 条任务从…抽取」此前写死 3，B 评审列为守卫盲区。
+ */
+export const SEASON_TASKS_PER_DAY = 3
 
 /** 某等级的奖励（即时发放） */
 export function levelReward(level: number): { gold: number; essence: number; tokens: number } {

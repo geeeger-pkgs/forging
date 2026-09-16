@@ -240,7 +240,7 @@ void levelInfo
     <section class="card">
       <h3>远征队旗帜</h3>
       <p class="dim">
-        等级 {{ banner }} / {{ CONTENT.expeditions.banner.maxLevel }}：每级 <b>+8% 队伍战力</b> 与 <b>+1 队伍位</b>。
+        等级 {{ banner }} / {{ CONTENT.expeditions.banner.maxLevel }}：每级 <b>+{{ fmtPct(CONTENT.expeditions.banner.powerPerLevel, 0) }} 队伍战力</b> 与 <b>+{{ CONTENT.expeditions.team.maxPerBanner }} 队伍位</b>。
       </p>
       <button v-if="bannerCost" class="btn primary" @click="cmd({ type: 'upgradeBanner' })">
         升级旗帜（徽记 ×{{ bannerCost.tokens }} + {{ bannerCost.gold }} 金）

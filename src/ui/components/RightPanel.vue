@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { cmd, inspectInstance, inspectItem, store } from '../../app/store'
 import { perfectScore } from '../../game/affixes'
+import { MAX_GEAR_SETS } from '../../game/commands'
 import { recycleGain } from '../../game/economy'
 import { fmtPct } from '../format'
 import { CONTENT, itemDef } from '../../game/content'
@@ -432,7 +433,7 @@ function isTop(score: number): boolean {
           <button class="btn sm primary" title="确认保存" @click="saveGearSet">保存</button>
           <button class="btn sm" title="取消（Esc）" @click="cancelGearName">取消</button>
         </template>
-        <button v-else class="btn sm" title="保存当前着装（最多 3 套）" @click="saveGearSet">存配装</button>
+        <button v-else class="btn sm" :title="`保存当前着装（最多 ${MAX_GEAR_SETS} 套）`" @click="saveGearSet">存配装</button>
         <button
           v-for="g in gearSets"
           :key="'del-' + g.id"

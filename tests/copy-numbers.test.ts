@@ -13,6 +13,15 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const uiRoot = join(process.cwd(), 'src', 'ui')
+/** v3.4.6：App.vue 在 src/ui 之外（B 评审指出），单独纳入 */
+const appVue = join(process.cwd(), 'src', 'App.vue')
+const vueFiles = (): string[] => [...walk(uiRoot), appVue]
+
+/**
+ * v3.4.6：玩家可见文案落在 .ts 里的模块白名单（B 评审：crates.ts 的「📦 大奖！金币 ×300」
+ * 形态命中守卫，但 walk 只收 .vue）。新增"把玩家文案写进内核/壳层字符串"的模块时请加入。
+ */
+const COPY_TS_FILES = [join(process.cwd(), 'src', 'game', 'crates.ts')]
 
 function walk(dir: string): string[] {
   const out: string[] = []
@@ -71,16 +80,35 @@ function templateTextLines(file: string): { line: number; text: string; raw: str
   return out
 }
 
+/** 取 .ts 的字符串字面量（含模板串静态片段）；跳过注释行；`${...}` 换占位，避免把插值表达式当字面量扫 */
+function tsTextLines(file: string): { line: number; text: string }[] {
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/)
+  const out: { line: number; text: string }[] = []
+  lines.forEach((raw, i) => {
+    const t = raw.trim()
+    if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return
+    const cleaned = raw.replace(/\$\{[^}]*\}/g, '${}')
+    for (const m of cleaned.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)) {
+      const body = m[1] ?? m[2] ?? m[3] ?? ''
+      if (body) out.push({ line: i + 1, text: body })
+    }
+  })
+  return out
+}
+
 const PATTERNS: { name: string; re: RegExp }[] = [
   { name: '倍率', re: /×\s*\d+(?:\.\d+)?/g },
   { name: '周期天数', re: /\d+\s*天/g },
   { name: '版本号', re: /\bv\d+\.\d+/g },
+  // v3.4.6：B 评审实测的公式/计数型裸奔区（「主题每 25 层循环」「(10 + 2×层)」）
+  { name: '周期层/条/套/级', re: /每\s*\d+\s*(?:层|条|套|级)/g },
+  { name: '公式系数', re: /\d+\s*[+×]\s*层/g },
 ]
 
 describe('文案数字守卫（防硬编码；评审探针证明过这类漂移测不出来）', () => {
   it('src/ui 的模板文本里不出现硬编码的倍率 / 周期天数 / 版本号', () => {
     const offenders: string[] = []
-    for (const f of walk(uiRoot)) {
+    for (const f of vueFiles()) {
       for (const { line, text } of templateTextLines(f)) {
         for (const { name, re } of PATTERNS) {
           for (const m of text.matchAll(re)) {
@@ -100,7 +128,7 @@ describe('文案数字守卫（防硬编码；评审探针证明过这类漂移�
    */
   it('插值内的字符串字面量同样不得写死数字（防"藏在 {{ }} 里"的孔洞）', () => {
     const offenders: string[] = []
-    for (const f of walk(uiRoot)) {
+    for (const f of vueFiles()) {
       // 必须用 raw（保留插值）；用 text 会得到空体，pass 空跑（探针证明过）
       for (const { line, raw } of templateTextLines(f)) {
         for (const interp of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
@@ -116,5 +144,24 @@ describe('文案数字守卫（防硬编码；评审探针证明过这类漂移�
       }
     }
     expect(offenders, `插值内的字符串字面量也要从内容表推导：\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  /**
+   * v3.4.6：第三个 pass —— 玩家可见文案的 **.ts 白名单模块**里的字符串字面量。
+   * 起因：crates.ts 的事件文本「📦 大奖！金币 ×300」形态命中守卫，但 walk 只收 .vue（B 评审实测扫不到）。
+   * 规则：单/双引号字符串与模板串的**静态片段**（`${…}` 换占位）；跳过注释行。
+   */
+  it('白名单 .ts 模块（玩家可见文案）同样不得写死数字', () => {
+    const offenders: string[] = []
+    for (const f of COPY_TS_FILES) {
+      for (const { line, text } of tsTextLines(f)) {
+        for (const { name, re } of PATTERNS) {
+          for (const m of text.matchAll(re)) {
+            offenders.push(`${f.replace(process.cwd(), '')}:${line} [${name}] ${m[0]}`)
+          }
+        }
+      }
+    }
+    expect(offenders, `白名单 .ts 模块里的文案数字要从内容表/常量插值：\n${offenders.join('\n')}`).toEqual([])
   })
 })

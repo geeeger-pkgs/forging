@@ -171,7 +171,7 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
       <div class="bar"><i :style="{ width: (view.stamina / view.staminaMax) * 100 + '%' }" /></div>
       <p class="dim small">
         每 {{ DEF.staminaRegenMinutes }} 分钟恢复 1 点，在线上限 {{ DEF.staminaMax }}（满后不再累积）；
-        <b>离线回体上限 {{ DEF.staminaMax + DEF.offlineCapExtra }}</b>（按真实时长折算，仅离线期间生效）——纯放置玩家每日可打满 24 次。
+        <b>离线回体上限 {{ DEF.staminaMax + DEF.offlineCapExtra }}</b>（按真实时长折算，仅离线期间生效）——纯放置玩家每日可打满 {{ DEF.staminaMax + DEF.offlineCapExtra }} 次。
       </p>
       <div class="actions">
         <div class="chain">
@@ -220,7 +220,7 @@ function modDesc(mod: typeof CONTENT.abyss.mods[number]): string {
       </div>
       <p class="dim small">
         连打 = 从下一层起逐层判定：通过就继续，遇到第一个不达标的层停下（首通奖励逐层照发；战力不足不消耗体力）。
-        层词条每 5 层一循环：{{ mod.name }}{{ modDesc(mod) }}。
+        层词条每 {{ ABYSS_CYCLE }} 层一循环：{{ mod.name }}{{ modDesc(mod) }}。
       </p>
       <p v-if="view.gap > 0" class="bad small">
         ⚠ 战力不足时挑战不会发起，也不会消耗体力——先去补配装。

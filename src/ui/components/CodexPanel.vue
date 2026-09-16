@@ -7,7 +7,7 @@ import { store } from '../../app/store'
 import { codexGate, codexIds, codexMilestonesClaimed, codexProgress, milestoneReached } from '../../game/codex'
 import { CONTENT, itemDef } from '../../game/content'
 import { fmtDur } from '../format'
-import { msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
+import { SEASON_TASKS_PER_DAY, msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
 import type { CodexCategory } from '../../game/codex'
 
 /** v3.2 C2：默认展开"进度最低"的分区（玩家最该补的那一栏），而不是全部收起 */
@@ -165,7 +165,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         </div>
         <div class="bar"><i :style="{ width: season.pct * 100 + '%' }" /></div>
         <p class="dim small">
-          每 {{ CONTENT.season.days }} 天轮换：3 条任务从 {{ CONTENT.season.templates.length }} 条模板中按赛季确定性抽取；每档只计最高达成（不叠加）；
+          每 {{ CONTENT.season.days }} 天轮换：{{ SEASON_TASKS_PER_DAY }} 条任务从 {{ CONTENT.season.templates.length }} 条模板中按赛季确定性抽取；每档只计最高达成（不叠加）；
           达到等级即时发放奖励。挖掘/熔炼/锻造/金币/远征离线照常推进，标记「需在线」的任务离线不增长。
         </p>
         <!-- v3.3 B1：目标已按账号分档缩放，如实标注（否则玩家会以为表里数字变了） -->
@@ -193,7 +193,7 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         </div>
       </template>
       <p v-else class="dim">
-        赛季系统在中后期解锁（总等级 {{ CONTENT.season.unlockTotalLevel }}）：每 {{ CONTENT.season.days }} 天轮换 3 条长线任务，
+        赛季系统在中后期解锁（总等级 {{ CONTENT.season.unlockTotalLevel }}）：每 {{ CONTENT.season.days }} 天轮换 {{ SEASON_TASKS_PER_DAY }} 条长线任务，
         完成后获得声望与等级奖励（金币/精华/远征徽记）。图鉴收集度独立发奖，不受此门槛影响。
       </p>
     </section>

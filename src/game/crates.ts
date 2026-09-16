@@ -11,6 +11,13 @@ import type { GameEvent, GameState } from './types'
 
 const CRATE_ID = 'crate'
 
+/**
+ * 大奖档位（v3.4.6）：金币数与文案同源。
+ * 此前 `addGold(state, 300)` 与文本 '📦 大奖！金币 ×300' 是两处独立字面量，
+ * 且文案落在 .vue 之外、数字守卫扫不到（B 评审列为漏网）。
+ */
+const JACKPOT_GOLD = 300
+
 /** 开启 1 个工匠小箱；不足或未持有时返回 blocked */
 export function openCrate(state: GameState, rng: Rng = systemRng()): GameEvent[] {
   if (materialCount(state, CRATE_ID) < 1) {
@@ -23,9 +30,9 @@ export function openCrate(state: GameState, rng: Rng = systemRng()): GameEvent[]
   const events: GameEvent[] = []
 
   if (r < 0.03) {
-    addGold(state, 300)
-    events.push({ type: 'goldGained', amount: 300 })
-    events.push({ type: 'crateOpened', text: '📦 大奖！金币 ×300' })
+    addGold(state, JACKPOT_GOLD)
+    events.push({ type: 'goldGained', amount: JACKPOT_GOLD })
+    events.push({ type: 'crateOpened', text: `📦 大奖！金币 ×${JACKPOT_GOLD}` })
   } else if (r < 0.03 + 0.42) {
     const gold = randInt(rng, 20, 50)
     addGold(state, gold)
@@ -42,9 +49,10 @@ export function openCrate(state: GameState, rng: Rng = systemRng()): GameEvent[]
     events.push({ type: 'itemsGained', items: [{ itemId: 'coal', qty }] })
     events.push({ type: 'crateOpened', text: `📦 ${itemDef('coal').name} ×${qty}` })
   } else {
-    addMaterial(state, 'emberstone', 1)
-    events.push({ type: 'itemsGained', items: [{ itemId: 'emberstone', qty: 1 }] })
-    events.push({ type: 'crateOpened', text: `📦 ${itemDef('emberstone').name} ×1` })
+    const qty = 1
+    addMaterial(state, 'emberstone', qty)
+    events.push({ type: 'itemsGained', items: [{ itemId: 'emberstone', qty }] })
+    events.push({ type: 'crateOpened', text: `📦 ${itemDef('emberstone').name} ×${qty}` })
   }
   return events
 }
