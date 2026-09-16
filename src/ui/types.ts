@@ -9,6 +9,8 @@ export interface ActionCard {
   itemId?: string
   locked: boolean
   note: string
+  /** v3.1：教程当前目标对应的卡（高亮 + 「前往」落点） */
+  highlight?: boolean
 }
 
 /**

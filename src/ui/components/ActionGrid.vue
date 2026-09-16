@@ -12,13 +12,14 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
       v-for="c in cards"
       :key="c.title"
       class="cell"
-      :class="{ locked: c.locked }"
+      :class="{ locked: c.locked, hint: c.highlight }"
       @click="!c.locked && emit('pick', c)"
     >
       <ItemIcon v-if="c.itemId" :item-id="c.itemId" :size="38" />
       <span v-else class="icon">{{ c.icon }}</span>
       <span class="title">{{ c.title }}</span>
       <span class="note">{{ c.note }}</span>
+      <span v-if="c.highlight" class="hint-tag">教程目标</span>
     </button>
   </div>
 </template>
@@ -31,6 +32,7 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
   align-content: start;
 }
 .cell {
+  position: relative; /* v3.1：教程目标角标 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -48,6 +50,20 @@ const emit = defineEmits<{ pick: [ActionCard] }>()
 .cell:hover:not(.locked) {
   border-color: var(--c-accent);
   transform: translateY(-1px);
+}
+.cell.hint {
+  border-color: var(--c-accent);
+  box-shadow: inset 0 0 0 1px var(--c-accent);
+}
+.hint-tag {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  border-radius: 999px;
+  padding: 0 6px;
 }
 .cell.locked {
   cursor: not-allowed;

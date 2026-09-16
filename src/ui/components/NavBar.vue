@@ -13,12 +13,54 @@ const skills = computed(() =>
   }),
 )
 
+/**
+ * v3.1：教程卡写清"要什么、差多少、去哪做"。
+ * 测评 B-2：原卡只有「进度 0 / 10」，第 3/7 步（材料墙）只能靠撞墙学；现在给出目标物与数量，
+ * 并提供「前往」把玩家送到对应视图（矿场/配方/装备/强化）。
+ */
 const tutorial = computed(() => {
   const t = store.state.flags.tutorial
   const step = TUTORIAL_BY_STEP.get(t.current)
   if (!step) return null
-  return { step, done: t.completed.includes(step.step), progress: t.progress, target: step.goal.target }
+  const g = step.goal as { type: string; itemId?: string; slotId?: string; target: number }
+  const itemName = g.itemId ? (CONTENT.items[g.itemId]?.name ?? g.itemId) : null
+  const goalText =
+    g.type === 'mineItem'
+      ? `挖掘 ${itemName} ×${g.target}`
+      : g.type === 'craftItem'
+        ? `制作 ${itemName} ×${g.target}`
+        : g.type === 'equipSlot'
+          ? '装备一件工具/武器'
+          : g.type === 'enhanceInstance'
+            ? `强化装备 ×${g.target}`
+            : `总等级达到 ${g.target}`
+  return {
+    step,
+    goalText,
+    view: goalView(g),
+    done: t.completed.includes(step.step),
+    progress: t.progress,
+    target: g.target,
+    remain: Math.max(0, g.target - t.progress),
+  }
 })
+
+/** 教程目标 → 该去哪个视图（craftItem 按配方所属技能推导：熔炼/锻造） */
+function goalView(g: { type: string; itemId?: string }): string {
+  if (g.type === 'mineItem') return 'mining'
+  if (g.type === 'equipSlot' || g.type === 'enhanceInstance') return 'enhancing'
+  if (g.type === 'totalLevel') return 'mining'
+  if (g.type === 'craftItem' && g.itemId) {
+    const r = CONTENT.recipes.find((x) => x.outputs.some((o) => o.itemId === g.itemId))
+    if (r) return r.skill === 'smelting' ? 'smelting' : 'forging'
+  }
+  return 'mining'
+}
+
+function gotoStep(): void {
+  const t = tutorial.value
+  if (t) setView(t.view as never)
+}
 
 function claim(): void {
   const t = tutorial.value
@@ -95,10 +137,14 @@ function toggleMute(): void {
 
     <div v-if="tutorial" class="tutorial">
       <div class="t-title">📘 教程 · {{ tutorial.step.title }}</div>
+      <div class="t-goal">{{ tutorial.goalText }}</div>
       <div class="t-progress">
-        {{ tutorial.done ? '目标已达成' : `进度 ${tutorial.progress} / ${tutorial.target}` }}
+        {{ tutorial.done ? '目标已达成' : `进度 ${tutorial.progress} / ${tutorial.target}（还差 ${tutorial.remain}）` }}
       </div>
-      <button v-if="tutorial.done" class="btn primary sm" @click="claim">领取奖励</button>
+      <div class="t-actions">
+        <button v-if="!tutorial.done" class="btn sm" @click="gotoStep">前往</button>
+        <button v-if="tutorial.done" class="btn primary sm" @click="claim">领取奖励</button>
+      </div>
     </div>
   </nav>
 </template>
@@ -184,6 +230,16 @@ function toggleMute(): void {
 }
 .t-title {
   font-weight: 600;
+}
+.t-goal {
+  font-size: 12px;
+  color: var(--c-text);
+  font-weight: 600;
+}
+.t-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
 }
 .t-progress {
   color: var(--c-text-dim);

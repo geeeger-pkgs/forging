@@ -42,7 +42,7 @@ const materials = computed(() =>
   Object.entries(store.state.materials)
     .filter(([, qty]) => qty > 0)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, qty]) => ({ id, qty, name: itemDef(id).name })),
+    .map(([id, qty]) => ({ id, qty, name: itemDef(id).name, value: itemDef(id).value, total: itemDef(id).value * qty })),
 )
 
 /** v3.0 L2：行囊排序键（完美度 / 强化 / 档位），默认按完美度降序 */
@@ -241,7 +241,9 @@ function isTop(score: number): boolean {
           <ItemIcon :item-id="m.id" :size="16" />
           <span class="name">{{ m.name }}</span>
         </span>
-        <span class="qty">×{{ m.qty }}</span>
+        <span class="qty" :title="`单价 ${m.value} 金 · 全部回收 +${m.total} 金`">
+          ×{{ m.qty }}<em class="price">（单价 {{ m.value }}）</em>
+        </span>
         <button v-if="m.id === 'crate'" class="btn sm" @click="cmd({ type: 'openCrate' })">开启</button>
         <button v-if="CONTENT.items[m.id]?.category === 'rune'" class="btn sm" @click="cmd({ type: 'useRune', itemId: m.id })">激活</button>
         <!-- v3.0：0 收益物品（遗物/徽记）不出现在回收入口（防误删图鉴进度） -->
@@ -406,6 +408,12 @@ h3 {
 }
 .name em {
   font-style: normal;
+}
+.price {
+  color: var(--c-text-dim);
+  font-style: normal;
+  font-size: 11px;
+  margin-left: 4px;
 }
 .qty {
   color: var(--c-text-dim);

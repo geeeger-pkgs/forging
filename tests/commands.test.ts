@@ -28,7 +28,9 @@ describe('命令层', () => {
 
     s.queueSlots = 1
     const ev1 = applyCommand(s, { type: 'startAction', ref: { kind: 'mine', siteId: 'copper_seam' }, count: 1, mode: 'enqueue' }, 0)
-    expect(ev1).toHaveLength(0)
+    // v3.1：入队成功会给出 notice 反馈（此前静默），但不发 actionStarted
+    expect(ev1.filter((e) => e.type === 'actionStarted')).toHaveLength(0)
+    expect(ev1.some((e) => e.type === 'notice')).toBe(true)
     expect(s.actions.queue.length).toBe(1)
 
     const ev2 = applyCommand(s, { type: 'startAction', ref: { kind: 'mine', siteId: 'copper_seam' }, count: 1, mode: 'enqueue' }, 0)

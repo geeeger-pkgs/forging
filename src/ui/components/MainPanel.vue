@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { pickAction, store } from '../../app/store'
 import { CONTENT, itemDef, skillName } from '../../game/content'
 import { levelInfo } from '../../game/level'
+import { durationOf } from '../../game/rules'
 import type { RecipeDef } from '../../game/types'
 import { FORGE_CATEGORIES, type ActionCard } from '../types'
 import AchievementsPanel from './AchievementsPanel.vue'
@@ -34,17 +35,40 @@ const showScene = computed(() =>
   ['mining', 'smelting', 'forging', 'enhancing'].includes(view.value),
 )
 
+/** v3.1：教程当前目标（用于卡面高亮与「前往」） */
+const tutorialHint = computed(() => {
+  const cur = store.state.flags.tutorial.current
+  const step = CONTENT.tutorial.find((x) => x.step === cur)
+  if (!step) return null
+  const g = step.goal as { type: string; itemId?: string; slotId?: string }
+  return { type: g.type, itemId: g.itemId, slotId: g.slotId }
+})
+
+/** 教程目标对应的"高亮卡"：矿场按产出物匹配、配方按产出物匹配 */
+function isHinted(kind: 'mine' | 'craft', outputItemId?: string): boolean {
+  const h = tutorialHint.value
+  if (!h || !h.itemId) return false
+  if (h.type === 'mineItem') return kind === 'mine' && outputItemId === h.itemId
+  if (h.type === 'craftItem') return kind === 'craft' && outputItemId === h.itemId
+  return false
+}
+
 const miningCards = computed<ActionCard[]>(() => {
   const lv = levelInfo(store.state.skills.mining).level
   return CONTENT.ores.map((s) => {
     const locked = lv < s.unlockLevel
+    // v3.1：卡面直接给"耗时 · 产出"（此前只有产出，耗时要点开弹窗才知道）
+    const dur = durationOf(store.state, { kind: 'mine', siteId: s.id })
     return {
       ref: { kind: 'mine', siteId: s.id } as const,
       title: s.name,
       icon: '🪨',
       itemId: s.outputItemId,
       locked,
-      note: locked ? `需要 Lv${s.unlockLevel}` : `${itemDef(s.outputItemId).name} ${s.yieldMin}~${s.yieldMax}`,
+      highlight: !locked && isHinted('mine', s.outputItemId),
+      note: locked
+        ? `需要 Lv${s.unlockLevel}`
+        : `${(dur / 1000).toFixed(1)}s · ${itemDef(s.outputItemId).name} ${s.yieldMin}~${s.yieldMax}`,
     }
   })
 })
@@ -53,13 +77,23 @@ function recipeCard(r: RecipeDef): ActionCard {
   const lv = levelInfo(store.state.skills[r.skill]).level
   const locked = lv < r.unlockLevel
   const itemId = r.outputs[0]?.itemId
+  // v3.1：卡面给"输入 → 产出 · 耗时"（此前已解锁配方只显示"Lv1"，信息量为零）
+  const dur = durationOf(store.state, { kind: 'craft', recipeId: r.id })
+  const ins = r.inputs
+    .map((i) => `${i.qty} ${itemDef(i.itemId).name}`)
+    .slice(0, 2)
+    .join(' + ')
+  const more = r.inputs.length > 2 ? ' +…' : ''
   return {
     ref: { kind: 'craft', recipeId: r.id },
     title: r.name,
     icon: '📦',
     itemId,
     locked,
-    note: locked ? `需要 Lv${r.unlockLevel}` : `Lv${r.unlockLevel}`,
+    highlight: !locked && isHinted('craft', itemId),
+    note: locked
+      ? `需要 Lv${r.unlockLevel}`
+      : `${ins}${more} → 1 ${itemId ? itemDef(itemId).name : ''} · ${(dur / 1000).toFixed(1)}s`,
   }
 }
 

@@ -245,7 +245,8 @@ function startAction(
     return [{ type: 'blocked', reason: '队列已满' }]
   }
   state.actions.queue.push(act)
-  return []
+  // v3.1：加入队列给出明确反馈（此前完全静默，测评 B-5）
+  return [{ type: 'notice', text: `已加入队列：${refLabel(ref)}` }]
 }
 
 function stopAction(state: GameState): GameEvent[] {

@@ -183,9 +183,13 @@ function frame(): void {
       continue
     }
     ctx.globalAlpha = Math.max(0, 1 - p.life / p.max)
-    ctx.fillStyle = POPUP_COLORS[p.kind]
     ctx.font = '600 13px ui-sans-serif, system-ui'
     ctx.textAlign = 'center'
+    // v3.1：先描一圈深色边再填色 —— 非技能页的飘字会落在正文上（测评 B-5）
+    ctx.lineWidth = 3
+    ctx.strokeStyle = 'rgba(8,10,18,0.85)'
+    ctx.strokeText(p.text, p.x, p.y)
+    ctx.fillStyle = POPUP_COLORS[p.kind]
     ctx.fillText(p.text, p.x, p.y)
   }
   ctx.globalAlpha = 1
