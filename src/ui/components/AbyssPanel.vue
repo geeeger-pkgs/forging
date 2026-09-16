@@ -41,6 +41,12 @@ const breakdown = computed(() =>
 )
 
 const canChallenge = computed(() => view.value.gap <= 0 && view.value.stamina >= 1)
+/** v3.0 测评 Minor：扫荡次数选项去重 + 文案与实际执行次数一致 */
+const sweepChoices = computed(() => {
+  const max = sweepMax.value
+  return [...new Set([1, 3, max].filter((n) => n >= 1 && n <= max))].sort((a, b) => a - b)
+})
+const sweepActual = computed(() => Math.min(sweepCount.value, sweepMax.value))
 /** 连打可选项：受内容表上限与"下一层是否达标"限制（逐层判定，内核会在首个失败层停止） */
 const chainOptions = computed(() => {
   const max = Math.min(DEF.challengeMaxFloors, 3)
@@ -56,7 +62,7 @@ function fmtMs(ms: number): string {
 
 /** 扫荡产出（与内核 repeatCrystal 同式；扫荡不吃层词条倍率） */
 const bestSweepCrystal = computed(() => 1 + Math.floor(view.value.bestFloor / DEF.repeatCrystal.perFloor))
-const sweepTotal = computed(() => bestSweepCrystal.value * sweepCount.value)
+const sweepTotal = computed(() => bestSweepCrystal.value * sweepActual.value)
 const sweepMax = computed(() => Math.min(DEF.sweepMaxCount, Math.max(1, view.value.stamina)))
 
 function sweep(n: number): void {
@@ -143,11 +149,10 @@ function sweep(n: number): void {
         <div class="chain">
           <span class="dim small">扫荡次数</span>
           <button
-            v-for="n in [1, 3, sweepMax]"
-            :key="n + '-' + sweepMax"
+            v-for="n in sweepChoices"
+            :key="n"
             class="btn sm"
             :class="{ primary: sweepCount === n && n !== sweepMax }"
-            :disabled="n > sweepMax"
             @click="sweepCount = n"
           >
             {{ n === sweepMax ? `用尽体力（${sweepMax}）` : `×${n}` }}
@@ -159,7 +164,7 @@ function sweep(n: number): void {
           :title="view.bestFloor < 1 ? '尚未通关任何层' : view.stamina < 1 ? '体力不足' : ''"
           @click="sweep(sweepCount)"
         >
-          <template v-if="view.bestFloor >= 1">扫荡 ×{{ sweepCount }}（+{{ sweepTotal }} 结晶）</template>
+          <template v-if="view.bestFloor >= 1">扫荡 ×{{ sweepActual }}（+{{ sweepTotal }} 结晶）</template>
           <template v-else>扫荡（需先通关）</template>
         </button>
       </div>

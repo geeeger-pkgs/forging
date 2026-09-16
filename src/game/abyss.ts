@@ -314,8 +314,10 @@ export interface AbyssView {
 }
 
 export function abyssView(state: GameState, now: number): AbyssView {
-  const score = abyssScore(state, now)
   const nextFloor = state.abyss.bestFloor + 1
+  // v3.0 测评 D1（Blocker）：面板必须用**下一层的有效权重**算分数/差额/明细，
+  // 否则倾斜层（迅捷/丰饶/试炼）会出现"面板说打不过、内核判定能过"的口径分裂。
+  const score = abyssScore(state, now, nextFloor)
   const nextRequirement = abyssRequirement(nextFloor)
   return {
     score,

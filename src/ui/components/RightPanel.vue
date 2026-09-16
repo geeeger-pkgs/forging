@@ -115,6 +115,43 @@ function unequip(slot: SlotId): void {
 function equipInstance(instanceId: number): void {
   cmd({ type: 'equip', instanceId })
 }
+/**
+ * v3.0 L2：整理前二次确认。
+ * 测评 D2：原实现一击不可逆且并列时会"卖强留弱"（内核已修：并列保留高强化）；
+ * 回收价不含强化投入，因此确认框里如实提示"将被回收的最高强化等级"。
+ */
+function tidyBag(): void {
+  const equipped = new Set(Object.values(store.state.slots))
+  let willDrop = 0
+  let topEnh = 0
+  const byItem = new Map<string, number[]>()
+  for (const inst of store.state.equipment) {
+    if (equipped.has(inst.instanceId)) continue
+    const list = byItem.get(inst.itemId) ?? []
+    list.push(inst.instanceId)
+    byItem.set(inst.itemId, list)
+  }
+  for (const [itemId, ids] of byItem) {
+    if (ids.length <= 1) continue
+    const list = store.state.equipment
+      .filter((e) => e.itemId === itemId && !equipped.has(e.instanceId))
+      .sort(
+        (a, b) =>
+          perfectScore(b.itemId, b.affixes) - perfectScore(a.itemId, a.affixes) ||
+          (b.enhanceLevel ?? 0) - (a.enhanceLevel ?? 0),
+      )
+    for (const inst of list.slice(1)) {
+      willDrop += 1
+      topEnh = Math.max(topEnh, inst.enhanceLevel ?? 0)
+    }
+  }
+  if (willDrop > 0) {
+    const extra = topEnh > 0 ? `（其中最高强化 +${topEnh}，回收价不含强化投入）` : ''
+    if (!window.confirm(`整理将回收 ${willDrop} 件重复装备（每个原型只留完美度最高的一件）${extra}。确定继续？`)) return
+  }
+  cmd({ type: 'tidyBag' })
+}
+
 /** v3.0：是否可回收（0 收益的遗物/徽记不可回收，避免误删图鉴进度） */
 function recyclable(itemId: string): boolean {
   return (CONTENT.items[itemId]?.value ?? 0) > 0
@@ -228,7 +265,7 @@ function isTop(score: number): boolean {
         <button class="btn sm" :class="{ primary: bagSort === 'enhance' }" @click="bagSort = 'enhance'">强化</button>
         <button class="btn sm" :class="{ primary: bagSort === 'tier' }" @click="bagSort = 'tier'">档位</button>
         <span class="spacer" />
-        <button class="btn sm" title="同一原型只保留最高完美度的一件，其余回收换金" @click="cmd({ type: 'tidyBag' })">整理</button>
+        <button class="btn sm" title="同一原型只保留最高完美度（并列时留高强化）的一件，其余回收换金" @click="tidyBag()">整理</button>
       </div>
       <div v-if="bagItems.length === 0" class="dim">暂无</div>
       <div v-for="b in bagItems" :key="b.inst.instanceId" class="row">

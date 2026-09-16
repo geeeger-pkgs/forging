@@ -367,11 +367,13 @@ const regenPerDay = regenPerHour * 24
 const onlineCap = ABYSS_TABLE.staminaMax
 const offlineCap = ABYSS_TABLE.staminaMax + ABYSS_TABLE.offlineCapExtra
 console.log(`恢复 ${regenPerHour}/时；**在线上限 ${onlineCap}**（溢出丢弃）、**离线上限 ${offlineCap}**（时间比例，仅离线段生效）`)
+// v3.0 测评订正：上线间隔 ≥6h 时，离线结算按 offlineCap 计入 → "1 次/2 次上线"同样可打满日上限
+const loginDaily = (times) => (times === 1 ? offlineCap : times === 2 ? Math.min(2 * offlineCap, regenPerDay) : Math.min(3 * onlineCap, regenPerDay))
 for (const [label, perDay] of [
   ['常驻在线（不溢出）', regenPerDay],
-  ['每日上线 3 次', 3 * onlineCap],
-  ['每日上线 2 次', 2 * onlineCap],
-  ['每日上线 1 次（离线回体）', offlineCap],
+  ['每日上线 3 次', loginDaily(3)],
+  ['每日上线 2 次', loginDaily(2)],
+  ['每日上线 1 次（离线回体）', loginDaily(1)],
 ]) {
   console.log(`  ${label.padEnd(22)} → 最多 ${f(Math.min(perDay, regenPerDay), 0)} 次/日（理论 ${f(regenPerDay, 0)}/日 的 ${f((Math.min(perDay, regenPerDay) / regenPerDay) * 100, 0)}%）`)
 }
@@ -471,7 +473,7 @@ const out = {
   singleStatReach: single,
   rhythm: rhythm.map((r) => ({ floor: r.floor, mod: r.mod, ratio: Number(r.ratio.toFixed(6)) })),
   avgFirstClearCrystalMul: Number(avgCrystalMul.toFixed(4)),
-  offline: { onlineCap, offlineCap, perDay: { online24h: regenPerDay, login1: offlineCap, login2: 2 * onlineCap, login3: 3 * onlineCap } },
+  offline: { onlineCap, offlineCap, perDay: { online24h: regenPerDay, login1: loginDaily(1), login2: loginDaily(2), login3: loginDaily(3) } },
   firstClearAtReach: { early: crystalToFloor(reach.early), mid: crystalToFloor(reach.mid), end: crystalToFloor(reach.end) },
   daysToClearShop: Object.fromEntries(
     [['online', regenPerDay], ['login2', 2 * onlineCap], ['login1', offlineCap]].map(([k, perDay]) => [

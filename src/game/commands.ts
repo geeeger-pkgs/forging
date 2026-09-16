@@ -177,10 +177,11 @@ function tidyBag(state: GameState, events: GameEvent[]): void {
   let gold = 0
   for (const [, list] of groups) {
     if (list.length <= 1) continue
+    // v3.0 测评 D2：并列时保留**高强化**（回收价不含强化投入，卖强留弱=白扔资产）
     const sorted = [...list].sort(
       (a, b) =>
         perfectScore(b.itemId, b.affixes) - perfectScore(a.itemId, a.affixes) ||
-        (a.enhanceLevel ?? 0) - (b.enhanceLevel ?? 0) ||
+        (b.enhanceLevel ?? 0) - (a.enhanceLevel ?? 0) ||
         a.instanceId - b.instanceId,
     )
     for (const inst of sorted.slice(1)) {

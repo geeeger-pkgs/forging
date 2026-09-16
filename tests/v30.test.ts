@@ -19,7 +19,8 @@ import {
 } from '../src/game/abyss'
 import { poolOf, rollAffixes } from '../src/game/affixes'
 import { CODEX_TITLES, codexGate, codexIds, codexProgress, milestoneReached, recordItem, recordRecipe } from '../src/game/codex'
-import { CODEX_BYTES, codexFingerprint, sectionTotal } from '../src/game/codex-store'
+import { normalizeCodex } from '../src/game/codex-store'
+import { CODEX_BYTES, codexFingerprint, fingerprintOf, sectionTotal, type CodexSection } from '../src/game/codex-store'
 import { applyCommand, reforgeBlockReason } from '../src/game/commands'
 import { CONTENT, itemDef } from '../src/game/content'
 import { rerollTrait } from '../src/game/expeditions'
@@ -111,50 +112,66 @@ describe('F2 连打（逐层判定）', () => {
     expect(s.abyss.stamina).toBe(3) // 不消耗
   })
 
+  /** 满档满强化全套（真正写进 slots，否则 abyssScore 恒为 0 —— 测评 D3） */
+  function equipVoid(s: GameState): void {
+    const slots: Record<string, string> = {
+      pick: 'pick_void',
+      crucible: 'crucible_void',
+      hammer: 'hammer_void',
+      mainhand: 'sword_void',
+      head: 'helmet_void',
+      body: 'chest_void',
+      legs: 'legs_void',
+      feet: 'boots_void',
+      necklace: 'necklace_mithril',
+      ring: 'ring_mithril',
+    }
+    for (const [slot, itemId] of Object.entries(slots)) {
+      const id = addInstance(s, itemId)
+      s.equipment.find((e) => e.instanceId === id)!.enhanceLevel = 10
+      ;(s.slots as Record<string, number>)[slot] = id
+    }
+  }
+
   it('连打：逐层通过、只花 1 点体力、只发 1 条事件、首通逐层补发', () => {
     const s = ready(3)
-    // 把第 1~3 层门槛"打穿"：直接抬高深渊永久速度（+1%/级）不够 → 用精通/装备都不便，
-    // 这里改用**直接设置 bestFloor 与体力**并验证"连打 = 逐层补发"的会计恒等式。
-    s.abyss.bestFloor = 0
-    // 六项人为拉满（测试会计，不测平衡）
-    const bump = (st: GameState) => {
-      for (const id of Object.keys(st.materials)) delete st.materials[id]
-      // 用强力装备不可行 → 直接改 weights 不可（内容表只读）；故用 abyssScore 的输入侧：
-      // 装备 3 件满档工具（addInstance 会自动 roll 词缀）
-      for (const itemId of ['pick_void', 'crucible_void', 'hammer_void', 'chest_void', 'legs_void', 'boots_void', 'necklace_mithril', 'ring_mithril']) {
-        const inst = addInstance(st, itemId)
-        const eq = st.equipment.find((e) => e.instanceId === inst)!
-        eq.enhanceLevel = 10
-      }
-    }
-    bump(s)
-    const score = abyssScore(s, 0, 1).total
-    if (score < abyssRequirement(1)) {
-      // 装备仍不足的情况：退化为 blocked 分支校验（不消耗体力）
-      // 装备不足以过第 1 层时，用"永不过关"路径验证 blocked 分支（不消耗体力）
-      const evs: GameEvent[] = []
-      challengeAbyss(s, 0, evs, 3)
-      expect(evs[0].type).toBe('blocked')
-      expect(s.abyss.stamina).toBe(3)
-      return
-    }
+    equipVoid(s)
+    // 自证门槛已过（否则下面的断言会变成"永远走不到"的死代码 —— 测评 D3）
+    expect(abyssScore(s, 0, 1).total).toBeGreaterThan(abyssRequirement(1))
+
     const evs: GameEvent[] = []
     challengeAbyss(s, 0, evs, 3)
     const cleared = evs.filter((e) => e.type === 'abyssCleared')
-    expect(cleared.length).toBe(1)
+    expect(cleared.length).toBe(1) // 只发 1 条
+    expect(cleared[0].type === 'abyssCleared' && cleared[0].count).toBeGreaterThanOrEqual(1)
     if (cleared[0].type === 'abyssCleared') {
       const e = cleared[0]
-      expect(e.count).toBeGreaterThanOrEqual(1)
       expect(e.count).toBeLessThanOrEqual(DEF.challengeMaxFloors)
       expect(e.clearedTo).toBe(s.abyss.bestFloor)
       expect(e.floor).toBe(e.clearedTo)
-      // 首通奖励逐层补发：总结晶 = 各层首通之和
+      expect(e.modName.length).toBeGreaterThan(0)
+      // 首通逐层补发：总结晶 = 各层首通之和（无跳过层 → 无奖励黑洞）
       let want = 0
       for (let n = 1; n <= e.count; n++) want += firstClearCrystal(n)
       expect(e.crystals).toBe(want)
       expect(s.abyss.crystals).toBe(want)
     }
     expect(s.abyss.stamina).toBe(2) // 整次连打只花 1 点
+  })
+
+  it('D1 回归：逐层推进时"面板口径 == 内核判定"（倾斜层必须同源）', () => {
+    const s = ready(3)
+    equipVoid(s)
+    for (let i = 0; i < 12; i++) {
+      const floor = s.abyss.bestFloor + 1
+      // 面板口径 = abyssView 内部用的就是 abyssScore(state, now, nextFloor)
+      const canByPanel = abyssScore(s, 0, floor).total >= abyssRequirement(floor)
+      const evs: GameEvent[] = []
+      s.abyss.stamina = 3
+      challengeAbyss(s, 0, evs, 1)
+      const passed = evs.some((x) => x.type === 'abyssCleared')
+      expect(passed, `第 ${floor} 层：面板 ${canByPanel} / 内核 ${passed}`).toBe(canByPanel)
+    }
   })
 
   it('目标层数被内容表上限截断（≤ challengeMaxFloors）', () => {
@@ -316,6 +333,32 @@ describe('F6 图鉴位图与分区门槛', () => {
     expect(codexIds(s, 'items').has('ore_iron')).toBe(true)
     expect(codexIds(s, 'items').has('ore_copper')).toBe(false)
     expect(s.codex.fp).toBe(codexFingerprint())
+  })
+
+  it('D5：表指纹对"任何位置的增删"都敏感（中段插入也必须检出）', () => {
+    const base: Record<CodexSection, string[]> = {
+      items: ['a', 'b', 'c'],
+      recipes: ['r1', 'r2'],
+      affixes: ['k'],
+      ores: ['o1'],
+    }
+    const fp0 = fingerprintOf(base)
+    expect(fingerprintOf({ ...base, items: ['a', 'x', 'b', 'c'] })).not.toBe(fp0) // 中段插入
+    expect(fingerprintOf({ ...base, items: ['a', 'c'] })).not.toBe(fp0) // 中段删除
+    expect(fingerprintOf({ ...base, items: ['b', 'a', 'c'] })).not.toBe(fp0) // 换序
+    expect(fingerprintOf({ ...base, items: ['a', 'b', 'c'] })).toBe(fp0) // 同序同结果
+    expect(fingerprintOf(base)).toBe(fp0) // 确定性
+    expect(codexFingerprint()).toBe(codexFingerprint())
+  })
+
+  it('指纹不符时不解码旧位图（宁可少算不可错算）', () => {
+    const s = fresh()
+    recordItem(s, 'ore_iron')
+    const stale = { bits: s.codex.bits, fp: 'stale-fingerprint' }
+    // 直接走归一化：应清空为"无进度"，而不是把旧位序套到新表上
+    const normalized = normalizeCodex(stale)
+    expect(normalized.fp).toBe(codexFingerprint())
+    expect(sectionTotal('items')).toBeGreaterThan(0)
   })
 
   it('分区门槛：四档单调、末档=全收集，且面板可给出"还差哪个区"', () => {

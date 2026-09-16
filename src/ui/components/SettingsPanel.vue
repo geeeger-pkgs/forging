@@ -49,6 +49,12 @@ function setVolume(e: Event): void {
   cmd({ type: 'setSettings', patch: { volume: v } })
 }
 
+/** v3.0 L2：实例级自动回收阈值（0 = 关闭） */
+const recycleThr = computed(() => store.state.meta.autoRecyclePerfect ?? 0)
+function setRecycleThr(e: Event): void {
+  cmd({ type: 'setAutoRecyclePerfect', pct: Number((e.target as HTMLInputElement).value) })
+}
+
 function setFx(e: Event): void {
   const v = (e.target as HTMLSelectElement).value as FxLevel
   cmd({ type: 'setSettings', patch: { fx: v } })
@@ -187,6 +193,25 @@ function onClear(): void {
       </p>
       <p class="dim">
         建议保留：精华/煤（强化与符文常用）留 100+；任务需要的小箱/锭请谨慎开启自动；矿石类可放心全自动。
+      </p>
+      <div class="opt-row">
+        <label class="opt" for="bagthr"><span>装备回收</span></label>
+        <!-- v3.0 L2：实例级自动回收（低于阈值完美度的**未装备**实例自动回收；不碰在制消耗件；离线不结算） -->
+        <input
+          id="bagthr"
+          class="slider"
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          :value="recycleThr"
+          @change="setRecycleThr"
+        />
+        <span class="dim">{{ recycleThr === 0 ? '关闭' : `低于完美度 ${recycleThr}% 自动回收` }}</span>
+      </div>
+      <p class="dim">
+        装备回收只处理**未装备**的实例，并会避开当前动作/队列将要消耗的装备；离线期间不结算（避免误卖）。
+        遗物与徽记永不参与自动回收。行囊页的「整理」可一次性回收同原型的重复装备（同分保留高强化）。
       </p>
     </section>
 

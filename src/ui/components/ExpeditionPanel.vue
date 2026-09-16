@@ -69,7 +69,7 @@ const routes = computed<RouteView[]>(() =>
   CONTENT.expeditions.routes.map((def) => {
     const lockReason = routeUnlockReason(store.state, def)
     const running = store.state.meta.expeditions.runs.some((r) => r.routeId === def.id)
-    const team = squad.value
+    const team = effectiveSquad(store.state, picked.value)
     return {
       def,
       lockReason,

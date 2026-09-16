@@ -153,7 +153,8 @@ export function refreshSeason(state: GameState, now: number): GameEvent[] {
  * 迁移使用当前时间（先例：v2.4 的 staminaAt 迁移同样使用 Date.now()，并写入文档）。
  */
 export function realignSeasonForEpoch(state: GameState, now: number): void {
-  if (state.season.index < 0) return
+  // 迁移期防御：v10 以前的档可能根本没有 season 字段（ensureFields 尚未运行）
+  if (!state.season || state.season.index < 0) return
   const idx = seasonIndex(now)
   if (idx < 0 || idx === state.season.index) return
   const tasks = pickSeasonTasks(idx)

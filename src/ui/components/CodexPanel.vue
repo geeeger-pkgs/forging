@@ -4,7 +4,7 @@
 // ============================================================
 import { computed, ref } from 'vue'
 import { store } from '../../app/store'
-import { codexIds, codexMilestonesClaimed, codexProgress } from '../../game/codex'
+import { codexGate, codexIds, codexMilestonesClaimed, codexProgress, milestoneReached } from '../../game/codex'
 import { CONTENT, itemDef } from '../../game/content'
 import { msToSeasonEnd, seasonUnlocked, seasonView, renownForLevel } from '../../game/season'
 import type { CodexCategory } from '../../game/codex'
@@ -13,6 +13,15 @@ const open = ref<string | null>(null)
 
 const progress = computed(() => codexProgress(store.state))
 const claimed = computed(() => codexMilestonesClaimed(store.state))
+/**
+ * v3.0 评审 B-M1：里程碑是**分区门槛**（每个分区各自达标）。
+ * 面板必须按同一判据显示状态并给出"还差哪个区"——
+ * 此前用线性 pct 判断，会出现"面板说可达成、实际不达标"的误报。
+ */
+const gate = computed(() => codexGate(store.state))
+function msReady(m: { req: Record<string, number> }): boolean {
+  return milestoneReached(store.state, m)
+}
 
 /** 分区未解锁条目（展开时显示；伙伴/遗物/配方/词缀/矿场都给出可读名称） */
 function missingOf(cat: CodexCategory): string[] {
@@ -110,16 +119,26 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
         </div>
       </div>
       <div class="milestones">
-        <div v-for="m in CONTENT.season.codexMilestones" :key="m.pct" class="ms" :class="{ done: claimed.has(String(m.pct)) }">
-          <b>{{ Math.round(m.pct * 100) }}%</b>
+        <div
+          v-for="m in CONTENT.season.codexMilestones"
+          :key="m.pct"
+          class="ms"
+          :class="{ done: claimed.has(String(m.pct)), ready: !claimed.has(String(m.pct)) && msReady(m) }"
+        >
+          <b>「{{ m.title }}」</b>
           <span class="dim small">
             {{ m.gold }} 金 + 精华 ×{{ m.essence }}<template v-if="m.tokens"> + 徽记 ×{{ m.tokens }}</template>
           </span>
           <span class="spacer" />
-          <span class="small" :class="claimed.has(String(m.pct)) ? 'good' : 'dim'">
-            {{ claimed.has(String(m.pct)) ? '已发放' : progress.pct >= m.pct ? '可达成' : '未达成' }}
+          <span class="small" :class="claimed.has(String(m.pct)) || msReady(m) ? 'good' : 'dim'">
+            {{ claimed.has(String(m.pct)) ? '已发放' : msReady(m) ? '可领取' : '未达成' }}
           </span>
         </div>
+        <p v-if="gate.next" class="dim small">
+          下一档「{{ gate.next.title }}」还差：{{
+            gate.shortfall.map((x) => `${x.name} ${x.found}/${x.need}`).join(' ｜ ')
+          }}<br />门槛按**分区**计算：每个分区都要各自达标（避免只堆单一分区）。
+        </p>
       </div>
     </section>
 
@@ -256,6 +275,12 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
 }
 .ms.done b {
   color: var(--c-success);
+}
+.ms.ready {
+  border-color: var(--c-accent);
+}
+.ms.ready b {
+  color: var(--c-accent);
 }
 .level {
   display: flex;

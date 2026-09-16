@@ -67,4 +67,4 @@
 | v2.3 | ✅ 完成（测评 7.7 → 处置后达标） | 211 测试全绿 ｜ typecheck ｜ build（gzip JS 79.40KB）｜ 实机烟测（桌面 + 390px 无溢出）｜ sim-season JSON 机器校验 | docs/review-v2.3.md |
 | v2.4 | ✅ 完成（测评 7.6 → 处置后达标，Blocker 0） | 245 测试全绿 ｜ typecheck ｜ build（gzip JS 84.5KB）｜ 实机烟测（桌面 + 窄屏）｜ sim-abyss JSON 机器校验 | docs/review-v2.4.md |
 | v2.5 | ✅ 完成（测评 6.0 不通过 → 处置后**复审 8.1 通过**，Blocker 0） | 309 测试全绿 ｜ typecheck ｜ build（gzip JS 94.85KB）｜ 实机烟测 R1~R6（自动播放门槛 / 帧时 p50·p95·max（tick+audio）/ 三档降级 / 持久化 / 跨视图可见）+ 2 张截图 ｜ audit-fx E1~E7 | docs/review-v2.5.md |
-| v3.0 | ✅ 完成（测评 8.1 → 通过） | 344 测试全绿 ｜ typecheck ｜ build（gzip JS 99.3KB ≤105KB 预算）｜ 实机烟测 R1~R8（含连打/批量真实点击、iframe 窄屏）｜ 四个 sim 脚本读表 + JSON 三件套 ｜ gen:check/audit:fx:check | docs/review-v3.0.md |
+| v3.0 | ✅ 完成（测评 6.5 未通过 → 处置后复核通过） | 356 测试全绿 ｜ typecheck ｜ build（gzip JS 100.5KB ≤105KB 预算）｜ 实机烟测 R1~R8（含连打/批量真实点击、iframe 窄屏）｜ 五个 sim 脚本读表 + JSON 三件套 ｜ gen:check/audit:fx:check | docs/review-v3.0.md |

@@ -273,7 +273,7 @@
     "perDay": {
       "online24h": 48,
       "login1": 24,
-      "login2": 24,
+      "login2": 48,
       "login3": 36
     }
   },

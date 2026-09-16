@@ -321,6 +321,18 @@ export function validateContent(t: ContentTables): string[] {
     if (!(ms[i].pct > 0) || ms[i].pct > 1) errs.push(`图鉴里程碑比例非法: #${i}`)
     if (i > 0 && ms[i].pct <= ms[i - 1].pct) errs.push('图鉴里程碑比例必须递增')
     if (!(ms[i].gold >= 0 && ms[i].essence >= 0 && ms[i].tokens >= 0)) errs.push(`图鉴里程碑奖励非法: #${i}`)
+    // v3.0 评审 M2：分区门槛必须六区齐全且键名合法（否则该分区被静默跳过）
+    const REQ_KEYS = ['items', 'recipes', 'affixes', 'companions', 'relics', 'ores']
+    const req = ms[i].req as Record<string, number> | undefined
+    if (!req) errs.push(`图鉴里程碑缺少分区门槛: #${i}`)
+    else {
+      for (const k of REQ_KEYS) {
+        if (typeof req[k] !== 'number') errs.push(`图鉴里程碑分区门槛缺失: #${i} -> ${k}`)
+        else if (!(req[k] > 0 && req[k] <= 1)) errs.push(`图鉴里程碑分区门槛越界: #${i}.${k}`)
+      }
+      for (const k of Object.keys(req)) if (!REQ_KEYS.includes(k)) errs.push(`图鉴里程碑分区键非法: #${i} -> ${k}`)
+    }
+    if (typeof ms[i].title !== 'string' || ms[i].title.length === 0) errs.push(`图鉴里程碑缺少称号: #${i}`)
   }
   if (!(s.levelReward.goldBase >= 0 && s.levelReward.tokenEvery >= 1)) errs.push('赛季等级奖励配置非法')
 

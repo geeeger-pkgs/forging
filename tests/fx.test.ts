@@ -833,13 +833,52 @@ describe('F9 关键事件均有 toast 出口（信息不依赖动效）', () => 
   })
 
   it('关档只关视觉、不关音效（音效由 sound/volume 独立控制，测评 M3）', () => {
-    // 结构不变量：dispatchFx 里 playCue 必须出现在 "if (level === 'off') continue" **之前**，
-    // 否则关掉特效会顺带静音（并让「特效=关闭 + 音效=开」这一档不可达）
+    // v3.0：off 档在**映射前**短路，但必须保留"要发声的事件"（AUDIO_ONLY 白名单）。
+    // 结构不变量：白名单存在、且 playCue 仍在视觉门（if (visualsOff) continue）之前。
+    expect(storeSrc).toContain('const AUDIO_ONLY = new Set<string>(')
+    expect(storeSrc).toContain('if (visualsOff && !AUDIO_ONLY.has(e.type))')
     const cueIdx = storeSrc.indexOf('playCue(plan.cue)')
-    const gateIdx = storeSrc.indexOf("if (level === 'off') continue")
+    const gateIdx = storeSrc.indexOf('if (visualsOff) continue')
     expect(cueIdx).toBeGreaterThan(-1)
     expect(gateIdx).toBeGreaterThan(-1)
     expect(cueIdx).toBeLessThan(gateIdx)
+  })
+
+  it('AUDIO_ONLY 白名单覆盖"必须发声"的关键事件（改视觉档不影响它们）', () => {
+    // 与 resolveFx 的 cue 覆盖面对齐：任何会发声的事件都必须在白名单里，
+    // 否则 off 档下会被"映射前短路"吞掉声音。
+    const cueEvents = [
+      'enhanceResult',
+      'crateOpened',
+      'levelUp',
+      'prestigeDone',
+      'seasonLevelUp',
+      'codexMilestone',
+      'abyssCleared',
+      'abyssSwept',
+      'abyssItemBought',
+      'taskCompleted',
+      'achievementUnlocked',
+      'blocked',
+      'expeditionDispatched',
+      'expeditionDone',
+      'expeditionClaimed',
+      'bannerUpgraded',
+      'actionStarted',
+      'tutorialGoalMet',
+      'tutorialRewarded',
+      'reforged',
+      'companionLevelUp',
+      'companionRecruited',
+      'traitRerolled',
+      'perkChanged',
+      'loadoutApplied',
+      'itemsGained',
+      'goldGained',
+    ]
+    for (const ev of cueEvents) {
+      expect(storeSrc.includes(`  '${ev}',`), `AUDIO_ONLY 缺少 ${ev}`).toBe(true)
+    }
   })
 
   it('off 档仍推 toast：toast 分支与动效档位无关', () => {

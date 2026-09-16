@@ -52,22 +52,32 @@ export const CODEX_BYTES = Math.ceil(TOTAL_BITS / 8)
 export const CODEX_SECTIONS = SECTIONS
 
 /**
- * 表指纹：id 顺序 + 各分区规模。指纹不符说明内容表变了 → 位序可能移位 → 必须按 id 重建。
- * （用长度 + 前若干 id 的拼接，避免每次调用做全量字符串）
+ * 表指纹：**完整 id 序列**的哈希（v3.0 测评 D5）。
+ * 旧实现只取"长度 + 首尾 id"，中段插入/删除条目的内容表变化无法检出 →
+ * 用新表解码旧位序会**静默错位**（把 A 的进度算到 B 头上）。
+ * 现在任何 id 序列变化都会改变指纹；指纹不符时**不再尝试解码**（见 normalizeCodex）。
  */
-export function codexFingerprint(): string {
-  const parts: string[] = []
-  for (const sec of SECTIONS) {
-    const ids = idsOf(sec)
-    parts.push(`${sec}:${ids.length}:${ids[0] ?? ''}:${ids[ids.length - 1] ?? ''}`)
-  }
+function hashIds(ids: string[]): number {
   let h = 2166136261 >>> 0
-  const s = parts.join('|')
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i)
+  for (const id of ids) {
+    for (let i = 0; i < id.length; i++) {
+      h ^= id.charCodeAt(i)
+      h = Math.imul(h, 16777619) >>> 0
+    }
+    h ^= 0x2c // 分隔符（逗号），避免 "ab"+"c" 与 "a"+"bc" 同哈希
     h = Math.imul(h, 16777619) >>> 0
   }
-  return `${TOTAL_BITS}-${h.toString(36)}`
+  return h >>> 0
+}
+
+export function codexFingerprint(): string {
+  return `${TOTAL_BITS}-${hashIds(SECTIONS.flatMap((sec) => idsOf(sec))).toString(36)}`
+}
+
+/** 纯函数版：供测试验证"任何位置增删条目都会改变指纹" */
+export function fingerprintOf(sectionIds: Record<CodexSection, readonly string[]>): string {
+  const all = SECTIONS.flatMap((sec) => [...(sectionIds[sec] ?? [])])
+  return `${all.length}-${hashIds(all).toString(36)}`
 }
 
 // ---------------- 编解码 ----------------
@@ -185,10 +195,10 @@ export function normalizeCodex(state: CodexState, legacy?: Partial<Record<CodexS
   if (!bits) {
     bits = legacy ? bitsFromIds(splitLegacy(legacy)) : emptyBits()
   } else if (state.fp !== fp) {
-    // 表变了 → 位序可能移位：按**已收集 id** 重建（内容表增删条目时老档无损）
-    const collected: Partial<Record<CodexSection, string[]>> = {}
-    for (const sec of SECTIONS) collected[sec] = [...sectionIds(bits, sec)]
-    bits = bitsFromIds(collected)
+    // 表变了（任何位置增删条目都会改指纹）→ **旧位序不可信，禁止解码**。
+    // 兜底：丢弃位图，交由 checkCodexBackfill 从当前持有物重建（已知损失：
+    // 已消耗/已回收的历史条目不再计入；这是"宁可少算，不可错算"的取舍，测评 D5）。
+    bits = emptyBits()
   }
   return { bits, fp }
 }

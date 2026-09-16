@@ -133,12 +133,53 @@ export { resolveFxLevel }
  * 表现层分发（v2.5）：事件交给纯映射模块 → 音效 / 场景总线 / 飘字。
  * 与 toast 相互独立：动效档位不影响 toast（关键信息永不丢失，设计 §2.5）。
  */
+/**
+ * off 档仍需**发声**的事件（音效与视觉解耦：sound/volume 独立控制）。
+ * 这些事件在 off 档不能因"视觉短路"被跳过，否则关掉特效会顺带静音（v2.5 测评 M3 的教训）。
+ */
+const AUDIO_ONLY = new Set<string>([
+  'enhanceResult',
+  'crateOpened',
+  'levelUp',
+  'prestigeDone',
+  'perkChanged',
+  'seasonLevelUp',
+  'codexMilestone',
+  'companionLevelUp',
+  'companionRecruited',
+  'traitRerolled',
+  'abyssCleared',
+  'abyssSwept',
+  'abyssItemBought',
+  'taskCompleted',
+  'achievementUnlocked',
+  'tutorialGoalMet',
+  'tutorialRewarded',
+  'blocked',
+  'expeditionDispatched',
+  'expeditionDone',
+  'expeditionClaimed',
+  'bannerUpgraded',
+  'actionStarted',
+  'actionCompleted',
+  'reforged',
+  'itemsGained',
+  'goldGained',
+  'loadoutApplied',
+])
+
 function dispatchFx(events: GameEvent[]): void {
   // performance.now 而非 Date.now：Date.now 只有 1ms 分辨率，任何非零开销都会量化成 1ms，
   // 与 0.5ms 的预算无法比较（实机烟测 R3 的第一版读数就是这么假的）
   const t0 = performance.now()
   const level = resolveFxLevel(store.state.meta.settings?.fx)
+  // v3.0 测评 Minor：off 档**在映射前**短路（此前仍构造 plan，与文档"映射前短路"不符，也白做功）
+  const visualsOff = level === 'off'
   for (const e of events) {
+    if (visualsOff && !AUDIO_ONLY.has(e.type)) {
+      // 视觉关档：跳过映射（音效由 sound/volume 独立控制，见下）
+      continue
+    }
     const plan = resolveFx(e, {
       itemName: (id) => CONTENT.items[id]?.name ?? id,
       isRare: (id) => RARE_CATEGORIES.has(CONTENT.items[id]?.category ?? ''),
@@ -151,7 +192,7 @@ function dispatchFx(events: GameEvent[]): void {
       if (playCue(plan.cue)) noteCue(plan.cue)
     }
     // 视觉表现受档位控制：off 全关；reduced 只关粒子爆发（保留飘字与光环，信息不丢）
-    if (level === 'off') continue
+    if (visualsOff) continue
     if (plan.burst && level === 'full' && requestBurst()) emitScene({ kind: 'burst', burst: plan.burst })
     if (plan.ring) emitScene({ kind: 'ring' })
     if (plan.popup) emitScene({ kind: 'popup', text: plan.popup.text, popupKind: plan.popup.kind })
