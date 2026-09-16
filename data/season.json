@@ -3,7 +3,7 @@
   "days": 14,
   "unlockTotalLevel": 60,
   "levels": 20,
-  "renownPerLevel": 4,
+  "renownPerLevel": 3,
   "tierRenown": {
     "bronze": 10,
     "silver": 20,
@@ -153,5 +153,13 @@
         "ores": 1
       }
     }
-  ]
+  ],
+  "scaleByMaturity": {
+    "junior": 0.67,
+    "veteran": 0.66
+  },
+  "coefFloor": 0.35,
+  "maturityBands": {
+    "juniorMaxTotalLevel": 119
+  }
 }

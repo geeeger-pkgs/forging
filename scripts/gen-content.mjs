@@ -4,7 +4,7 @@
 // v1.6：档位扩展至 T7（铜/铁/银/金/秘银/星尘/虚空）；饰品保持 5 档
 // 运行：node scripts/gen-content.mjs
 // ============================================================
-import { writeFileSync, readFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -333,6 +333,17 @@ const companionsDef = { companions, startLevelCap: 30 }
 
 // ---------------- 图鉴与赛季（v2.3） ----------------
 // 数值口径：docs/design-v2.3.md（先模拟后定档，scripts/sim-season.mjs → docs/sim-season-output.json）
+// v3.3 B1：目标缩放系数由 sim 反推 —— 这里**读它的输出**，缺失/字段缺就报错（防止绕过证据链手填）
+const seasonScale = (() => {
+  const p = join(root, 'docs', 'sim-season-output.json')
+  if (!existsSync(p)) throw new Error('缺少 docs/sim-season-output.json（先跑 scripts/sim-season.mjs）')
+  const sim = JSON.parse(readFileSync(p, 'utf8'))
+  const m = sim.maturity
+  if (!m || !m.scaleByMaturity || typeof m.coefFloor !== 'number') {
+    throw new Error('sim 输出缺少 maturity.scaleByMaturity / coefFloor（先跑 scripts/sim-season.mjs）')
+  }
+  return { scaleByMaturity: m.scaleByMaturity, coefFloor: m.coefFloor }
+})()
 const season = {
   /** 赛季纪元（UTC 2026-01-01T00:00:00Z）；seasonIndex = floor((now − epoch) / 14d)，且仅当前向轮换 */
   // v3.0 C8：EPOCH 对齐到**周一 00:00 (+08:00)**（旧值 2026-01-01T00:00Z 是周四，与本地日/周常错位）
@@ -341,7 +352,8 @@ const season = {
   /** 解锁门槛：总等级 */
   unlockTotalLevel: 60,
   levels: 20,
-  renownPerLevel: 4,
+  // v3.3 B1：满级门槛 80 → 60 声望（评审 P3 的苦役口径之一）；等级数与每级奖励不变
+  renownPerLevel: 3,
   tierRenown: { bronze: 10, silver: 20, gold: 40 },
   /** 每级奖励（即时自动发放） */
   levelReward: { goldBase: 500, goldPerLevel: 250, essenceBase: 1, essencePerFour: 1, tokenEvery: 5, tokenAmount: 2, maxLevelTokens: 10 },
@@ -368,6 +380,15 @@ const season = {
     { pct: 0.75, title: '格物致知', gold: 30000, essence: 45, tokens: 6, req: { items: 0.9, recipes: 0.85, affixes: 1, companions: 1, relics: 1, ores: 1 } },
     { pct: 1.0, title: '万物归一', gold: 80000, essence: 80, tokens: 15, req: { items: 1, recipes: 1, affixes: 1, companions: 1, relics: 1, ores: 1 } },
   ],
+  /**
+   * v3.3 B1：赛季目标按账号分档缩放。
+   * **纪律：系数由 scripts/sim-season.mjs 反推，本文件照抄其输出**（不得手填）；
+   * 若 sim 输出缺失则生成器直接报错，保证"脚本先出结论、表照抄"的次序不被破坏。
+   * 承诺口径（twice/always × 全铜·全银·1金2银；once × 全铜 + 老手全银）与推导见 docs/design-v3.3.md §1-B1。
+   */
+  scaleByMaturity: seasonScale.scaleByMaturity,
+  coefFloor: seasonScale.coefFloor,
+  maturityBands: { juniorMaxTotalLevel: 119 },
 }
 
 // ---------------- 深渊回廊（v2.4） ----------------

@@ -35,9 +35,12 @@ const SEASON_TARGETS = {
   mine: { bronze: T.totalMines[0], silver: T.totalMines[1], gold: T.totalMines[2] },
   craft: { bronze: T.totalCrafts[0], silver: T.totalCrafts[1], gold: T.totalCrafts[2] },
   gold: { bronze: T.totalGoldEarned[0], silver: T.totalGoldEarned[1], gold: T.totalGoldEarned[2] },
-  enhance: { bronze: T.totalEnhances[0], silver: T.totalEnhances[1], gold: T.totalEnhances[2] },
+  // v3.1 起强化模板的计数器是 totalEnhancesT4（只计 T4+，防在低档装备上刷）——
+  // 本行曾漏改，导致脚本自 v3.1 起一跑就崩、docs/sim-season-output.json 长期陈旧（v3.3 B1 发现）
+  enhance: { bronze: T.totalEnhancesT4[0], silver: T.totalEnhancesT4[1], gold: T.totalEnhancesT4[2] },
   expedition: { bronze: T.totalExpeditions[0], silver: T.totalExpeditions[1], gold: T.totalExpeditions[2] },
-  reforge: { bronze: T.totalReforges[0], silver: T.totalReforges[1], gold: T.totalReforges[2] },
+  // 同上前提：重铸同样只计 T4+（totalReforgesT4）
+  reforge: { bronze: T.totalReforgesT4[0], silver: T.totalReforgesT4[1], gold: T.totalReforgesT4[2] },
 }
 
 const LEVELS = SEASON.levels
@@ -247,6 +250,119 @@ console.log(`3. 档位梯度：全铜最不利 ${f(bronzeAlways.hoursMid, 0)}h�
 console.log(`4. 通胀：合计奖励 ≈ 终局 ${f((cumValue + codexRewardValue) / 74845, 2)} 小时产出；徽记注入占远征 ${pct(seasonTokenInject / (tokenPerDay * 14))} ✅`)
 console.log(`5. 离线不对称：强化（离线跳过）与重铸（命令）只能在线推进，目标已按在线权重下调（强化金档 ${SEASON_TARGETS.enhance.gold} 次 = 中期 ${f(taskHours('enhance', 'gold', STAGE.mid), 0)}h 在线）`)
 
+// ── H 账号分档 × 上线节奏：目标缩放系数（v3.3 B1） ─────────────
+// 起因（v3.0 硬核评审 P3）：中期玩家「每日上线 1 次」打满金档要 300+ 小时（270% 预算）。
+// 纪律（v3.3 计划评审 P-B1）：**不预设系数**，由本段反推：
+//   requiredCoef = 预算 / 最不利组合耗时；取承诺集内最小值（向下取整 2 位），再受表内下限约束。
+//
+// 参赛资格（重要）：赛季在总等级 60 解锁（season.json.unlockTotalLevel），
+//   故 T1 产出的"新号"**根本不参赛** —— 它仅作为对照行输出，不参与定档。
+// 分档（参保玩家，按技能总等级）：新晋 60~119 / 老手 ≥120（= 传承解锁线，真实分水岭）。
+//   新晋用 T3 中期模型（保守：T4/T5 玩家实际更快）；老手用 T7 终局模型。
+// 承诺集（由证据决定，写进文档）：twice/always × {全铜, 全银, 1金+2银}；once × {全铜 全档, 全银 老手}；
+//   3 金不承诺（容错档）。满级门槛 = 全银（renownPerLevel 4→3 ⇒ 满级 60 声望）。
+// 对照档（不参赛）：T1 产出的"新号"，仅用于展示"若允许参赛会需要多小的系数"
+const EARLY = {
+  loginsPerDay: 1,
+  expRoutes: 1,
+  name: '新号 T1',
+  // 派生口径（可复查）：每小时金币取 sim-audit B 段的 T1 基线 2812；轮/时沿用中期
+  // （同为手动挖矿节奏，差异在产出而非操作）；强化次数取中期一半（档位低、材料少）
+  mineRounds: STAGE.mid.mineRounds,
+  goldPerRound: 2812 / STAGE.mid.mineRounds,
+  smeltRounds: STAGE.mid.smeltRounds,
+  orePerSmelt: 3,
+  enhancePerHour: 40,
+}
+
+
+const INELIGIBLE_NOTE = '赛季未解锁（总等级<60），仅作对照'
+const CLASSES = {
+  junior: { name: '新晋(60~119)', stage: 'mid', eligible: true },
+  veteran: { name: '老手(≥120)', stage: 'end', eligible: true },
+  fresh: { name: '新号(T1,对照)', stage: 'early', eligible: false },
+}
+const STAGES = { early: EARLY, mid: STAGE.mid, end: STAGE.end }
+const goldPerHour = (st) => st.goldPerRound * st.mineRounds
+const REFORGE_GOLD_BY_CLASS = { early: 400, mid: 1100, end: 9500 } // affixes.reforge.goldByTier 的 T2/T3/T7
+
+console.log('')
+console.log('═'.repeat(78))
+console.log('H. 账号分档 × 上线节奏：目标缩放系数反推（v3.3 B1）')
+console.log('═'.repeat(78))
+const MATURITY_PROMISES = []
+for (const [cls, def] of Object.entries(CLASSES)) {
+  for (const off of OFFLINE_FACTORS) {
+    for (const sc of SCENARIOS) {
+      const hoursMid = Math.max(...combos.map((c) => totalHours(c, sc.tiers, STAGES[def.stage])))
+      const budget = SEASON_DAYS * 24 * off.factor
+      let promised = def.eligible
+      if (sc.key === 'gold2') promised = false
+      else if (off.key === 'once') promised = def.eligible && (sc.key === 'bronze3' || (sc.key === 'silver3' && cls === 'veteran'))
+      MATURITY_PROMISES.push({
+        cls,
+        stage: def.stage,
+        stageName: STAGES[def.stage].name,
+        eligible: def.eligible,
+        offline: off.key,
+        scenario: sc.key,
+        hoursMid,
+        budget,
+        ratio: hoursMid / budget,
+        requiredCoef: budget / hoursMid,
+        promised,
+      })
+    }
+  }
+}
+/** 系数下限（登记在 data/season.json.coefFloor，测试断言一致）：再低会让赛季奖励"奖杯化" */
+const COEF_FLOOR = 0.35
+const scaleByMaturity = {}
+for (const cls of Object.keys(CLASSES)) {
+  if (!CLASSES[cls].eligible) continue
+  const need = MATURITY_PROMISES.filter((p) => p.cls === cls && p.promised).map((p) => p.requiredCoef)
+  const raw = Math.min(1, Math.floor(Math.min(...need) * 100) / 100)
+  scaleByMaturity[cls] = Math.max(COEF_FLOOR, raw)
+}
+console.log(['账号档'.padEnd(16), '上线节奏'.padEnd(11), '场景'.padEnd(9), '最不利h'.padStart(9), '预算h'.padStart(7), '占比'.padStart(7), '承诺'.padStart(5)].join(' | '))
+for (const p of MATURITY_PROMISES) {
+  console.log(
+    [
+      p.cls.padEnd(16),
+      p.offline.padEnd(11),
+      p.scenario.padEnd(9),
+      f(p.hoursMid, 0).padStart(9),
+      f(p.budget, 0).padStart(7),
+      pct(p.ratio, 0).padStart(7),
+      (p.promised ? '✓' : '—').padStart(5),
+    ].join(' | '),
+  )
+}
+console.log('')
+console.log(`反推系数：新晋 ×${f(scaleByMaturity.junior)} ｜ 老手 ×${f(scaleByMaturity.veteran)}（下限 ${COEF_FLOOR}，上限 1.00）`)
+console.log(`（${CLASSES.fresh.name}：${INELIGIBLE_NOTE}）`)
+
+// 缩放后复算 + 反挂保护（严格递增、≥ 基础 × 下限系数）
+const scaledTargets = {}
+const guards = { monotone: true, floorOk: true }
+for (const cls of Object.keys(scaleByMaturity)) {
+  const coef = scaleByMaturity[cls]
+  scaledTargets[cls] = {}
+  for (const tpl of SEASON.templates) {
+    const scaled = tpl.targets.map((t) => Math.max(1, Math.ceil(t * coef)))
+    scaledTargets[cls][tpl.counter] = scaled
+    if (!(scaled[0] < scaled[1] && scaled[1] < scaled[2])) guards.monotone = false
+    if (scaled.some((v, i) => v < tpl.targets[i] * COEF_FLOOR)) guards.floorOk = false
+  }
+}
+const afterScale = MATURITY_PROMISES.map((p) => ({ ...p, ratioAfter: (p.hoursMid * (scaleByMaturity[p.cls] ?? 1)) / p.budget }))
+const promisedCells = afterScale.filter((p) => p.promised)
+const promisedMaxAfter = Math.max(...promisedCells.map((p) => p.ratioAfter))
+console.log(`缩放后承诺集最差占比 ${pct(promisedMaxAfter, 0)}（应 ≤100%）｜ 严格递增 ${guards.monotone ? '✅' : '⚠'} ｜ 下限保护 ${guards.floorOk ? '✅' : '⚠'}`)
+const reforgeGoldNeeded = T.totalReforgesT4[2] * REFORGE_GOLD_BY_CLASS.mid
+console.log(`重铸模板（金币门槛，单列）：金档 ${T.totalReforgesT4[2]} 次 × 单次造价(T3 ${REFORGE_GOLD_BY_CLASS.mid} 金) = ${reforgeGoldNeeded} 金 ≈ 中期 ${f(reforgeGoldNeeded / (goldPerHour(STAGE.mid) * SEASON_DAYS * 24 * 0.333), 2)} 倍「每日 1 次」14 天产出`)
+
+
 // ── 机器校验 JSON ─────────────────────────────────────────────
 const summary = {
   codex: {
@@ -278,6 +394,22 @@ const summary = {
     tokenInjectShare: seasonTokenInject / (tokenPerDay * 14),
   },
   feasibility,
+  maturity: {
+    classes: ['early', 'mid', 'end'],
+    stageParams: STAGES,
+    stageDerivation: {
+      early: '每小时金币取 sim-audit B 段 T1 基线 2812；轮/时沿用中期；强化次数取中期一半',
+      mid: 'stages.mid（T3，v2.3 既有口径）',
+      end: 'stages.end（T7，v2.3 既有口径）',
+    },
+    promises: afterScale,
+    scaleByMaturity,
+    coefFloor: COEF_FLOOR,
+    scaledTargets,
+    guards,
+    promisedMaxRatioAfter: promisedMaxAfter,
+    reforgeGoldMetric: { goldByClass: REFORGE_GOLD_BY_CLASS, goldNeededGoldTier: T.totalReforgesT4[2] * REFORGE_GOLD_BY_CLASS.mid },
+  },
 }
 writeFileSync(join(root, 'docs', 'sim-season-output.json'), JSON.stringify(summary, null, 2) + '\n')
 console.log('')

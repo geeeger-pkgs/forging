@@ -328,6 +328,27 @@ export function validateContent(t: ContentTables): string[] {
       if (tpl.targets[i] <= tpl.targets[i - 1]) errs.push(`赛季目标必须递增: ${tpl.id}`)
     }
   }
+  // v3.3 B1：目标缩放的合法性（系数范围与下限、缩放后仍严格递增且不低于 base×下限、分档边界）
+  const scale = s.scaleByMaturity
+  if (!scale) errs.push('缺少赛季缩放系数 scaleByMaturity')
+  else {
+    for (const k of ['junior', 'veteran'] as const) {
+      const v = scale[k]
+      if (!(v > 0) || v > 1) errs.push(`赛季缩放系数非法: ${k} = ${v}`)
+      else if (v < s.coefFloor) errs.push(`赛季缩放系数低于下限: ${k} = ${v} < ${s.coefFloor}`)
+    }
+  }
+  if (!(s.coefFloor > 0 && s.coefFloor <= 1)) errs.push(`赛季缩放下限非法: ${s.coefFloor}`)
+  if (!(s.maturityBands.juniorMaxTotalLevel >= s.unlockTotalLevel)) {
+    errs.push('分档边界应不小于赛季解锁门槛（否则存在"能参赛却按未参赛档缩放"的空洞）')
+  }
+  if (scale && s.coefFloor > 0) {
+    for (const tpl of s.templates) {
+      const scaled = tpl.targets.map((t) => Math.max(1, Math.ceil(t * scale.junior)))
+      if (!(scaled[0] < scaled[1] && scaled[1] < scaled[2])) errs.push(`缩放后目标不再递增: ${tpl.id}`)
+      if (scaled.some((v, i) => v < tpl.targets[i] * s.coefFloor)) errs.push(`缩放后目标低于下限保护: ${tpl.id}`)
+    }
+  }
   const ms = s.codexMilestones
   if (ms.length === 0) errs.push('图鉴里程碑为空')
   for (let i = 0; i < ms.length; i++) {

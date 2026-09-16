@@ -81,8 +81,8 @@
   "season": {
     "days": 14,
     "levels": 20,
-    "renownPerLevel": 4,
-    "fullLevelRenown": 80,
+    "renownPerLevel": 3,
+    "fullLevelRenown": 60,
     "maxRenown": 120,
     "tierRenown": {
       "bronze": 10,
@@ -252,5 +252,639 @@
       "okEnd": false,
       "okSilent": false
     }
-  ]
+  ],
+  "maturity": {
+    "classes": [
+      "early",
+      "mid",
+      "end"
+    ],
+    "stageParams": {
+      "early": {
+        "loginsPerDay": 1,
+        "expRoutes": 1,
+        "name": "新号 T1",
+        "mineRounds": 515,
+        "goldPerRound": 5.460194174757282,
+        "smeltRounds": 629,
+        "orePerSmelt": 3,
+        "enhancePerHour": 40
+      },
+      "mid": {
+        "loginsPerDay": 2,
+        "expRoutes": 2,
+        "name": "中期 T3",
+        "mineRounds": 515,
+        "goldPerRound": 36,
+        "smeltRounds": 629,
+        "orePerSmelt": 3,
+        "enhancePerHour": 80
+      },
+      "end": {
+        "loginsPerDay": 3,
+        "expRoutes": 4,
+        "name": "终局 T7",
+        "mineRounds": 382,
+        "goldPerRound": 196,
+        "smeltRounds": 417,
+        "orePerSmelt": 3,
+        "enhancePerHour": 160
+      }
+    },
+    "stageDerivation": {
+      "early": "每小时金币取 sim-audit B 段 T1 基线 2812；轮/时沿用中期；强化次数取中期一半",
+      "mid": "stages.mid（T3，v2.3 既有口径）",
+      "end": "stages.end（T7，v2.3 既有口径）"
+    },
+    "promises": [
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "bronze3",
+        "hoursMid": 164.8994259822358,
+        "budget": 336,
+        "ratio": 0.4907721011376066,
+        "requiredCoef": 2.0376056374883706,
+        "promised": true,
+        "ratioAfter": 0.3288173077621964
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "silver3",
+        "hoursMid": 284.764879099545,
+        "budget": 336,
+        "ratio": 0.8475145211295982,
+        "requiredCoef": 1.1799207860971674,
+        "promised": true,
+        "ratioAfter": 0.5678347291568309
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "full",
+        "hoursMid": 302.56104190998536,
+        "budget": 336,
+        "ratio": 0.9004792913987659,
+        "requiredCoef": 1.1105197082840659,
+        "promised": true,
+        "ratioAfter": 0.6033211252371732
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "gold2",
+        "hoursMid": 379.14994606256744,
+        "budget": 336,
+        "ratio": 1.128422458519546,
+        "requiredCoef": 0.8861929257522647,
+        "promised": false,
+        "ratioAfter": 0.7560430472080958
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "bronze3",
+        "hoursMid": 164.8994259822358,
+        "budget": 224,
+        "ratio": 0.7361581517064099,
+        "requiredCoef": 1.3584037583255804,
+        "promised": true,
+        "ratioAfter": 0.49322596164329463
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "silver3",
+        "hoursMid": 284.764879099545,
+        "budget": 224,
+        "ratio": 1.2712717816943973,
+        "requiredCoef": 0.7866138573981116,
+        "promised": true,
+        "ratioAfter": 0.8517520937352463
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "full",
+        "hoursMid": 302.56104190998536,
+        "budget": 224,
+        "ratio": 1.350718937098149,
+        "requiredCoef": 0.7403464721893773,
+        "promised": true,
+        "ratioAfter": 0.9049816878557598
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "gold2",
+        "hoursMid": 379.14994606256744,
+        "budget": 224,
+        "ratio": 1.6926336877793189,
+        "requiredCoef": 0.5907952838348431,
+        "promised": false,
+        "ratioAfter": 1.1340645708121437
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "bronze3",
+        "hoursMid": 164.8994259822358,
+        "budget": 112,
+        "ratio": 1.4723163034128197,
+        "requiredCoef": 0.6792018791627902,
+        "promised": true,
+        "ratioAfter": 0.9864519232865893
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "silver3",
+        "hoursMid": 284.764879099545,
+        "budget": 112,
+        "ratio": 2.5425435633887945,
+        "requiredCoef": 0.3933069286990558,
+        "promised": false,
+        "ratioAfter": 1.7035041874704926
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "full",
+        "hoursMid": 302.56104190998536,
+        "budget": 112,
+        "ratio": 2.701437874196298,
+        "requiredCoef": 0.37017323609468866,
+        "promised": false,
+        "ratioAfter": 1.8099633757115197
+      },
+      {
+        "cls": "junior",
+        "stage": "mid",
+        "stageName": "中期 T3",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "gold2",
+        "hoursMid": 379.14994606256744,
+        "budget": 112,
+        "ratio": 3.3852673755586378,
+        "requiredCoef": 0.29539764191742157,
+        "promised": false,
+        "ratioAfter": 2.2681291416242875
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "bronze3",
+        "hoursMid": 92.72268886461512,
+        "budget": 336,
+        "ratio": 0.27596038352564023,
+        "requiredCoef": 3.6237085454952167,
+        "promised": true,
+        "ratioAfter": 0.18213385312692257
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "silver3",
+        "hoursMid": 168.16377264680403,
+        "budget": 336,
+        "ratio": 0.5004874185916787,
+        "requiredCoef": 1.9980522243973675,
+        "promised": true,
+        "ratioAfter": 0.33032169627050795
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "full",
+        "hoursMid": 191.72398207088779,
+        "budget": 336,
+        "ratio": 0.5706070894966898,
+        "requiredCoef": 1.7525194103039639,
+        "promised": true,
+        "ratioAfter": 0.3766006790678153
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "always",
+        "scenario": "gold2",
+        "hoursMid": 217.2071264454405,
+        "budget": 336,
+        "ratio": 0.6464497810876205,
+        "requiredCoef": 1.546910571023086,
+        "promised": false,
+        "ratioAfter": 0.4266568555178296
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "bronze3",
+        "hoursMid": 92.72268886461512,
+        "budget": 224,
+        "ratio": 0.41394057528846034,
+        "requiredCoef": 2.415805696996811,
+        "promised": true,
+        "ratioAfter": 0.27320077969038387
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "silver3",
+        "hoursMid": 168.16377264680403,
+        "budget": 224,
+        "ratio": 0.7507311278875181,
+        "requiredCoef": 1.3320348162649118,
+        "promised": true,
+        "ratioAfter": 0.4954825444057619
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "full",
+        "hoursMid": 191.72398207088779,
+        "budget": 224,
+        "ratio": 0.8559106342450348,
+        "requiredCoef": 1.168346273535976,
+        "promised": true,
+        "ratioAfter": 0.5649010186017229
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "twice",
+        "scenario": "gold2",
+        "hoursMid": 217.2071264454405,
+        "budget": 224,
+        "ratio": 0.9696746716314308,
+        "requiredCoef": 1.0312737140153907,
+        "promised": false,
+        "ratioAfter": 0.6399852832767444
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "bronze3",
+        "hoursMid": 92.72268886461512,
+        "budget": 112,
+        "ratio": 0.8278811505769207,
+        "requiredCoef": 1.2079028484984056,
+        "promised": true,
+        "ratioAfter": 0.5464015593807677
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "silver3",
+        "hoursMid": 168.16377264680403,
+        "budget": 112,
+        "ratio": 1.5014622557750361,
+        "requiredCoef": 0.6660174081324559,
+        "promised": true,
+        "ratioAfter": 0.9909650888115238
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "full",
+        "hoursMid": 191.72398207088779,
+        "budget": 112,
+        "ratio": 1.7118212684900695,
+        "requiredCoef": 0.584173136767988,
+        "promised": false,
+        "ratioAfter": 1.1298020372034459
+      },
+      {
+        "cls": "veteran",
+        "stage": "end",
+        "stageName": "终局 T7",
+        "eligible": true,
+        "offline": "once",
+        "scenario": "gold2",
+        "hoursMid": 217.2071264454405,
+        "budget": 112,
+        "ratio": 1.9393493432628617,
+        "requiredCoef": 0.5156368570076953,
+        "promised": false,
+        "ratioAfter": 1.2799705665534888
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "always",
+        "scenario": "bronze3",
+        "hoursMid": 384.3197620055355,
+        "budget": 336,
+        "ratio": 1.143808815492665,
+        "requiredCoef": 0.874271981868995,
+        "promised": false,
+        "ratioAfter": 1.143808815492665
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "always",
+        "scenario": "silver3",
+        "hoursMid": 675.6055511461445,
+        "budget": 336,
+        "ratio": 2.010730806982573,
+        "requiredCoef": 0.49733161521539615,
+        "promised": false,
+        "ratioAfter": 2.010730806982573
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "always",
+        "scenario": "full",
+        "hoursMid": 772.4950213371267,
+        "budget": 336,
+        "ratio": 2.299092325408115,
+        "requiredCoef": 0.4349542595347878,
+        "promised": false,
+        "ratioAfter": 2.299092325408115
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "always",
+        "scenario": "gold2",
+        "hoursMid": 956.4950213371267,
+        "budget": 336,
+        "ratio": 2.846711373027163,
+        "requiredCoef": 0.35128253938038356,
+        "promised": false,
+        "ratioAfter": 2.846711373027163
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "twice",
+        "scenario": "bronze3",
+        "hoursMid": 384.3197620055355,
+        "budget": 224,
+        "ratio": 1.7157132232389978,
+        "requiredCoef": 0.5828479879126633,
+        "promised": false,
+        "ratioAfter": 1.7157132232389978
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "twice",
+        "scenario": "silver3",
+        "hoursMid": 675.6055511461445,
+        "budget": 224,
+        "ratio": 3.0160962104738593,
+        "requiredCoef": 0.33155441014359743,
+        "promised": false,
+        "ratioAfter": 3.0160962104738593
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "twice",
+        "scenario": "full",
+        "hoursMid": 772.4950213371267,
+        "budget": 224,
+        "ratio": 3.4486384881121728,
+        "requiredCoef": 0.2899695063565252,
+        "promised": false,
+        "ratioAfter": 3.4486384881121728
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "twice",
+        "scenario": "gold2",
+        "hoursMid": 956.4950213371267,
+        "budget": 224,
+        "ratio": 4.270067059540744,
+        "requiredCoef": 0.23418835958692236,
+        "promised": false,
+        "ratioAfter": 4.270067059540744
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "once",
+        "scenario": "bronze3",
+        "hoursMid": 384.3197620055355,
+        "budget": 112,
+        "ratio": 3.4314264464779956,
+        "requiredCoef": 0.2914239939563317,
+        "promised": false,
+        "ratioAfter": 3.4314264464779956
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "once",
+        "scenario": "silver3",
+        "hoursMid": 675.6055511461445,
+        "budget": 112,
+        "ratio": 6.032192420947719,
+        "requiredCoef": 0.16577720507179872,
+        "promised": false,
+        "ratioAfter": 6.032192420947719
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "once",
+        "scenario": "full",
+        "hoursMid": 772.4950213371267,
+        "budget": 112,
+        "ratio": 6.8972769762243455,
+        "requiredCoef": 0.1449847531782626,
+        "promised": false,
+        "ratioAfter": 6.8972769762243455
+      },
+      {
+        "cls": "fresh",
+        "stage": "early",
+        "stageName": "新号 T1",
+        "eligible": false,
+        "offline": "once",
+        "scenario": "gold2",
+        "hoursMid": 956.4950213371267,
+        "budget": 112,
+        "ratio": 8.540134119081488,
+        "requiredCoef": 0.11709417979346118,
+        "promised": false,
+        "ratioAfter": 8.540134119081488
+      }
+    ],
+    "scaleByMaturity": {
+      "junior": 0.67,
+      "veteran": 0.66
+    },
+    "coefFloor": 0.35,
+    "scaledTargets": {
+      "junior": {
+        "totalMines": [
+          2680,
+          6030,
+          12060
+        ],
+        "totalCrafts": [
+          670,
+          1608,
+          3216
+        ],
+        "totalGoldEarned": [
+          167500,
+          335000,
+          536000
+        ],
+        "totalEnhancesT4": [
+          81,
+          215,
+          402
+        ],
+        "totalExpeditions": [
+          9,
+          14,
+          19
+        ],
+        "totalReforgesT4": [
+          11,
+          24,
+          41
+        ]
+      },
+      "veteran": {
+        "totalMines": [
+          2640,
+          5940,
+          11880
+        ],
+        "totalCrafts": [
+          660,
+          1584,
+          3168
+        ],
+        "totalGoldEarned": [
+          165000,
+          330000,
+          528000
+        ],
+        "totalEnhancesT4": [
+          80,
+          212,
+          396
+        ],
+        "totalExpeditions": [
+          8,
+          14,
+          19
+        ],
+        "totalReforgesT4": [
+          10,
+          24,
+          40
+        ]
+      }
+    },
+    "guards": {
+      "monotone": true,
+      "floorOk": true
+    },
+    "promisedMaxRatioAfter": 0.9909650888115238,
+    "reforgeGoldMetric": {
+      "goldByClass": {
+        "early": 400,
+        "mid": 1100,
+        "end": 9500
+      },
+      "goldNeededGoldTier": 66000
+    }
+  }
 }

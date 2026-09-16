@@ -33,6 +33,33 @@ export function msToSeasonEnd(now: number): number {
   return (idx + 1) * SEASON_MS + DEF.epoch - now
 }
 
+// ---------------- v3.3 B1：目标按账号分档缩放 ----------------
+/**
+ * 账号分档：新晋（总等级 ≤ juniorMaxTotalLevel）/ 老手。
+ * 系数取自内容表 `scaleByMaturity`，**由 `scripts/sim-season.mjs` 反推**（脚本先出结论、表照抄；
+ * 测试断言"表 == 脚本输出"）。承诺口径与推导见 `docs/design-v3.3.md` §1-B1。
+ *
+ * 为什么按当前总等级而不是新增历史字段：不加存档字段（本版不升 SAVE_VERSION）。
+ * 已知副作用（登记在文档）：传承后总等级回落 → 目标短暂变小、赛季档位可能一次跳升；
+ * 该效应有界（每赛季每级奖励只发一次，rewardedLevel 单调），v3.4 视实机反馈再评估是否改为落档快照。
+ */
+export function maturityClassOf(state: GameState): 'junior' | 'veteran' {
+  return totalLevelOf(state) <= DEF.maturityBands.juniorMaxTotalLevel ? 'junior' : 'veteran'
+}
+
+/** 某赛季模板在当前账号下的目标（缩放后；**只读派生**，不修改内容表） */
+export function seasonTargetsFor(state: GameState, tplId: string): [number, number, number] {
+  const tpl = templateById(tplId)
+  const base = (tpl?.targets ?? [0, 0, 0]) as [number, number, number]
+  const coef = DEF.scaleByMaturity[maturityClassOf(state)]
+  return base.map((t) => Math.max(1, Math.ceil(t * coef))) as [number, number, number]
+}
+
+/** 当前缩放系数（UI 展示与测试用） */
+export function seasonScaleCoef(state: GameState): number {
+  return DEF.scaleByMaturity[maturityClassOf(state)]
+}
+
 /** 确定性地从模板池抽取 3 条（同赛季所有玩家一致；不做随机，评审 B3-2 的可复现要求） */
 export function pickSeasonTasks(index: number): SeasonSlot[] {
   const pool = DEF.templates
@@ -90,8 +117,9 @@ export function achievedTier(state: GameState, slot: SeasonSlot): number {
   const tpl = templateById(slot.defId)
   if (!tpl) return -1
   const v = seasonTaskProgress(state, slot)
+  const targets = seasonTargetsFor(state, slot.defId) // v3.3 B1：判定与展示同源（缩放后）
   let best = -1
-  for (let i = 0; i < tpl.targets.length; i++) if (v >= tpl.targets[i]) best = i
+  for (let i = 0; i < targets.length; i++) if (v >= targets[i]) best = i
   return best
 }
 
@@ -202,6 +230,9 @@ export interface SeasonView {
   maxRenown: number
   level: number
   maxLevel: number
+  /** v3.3 B1：目标缩放系数（新晋 0.67 / 老手 0.66）与档位名 */
+  scale: number
+  maturity: 'junior' | 'veteran'
   pct: number
   msLeft: number
   tasks: {
@@ -229,7 +260,7 @@ export function seasonView(state: GameState, now: number): SeasonView {
       desc: tpl?.desc ?? '',
       unit: tpl?.unit ?? '',
       progress: seasonTaskProgress(state, slot),
-      targets: (tpl?.targets ?? [0, 0, 0]) as [number, number, number],
+      targets: seasonTargetsFor(state, slot.defId),
       tier,
       renown: tier >= 0 ? DEF.tierRenown[TIERS[tier]] : 0,
       onlineOnly: tpl ? ONLINE_ONLY_COUNTERS.includes(tpl.counter) : false,
@@ -243,6 +274,9 @@ export function seasonView(state: GameState, now: number): SeasonView {
     maxRenown: DEF.tierRenown.gold * slots.length,
     level,
     maxLevel: DEF.levels,
+    /** v3.3 B1：当前账号档位与目标缩放系数（UI 如实标注） */
+    scale: seasonScaleCoef(state),
+    maturity: maturityClassOf(state),
     pct: DEF.levels > 0 ? level / DEF.levels : 0,
     msLeft: msToSeasonEnd(now),
     tasks: slots,

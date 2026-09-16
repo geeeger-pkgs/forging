@@ -575,6 +575,12 @@ export interface SeasonDef {
   }
   templates: SeasonTemplateDef[]
   codexMilestones: CodexMilestoneDef[]
+  /** v3.3 B1：赛季目标按账号分档缩放（系数由 scripts/sim-season.mjs 反推，测试断言与脚本输出一致） */
+  scaleByMaturity: { junior: number; veteran: number }
+  /** v3.3 B1：系数下限（防奖杯化；脚本 guards.floorOk 用同一值） */
+  coefFloor: number
+  /** v3.3 B1：分档边界（总等级 ≤此值为新晋，其余为老手） */
+  maturityBands: { juniorMaxTotalLevel: number }
 }
 
 // ---------- 伙伴与远征（v2.2） ----------

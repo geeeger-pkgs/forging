@@ -168,6 +168,11 @@ const renownTarget = computed(() => renownForLevel(season.value.level + 1))
           每 {{ CONTENT.season.days }} 天轮换：3 条任务从 {{ CONTENT.season.templates.length }} 条模板中按赛季确定性抽取；每档只计最高达成（不叠加）；
           达到等级即时发放奖励。挖掘/熔炼/锻造/金币/远征离线照常推进，标记「需在线」的任务离线不增长。
         </p>
+        <!-- v3.3 B1：目标已按账号分档缩放，如实标注（否则玩家会以为表里数字变了） -->
+        <p class="dim small">
+          目标已按你的账号进度调整：{{ season.maturity === 'junior' ? '新晋' : '老手' }}档 ×{{ season.scale.toFixed(2) }}
+          （同一模板对不同阶段的账号给不同数量的目标，精力投入对齐 14 天窗口）
+        </p>
         <div class="tasks">
           <div v-for="t in season.tasks" :key="t.defId" class="task">
             <div class="thead">
