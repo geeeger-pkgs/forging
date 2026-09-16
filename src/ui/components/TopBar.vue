@@ -236,5 +236,10 @@ const buffs = computed(() =>
     order: 3;
     flex: 1 1 100%;
   }
+  /* v3.7.2（用户反馈）：动作行换到第二行后，第一行只剩"金币 + 玩家/里程碑"，
+     .right 紧跟 .left 导致最右侧空出一大片 → 显式推到行尾，与金币两端对齐 */
+  .right {
+    margin-left: auto;
+  }
 }
 </style>
