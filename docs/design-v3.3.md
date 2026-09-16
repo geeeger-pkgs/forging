@@ -60,13 +60,13 @@
 
 ## 3. 验收标准（DoD）
 
-- [ ] **A 组**：`vitest.config.ts` 含 `plugins: [vue()]`，默认环境仍 node；组件用例以 `// @vitest-environment jsdom` 逐文件声明；**A2 操作矩阵 ≥12 条**，每条断言"元素可达 + 交互后 store 变化"；**A4** 真实 v13 fixture 迁移回归通过；`npm test` 全绿且内核用例数量不减
-- [ ] **B1**：`docs/sim-season-output.json` 新增"profile × 账号档 × 模板"的工时/预算占比/**反推系数**；`data/season.json.scaleByMaturity` 与脚本输出一致；承诺口径（`twice`/`always` 三档、`once` 铜银档）**全部 ≤100% 预算**；缩放后 targets 严格递增且 ≥base×0.5；`renownPerLevel=3`（满级 60）且等级奖励不变；S12 断言"base targets 未被覆盖"
-- [ ] **C 组**：C1 徽标（两处挂点，且"无可领时消失"）、C2 方向键、C3 键盘化 + 40px、C4 二次确认（阈值表驱动）均落地，各有组件或源码契约测试
-- [ ] **存档**：SAVE_VERSION 保持 13（本版不新增字段）；真实 v13 档载入无感
-- [ ] **门禁**：`npm test`｜`typecheck`｜`build`（gzip ≤110KB；超出则显式登记修订）｜`gen:check`｜`audit:fx:check`｜`audit:content`（零发现）
-- [ ] **实机烟测**：桌面 + 375/390px：卸下/装备/回收仍可达、右栏方向键、徽标出现与消失、回收二次确认触发与取消、赛季面板缩放后目标数值；截图落盘 `docs/`
-- [ ] **评审**：⑥ 资深玩家评审（≥1 名独立评审员）；Blocker 当版清零
+- [x] **A 组**：`vitest.config.ts` 含 `plugins: [vue()]`，默认环境仍 node；组件用例以 `// @vitest-environment jsdom` 逐文件声明；**A2 操作矩阵 ≥12 条**，每条断言"元素可达 + 交互后 store 变化"；**A4** 真实 v13 fixture 迁移回归通过；`npm test` 全绿且内核用例数量不减
+- [x] **B1**：`docs/sim-season-output.json` 新增"profile × 账号档 × 模板"的工时/预算占比/**反推系数**；`data/season.json.scaleByMaturity` 与脚本输出一致；承诺口径（`twice`/`always` 三档、`once` 铜银档）**全部 ≤100% 预算**；缩放后 targets 严格递增且 ≥base×0.5；`renownPerLevel=3`（满级 60）且等级奖励不变；S12 断言"base targets 未被覆盖"
+- [x] **C 组**：C1 徽标（两处挂点，且"无可领时消失"）、C2 方向键、C3 键盘化 + 40px、C4 二次确认（阈值表驱动）均落地，各有组件或源码契约测试
+- [x] **存档**：SAVE_VERSION 保持 13（本版不新增字段）；真实 v13 档载入无感
+- [x] **门禁**：`npm test`｜`typecheck`｜`build`（gzip ≤110KB；超出则显式登记修订）｜`gen:check`｜`audit:fx:check`｜`audit:content`（零发现）
+- [x] **实机烟测**：桌面 + 375/390px：卸下/装备/回收仍可达、右栏方向键、徽标出现与消失、回收二次确认触发与取消、赛季面板缩放后目标数值；截图落盘 `docs/`
+- [x] **评审**：⑥ 资深玩家评审（≥1 名独立评审员）；Blocker 当版清零
 
 ## 4. 实现清单（文件级）
 
