@@ -52,6 +52,21 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
   const maxRounds = opts.maxRounds ?? 500_000
   let rounds = 0
 
+  /**
+   * v3.7.17（用户报告："两个队列，第一个执行完第二个不执行"）：
+   * current 为空而队列非空时，从队列启动首项。
+   * 此前**没有任何在线路径**负责这一步 —— simulate 的 while 要求 current 非空，
+   * 于是玩家点「停止」、或动作因材料不足被阻塞（性能必然发生）之后，
+   * 队列里剩下的项永远卡住（offline.ts 只处理了"跳过队列中强化项"的特例，
+   * 且那是"当前是强化"的分支，不覆盖通用场景）。
+   * 起点用 lastSeenAt：在线 ≈ 上一 tick（250ms 内立即接续）；离线 = 离开时刻
+   * （队列项照常参与离线结算）。若首项启动后立刻阻塞，本轮不再连锁消费，
+   * 下一 tick 继续尝试队列中的下一项 —— 有限、收敛、不丢项。
+   */
+  if (!state.actions.current && state.actions.queue.length > 0) {
+    advanceQueue(state, state.meta.lastSeenAt, events)
+  }
+
   while (state.actions.current && rounds < maxRounds) {
     const act = state.actions.current
     act.durationMs = durationOf(state, act.ref) // 每轮按当前装备重算（换装下一轮生效）
@@ -62,7 +77,8 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
 
     const ok = performRound(state, act, events, opts.mode, rng, now)
     if (!ok) {
-      // 阻塞：停止当前动作；队列保留待玩家手动重启（设计 §13）
+      // 阻塞（材料不足等）：停止当前动作；队列保留 ——
+      // v3.7.17 起由本函数入口的「队列自动启动」在下一 tick 接续下一项（不再卡死）
       state.actions.current = null
       break
     }
