@@ -106,6 +106,38 @@ describe('队列推进复现', () => {
     expect(s.actions.queue.length, '队列应被消费').toBe(0)
   })
 
+  it('场景 8：队列项材料不足 → 移出队列并明确提示（预检拦截，不启动不卡住）', () => {
+    const s = boot()
+    // A = 熔炼（给 2 个矿石，刚好 1 轮）；队列：锻造铜镐（需铜锭 ×12，不可行）→ 挖掘（可行）
+    s.materials['ore_copper'] = 2
+    const smelt: ActionRef = { kind: 'craft', recipeId: 'smelt_copper' }
+    performCommand(s, { type: 'startAction', ref: smelt, count: 1, mode: 'now' })
+    s.queueSlots = 2
+    const forge: ActionRef = { kind: 'craft', recipeId: 'forge_pick_copper' }
+    s.actions.queue.push({ ref: forge, remaining: 1, startedAt: 0, durationMs: 6_000, procMisses: 0 })
+    performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+    expect(s.actions.queue.length, '队列应有 2 项').toBe(2)
+
+    const all: GameEvent[] = []
+    for (let t = 1_000; t <= 20_000; t += 250) {
+      simulate(s, t, { mode: 'online', rng: mulberry32(t), events: all })
+    }
+    const skipped = all.filter(
+      (e) => e.type === 'blocked' && String((e as { reason?: string }).reason ?? '').includes('已跳过队列项'),
+    )
+    expect(skipped.length, '应有「已跳过队列项」提示（不静默消失）').toBe(1)
+    expect(String((skipped[0] as { reason: string }).reason), '提示应说明原因').toContain('材料不足')
+    expect(
+      all.some(
+        (e) =>
+          e.type === 'actionStarted' && JSON.stringify((e as { ref?: unknown }).ref ?? '').includes('forge_pick_copper'),
+      ),
+      '不可行项不应被启动（预检在启动前拦截，避免闪一下又停）',
+    ).toBe(false)
+    expect(s.stats.totalMines, '后续可行项（挖掘）照常执行').toBeGreaterThanOrEqual(1)
+    expect(s.actions.queue.length, '队列应清空').toBe(0)
+  })
+
   it('场景 5：队列里有 2 项（两个队列位）', () => {
     const s = boot()
     s.queueSlots = 2

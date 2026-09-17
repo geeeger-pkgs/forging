@@ -76,26 +76,46 @@ describe('离线结算', () => {
 })
 
 describe('在线结算', () => {
-  it('队列推进：当前结束后自动执行队首', () => {
+  it('队列推进：当前结束后自动执行队首（Lv1 可玩动作）', () => {
     const s = newGame('T', 0)
     startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, 1)
-    enqueue(s, { kind: 'mine', siteId: 'iron_seam' }, null)
+    enqueue(s, { kind: 'mine', siteId: 'copper_seam' }, 1)
     const events = simulate(s, 60_000, { mode: 'online', rng: mulberry32(42) })
-    expect(events.some((e) => e.type === 'actionStarted' && e.ref.kind === 'mine' && e.ref.siteId === 'iron_seam')).toBe(true)
-    // 铁矿产出了铁矿石
-    expect(s.materials['ore_iron'] ?? 0).toBeGreaterThan(0)
+    // v3.7.18：原用例用铁矿脉（需 Lv10）——"入队绕过等级检查后仍执行"是隐藏漏洞，
+    // 预检已堵住；改用 Lv1 的铜矿脉，按语义断言（startCurrent 是测试 helper，不发
+    // actionStarted 事件；该事件只由队列推进发出）
+    expect(events.some((e) => e.type === 'actionStarted'), '队列项启动过').toBe(true)
+    expect(s.stats.totalMines, '两次挖掘都结算').toBe(2)
+    expect(s.actions.queue.length, '队列已消费').toBe(0)
   })
 
-  it('材料不足：阻塞停止并发出事件，队列不自动跳过', () => {
+  it('队列项等级不足 → 预检跳过并提示（堵住"入队绕过等级检查"的漏洞）', () => {
+    const s = newGame('T', 0)
+    startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, 1)
+    enqueue(s, { kind: 'mine', siteId: 'iron_seam' }, 1) // 需 Lv10，当前 Lv1
+    const events = simulate(s, 60_000, { mode: 'online', rng: mulberry32(42) })
+    expect(
+      events.some((e) => e.type === 'blocked' && e.reason.includes('已跳过队列项')),
+      '应跳过并明确提示',
+    ).toBe(true)
+    expect(
+      events.some((e) => e.type === 'actionStarted' && e.ref.kind === 'mine' && e.ref.siteId === 'iron_seam'),
+      '等级不足的动作不应执行（此前的隐藏漏洞是它会执行）',
+    ).toBe(false)
+    expect(s.materials['ore_iron'] ?? 0, '不应产出铁矿石').toBe(0)
+  })
+
+  it('队列项材料不足：预检跳过并提示（用户要求：移出队列而非卡住）', () => {
     const s = newGame('T', 0)
     startCurrent(s, { kind: 'mine', siteId: 'copper_seam' }, 2)
-    enqueue(s, { kind: 'craft', recipeId: 'forge_pick_copper' }, 1) // 无铜锭 → 阻塞
+    enqueue(s, { kind: 'craft', recipeId: 'forge_pick_copper' }, 1) // 无铜锭 → 不可行
     const events = simulate(s, 120_000, { mode: 'online', rng: mulberry32(42) })
     expect(s.actions.current).toBeNull()
-    expect(s.actions.queue.length).toBe(0)
-    expect(events.some((e) => e.type === 'blocked' && e.reason.includes('材料不足'))).toBe(true)
-    expect(events.some((e) => e.type === 'actionStopped' && e.reason === 'noMaterials')).toBe(true)
-    expect(s.equipment.length).toBe(0)
+    expect(s.actions.queue.length, '不可行项应被移出队列').toBe(0)
+    const skipped = events.filter((e) => e.type === 'blocked' && e.reason.includes('已跳过队列项'))
+    expect(skipped.length, 'v3.7.18：应明确提示"已跳过"（此前静默消失）').toBe(1)
+    expect(String((skipped[0] as { reason: string }).reason)).toContain('材料不足')
+    expect(s.equipment.length, '锻造未发生').toBe(0)
   })
 
   it('效率保底：E=12% 时每 9 轮必触发一次（rng 固定 0.99 不随机触发）', () => {

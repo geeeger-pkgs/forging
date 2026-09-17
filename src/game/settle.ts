@@ -7,7 +7,9 @@
 // 执行管道（设计 §4）：完成判定 → 效率 proc → 产出/掉落 → XP → 升级 → 教程 → 队列启动
 // ============================================================
 import { REFORGE_STONE, perfectScore } from './affixes'
+import { startBlockReason } from './blocking'
 import { recordOre, recordRecipe } from './codex'
+import { refLabel } from './refs'
 import { buffBonuses } from './buffs'
 import { perkBonuses } from './prestige'
 import { ENHANCE_BY_TARGET, MAX_ENHANCE, RECIPES_BY_ID, itemDef } from './content'
@@ -54,16 +56,18 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
 
   /**
    * v3.7.17（用户报告："两个队列，第一个执行完第二个不执行"）：
-   * current 为空而队列非空时，从队列启动首项。
-   * 此前**没有任何在线路径**负责这一步 —— simulate 的 while 要求 current 非空，
-   * 于是玩家点「停止」、或动作因材料不足被阻塞（性能必然发生）之后，
-   * 队列里剩下的项永远卡住（offline.ts 只处理了"跳过队列中强化项"的特例，
-   * 且那是"当前是强化"的分支，不覆盖通用场景）。
-   * 起点用 lastSeenAt：在线 ≈ 上一 tick（250ms 内立即接续）；离线 = 离开时刻
-   * （队列项照常参与离线结算）。若首项启动后立刻阻塞，本轮不再连锁消费，
-   * 下一 tick 继续尝试队列中的下一项 —— 有限、收敛、不丢项。
+   * current 为空而队列非空时，从队列启动首项。此前**没有任何在线路径**负责这一步 ——
+   * simulate 的 while 要求 current 非空，玩家点「停止」或动作因材料不足被阻塞后，
+   * 队列里剩下的项永远卡住。
+   *
+   * v3.7.18（用户要求："材料不足应移出队列，而不是卡住"）：
+   * 启动前先**预检**（startBlockReason）——不可行的项直接移出队列并明确提示，
+   * 继续尝试下一项直到找到可执行的或队列清空。此前是"启动后立刻失败"，
+   * 项虽最终被丢弃但会闪一下、且没有"已跳过"的说明（玩家看到队列项神秘消失）。
+   * 起点用 lastSeenAt：在线 ≈ 上一 tick（250ms 内立即接续）；离线 = 离开时刻。
    */
   if (!state.actions.current && state.actions.queue.length > 0) {
+    // 预检跳过逻辑在 advanceQueue 内（唯一入口；见其注释）
     advanceQueue(state, state.meta.lastSeenAt, events)
   }
 
@@ -96,16 +100,34 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
   return events
 }
 
-function advanceQueue(state: GameState, at: number, events: GameEvent[]): void {
-  const next = state.actions.queue.shift()
-  if (!next) {
-    events.push({ type: 'actionStopped', reason: 'queueEmpty' })
-    return
+/**
+ * 从队列启动下一项（v3.7.18：带**预检跳过**）。
+ * 用户要求："材料不足应移出队列，而不是卡住"——需要在**启动前**判定可行性：
+ *   · 不可行（材料不足/等级不够/装备被卸下…）→ 移出队列 + 明确提示，继续尝试下一项；
+ *   · 可行 → 设为当前动作。
+ * 预检放在本函数（唯一入口）——无论是"上一个动作正常完成"、"玩家停止"还是
+ * "上一个动作中途阻塞"后的接续，都走这里，行为一致。
+ * @returns 是否成功启动了动作
+ */
+function advanceQueue(state: GameState, at: number, events: GameEvent[]): boolean {
+  let guard = 0
+  while (state.actions.queue.length > 0 && guard++ < 64) {
+    const next = state.actions.queue[0]
+    const reason = startBlockReason(state, next.ref)
+    if (reason) {
+      state.actions.queue.shift()
+      events.push({ type: 'blocked', reason: `已跳过队列项「${refLabel(next.ref)}」：${reason}` })
+      continue
+    }
+    state.actions.queue.shift()
+    next.startedAt = at
+    next.durationMs = durationOf(state, next.ref)
+    state.actions.current = next
+    events.push({ type: 'actionStarted', ref: next.ref })
+    return true
   }
-  next.startedAt = at
-  next.durationMs = durationOf(state, next.ref)
-  state.actions.current = next
-  events.push({ type: 'actionStarted', ref: next.ref })
+  events.push({ type: 'actionStopped', reason: 'queueEmpty' })
+  return false
 }
 
 // ---------------- 单轮执行 ----------------

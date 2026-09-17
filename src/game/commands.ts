@@ -12,7 +12,7 @@ import {
   reforgeCost,
   rerollAffixes,
 } from './affixes'
-import { CONTENT, MAX_ENHANCE, RECIPES_BY_ID, SITES_BY_ID, itemDef } from './content'
+import { CONTENT, itemDef } from './content'
 import {
   HOUR_MS,
   busyCompanions,
@@ -30,15 +30,14 @@ import {
 import { buyAbyssItem, challengeAbyss, consumeTicket, sweepAbyss, ticketUsable } from './abyss'
 import { recordAffix } from './codex'
 import { recycleGain } from './economy'
-import { levelInfo } from './level'
 import { refLabel } from './refs'
 import { systemRng, type Rng } from './rng'
-import { durationOf, enhanceCostFor } from './rules'
+import { durationOf } from './rules'
+import { startBlockReason } from './blocking'
 import { simulate } from './settle'
 import {
   addGold,
   addMaterial,
-  freeInstances,
   instanceById,
   isEquipped,
   materialCount,
@@ -266,56 +265,9 @@ function stopAction(state: GameState): GameEvent[] {
   return [{ type: 'actionStopped', reason: 'user' }]
 }
 
-/** 开始前校验（等级 / 材料 / 装备 / 强化目标）；返回阻塞原因或 null */
-export function startBlockReason(state: GameState, ref: ActionRef): string | null {
-  if (ref.kind === 'mine') {
-    const site = SITES_BY_ID.get(ref.siteId)
-    if (!site) return `未知矿场: ${ref.siteId}`
-    const lv = levelInfo(state.skills[site.skill]).level
-    if (lv < site.unlockLevel) return `需要 挖掘 Lv${site.unlockLevel}（当前 ${lv}）`
-    return null
-  }
-  if (ref.kind === 'craft') {
-    const r = RECIPES_BY_ID.get(ref.recipeId)
-    if (!r) return `未知配方: ${ref.recipeId}`
-    const lv = levelInfo(state.skills[r.skill]).level
-    if (lv < r.unlockLevel) return `需要 Lv${r.unlockLevel}（当前 ${lv}）`
-    return inputShortageReason(state, r.inputs)
-  }
-  // enhance
-  const inst = instanceById(state, ref.instanceId)
-  if (!inst) return '被强化物品不存在'
-  if (ref.targetLevel > MAX_ENHANCE) return '已达最高强化等级'
-  if (ref.targetLevel !== inst.enhanceLevel + 1) return '强化目标与物品当前等级不匹配'
-  const cost = enhanceCostFor(inst.itemId, ref.targetLevel)
-  for (const c of cost) {
-    if (materialCount(state, c.itemId) < c.qty) return `材料不足：${itemDef(c.itemId).name} ×${c.qty}`
-  }
-  return null
-}
+export { startBlockReason }
 
-function inputShortageReason(
-  state: GameState,
-  inputs: readonly { itemId: ItemId; qty: number }[],
-): string | null {
-  for (const inp of inputs) {
-    const def = itemDef(inp.itemId)
-    if (def.stackable) {
-      if (materialCount(state, inp.itemId) < inp.qty) return `材料不足：${def.name} ×${inp.qty}`
-    } else {
-      const free = freeInstances(state, inp.itemId)
-      if (free.length < inp.qty) {
-        const total = state.equipment.filter((e) => e.itemId === inp.itemId).length
-        const equippedCount = total - free.length
-        return equippedCount > 0
-          ? `请先卸下：${def.name}（装备中不可消耗）`
-          : `缺少装备：${def.name} ×${inp.qty}`
-      }
-    }
-  }
-  return null
-}
-
+// 动作可行性预检已下沉到 ./blocking（settle 也要用，避免循环依赖）——此处 re-export 保持既有 API
 // ---------------- 装备 ----------------
 
 function equip(state: GameState, instanceId: number): GameEvent[] {
