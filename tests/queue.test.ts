@@ -3,10 +3,19 @@
 // 起因：用户报告「两个队列，第一个执行完第二个不执行」——停止/阻塞后队列卡死（场景 6/7）
 import { describe, expect, it } from 'vitest'
 import { applyCommand } from '../src/game/commands'
+import { settleOffline } from '../src/game/offline'
 import { simulate } from '../src/game/settle'
-import { newGame } from '../src/game/state'
+import { addInstance, newGame } from '../src/game/state'
 import { mulberry32 } from '../src/game/rng'
 import type { ActionRef, Command, GameEvent, GameState } from '../src/game/types'
+
+/** 造一件可强化的镐（+0，槽位已装备） */
+function equipPick(s: GameState): number {
+  const id = addInstance(s, 'pick_copper')
+  s.equipment.find((e) => e.instanceId === id)!.affixes = []
+  s.slots.pick = id
+  return id
+}
 
 /** 简化包装：now 固定为 0（命令不受墙钟影响，除了写 lastSeenAt） */
 const performCommand = (s: GameState, c: Command): GameEvent[] => applyCommand(s, c, 0)
@@ -136,6 +145,73 @@ describe('队列推进复现', () => {
     ).toBe(false)
     expect(s.stats.totalMines, '后续可行项（挖掘）照常执行').toBeGreaterThanOrEqual(1)
     expect(s.actions.queue.length, '队列应清空').toBe(0)
+  })
+
+  it('场景 9：队列里的强化（enhance）可行 → 正常执行（三类动作全覆：mine/craft/enhance）', () => {
+    const s = boot()
+    const id = equipPick(s)
+    s.materials['ingot_copper'] = 2
+    s.materials['essence'] = 1
+    performCommand(s, { type: 'startAction', ref: A, count: 1, mode: 'now' }) // 占住 current
+    const enq = performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'enhance', instanceId: id, targetLevel: 1 },
+      count: 1,
+      mode: 'enqueue',
+    })
+    expect(enq.some((e) => e.type === 'notice'), '材料齐 → 强化应能入队').toBe(true)
+    for (let t = 1_000; t <= 30_000; t += 250) simulate(s, t, { mode: 'online', rng: mulberry32(t) })
+    expect(s.equipment.find((e) => e.instanceId === id)!.enhanceLevel, '队列里的强化应被执行到 +1').toBe(1)
+    expect(s.actions.queue.length).toBe(0)
+  })
+
+  it('场景 10：队列里的强化不可行（入队后材料被消耗）→ 跳过并提示', () => {
+    const s = boot()
+    const id = equipPick(s)
+    s.materials['ingot_copper'] = 2
+    s.materials['essence'] = 1
+    performCommand(s, { type: 'startAction', ref: A, count: 1, mode: 'now' })
+    performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'enhance', instanceId: id, targetLevel: 1 },
+      count: 1,
+      mode: 'enqueue',
+    })
+    expect(s.actions.queue.length, '材料齐时入队成功').toBe(1)
+    // 入队后材料被消耗（其他动作/手动操作）
+    s.materials['ingot_copper'] = 0
+    s.materials['essence'] = 0
+    const all: GameEvent[] = []
+    for (let t = 1_000; t <= 30_000; t += 250) simulate(s, t, { mode: 'online', rng: mulberry32(t), events: all })
+    const skipped = all.filter(
+      (e) => e.type === 'blocked' && String((e as { reason?: string }).reason ?? '').includes('已跳过队列项'),
+    )
+    expect(skipped.length, '强化项应被跳过并提示').toBe(1)
+    expect(String((skipped[0] as { reason: string }).reason), '原因应为材料不足').toContain('材料不足')
+    expect(s.equipment.find((e) => e.instanceId === id)!.enhanceLevel, '强化未发生').toBe(0)
+    expect(s.actions.queue.length).toBe(0)
+  })
+
+  it('场景 11：离线结算会过滤队列中的强化项（既有规则，一并锁定）', () => {
+    const s = boot()
+    const id = equipPick(s)
+    s.materials['ingot_copper'] = 2
+    s.materials['essence'] = 1
+    performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' }) // ∞ 占住
+    performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'enhance', instanceId: id, targetLevel: 1 },
+      count: 1,
+      mode: 'enqueue',
+    })
+    expect(s.actions.queue.some((a) => a.ref.kind === 'enhance'), '入队的是强化项').toBe(true)
+    const summary = settleOffline(s, 8 * 3_600_000)
+    expect(summary, '离线应结算').not.toBeNull()
+    expect(s.actions.queue.some((a) => a.ref.kind === 'enhance'), '离线结算后队列里不应再有强化项').toBe(false)
+    expect(
+      (summary!.notes ?? []).some((n) => n.includes('强化')),
+      '应有"强化不参与离线"的说明',
+    ).toBe(true)
   })
 
   it('场景 5：队列里有 2 项（两个队列位）', () => {
