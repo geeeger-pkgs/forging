@@ -4,6 +4,7 @@ import { resolveFxLevel, store } from './app/store'
 import ActionDialog from './ui/components/ActionDialog.vue'
 import FxLayer from './ui/components/FxLayer.vue'
 import ItemDetailModal from './ui/components/ItemDetailModal.vue'
+import QueueModal from './ui/components/QueueModal.vue'
 import MainPanel from './ui/components/MainPanel.vue'
 import NavBar from './ui/components/NavBar.vue'
 import OfflineModal from './ui/components/OfflineModal.vue'
@@ -32,6 +33,7 @@ watchEffect(() => {
     <FxLayer />
     <ActionDialog />
     <ItemDetailModal />
+    <QueueModal />
     <OfflineModal v-if="store.summary" />
     <Toasts />
   </div>

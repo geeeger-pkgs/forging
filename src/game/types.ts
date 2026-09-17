@@ -923,6 +923,8 @@ export type Command =
   | { type: 'startAction'; ref: ActionRef; count: number | null; mode: 'now' | 'enqueue' }
   | { type: 'stopAction' }
   | { type: 'clearQueue' }
+  /** v3.7.22（用户要求）：调整队列顺序（上移/下移/置顶/置底由 UI 换算成 from→to） */
+  | { type: 'moveQueueItem'; from: number; to: number }
   | { type: 'equip'; instanceId: number }
   | { type: 'unequip'; slot: SlotId }
   | { type: 'recycleMaterial'; itemId: ItemId; qty: number }

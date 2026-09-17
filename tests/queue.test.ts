@@ -278,6 +278,79 @@ describe('队列推进复现', () => {
     ).toBe(true)
   })
 
+  it('场景 13（用户要求）：调整队列顺序——置底/置顶/上移/下移', () => {
+    const s = boot()
+    s.queueSlots = 3
+    performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' }) // ∞ 占住 current
+    performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'craft', recipeId: 'smelt_copper' },
+      count: 1,
+      mode: 'enqueue',
+    })
+    performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'craft', recipeId: 'forge_pick_copper' },
+      count: 1,
+      mode: 'enqueue',
+    })
+    performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+    const tag = (q: { ref: ActionRef }): string => (q.ref.kind === 'craft' ? q.ref.recipeId : q.ref.kind)
+    const order = (): string[] => s.actions.queue.map(tag)
+    expect(order(), '初始顺序').toEqual(['smelt_copper', 'forge_pick_copper', 'mine'])
+
+    performCommand(s, { type: 'moveQueueItem', from: 0, to: 2 })
+    expect(order(), '置底').toEqual(['forge_pick_copper', 'mine', 'smelt_copper'])
+    performCommand(s, { type: 'moveQueueItem', from: 2, to: 0 })
+    expect(order(), '置顶').toEqual(['smelt_copper', 'forge_pick_copper', 'mine'])
+    performCommand(s, { type: 'moveQueueItem', from: 2, to: 1 })
+    expect(order(), '上移').toEqual(['smelt_copper', 'mine', 'forge_pick_copper'])
+    performCommand(s, { type: 'moveQueueItem', from: 0, to: 1 })
+    expect(order(), '下移').toEqual(['mine', 'smelt_copper', 'forge_pick_copper'])
+  })
+
+  it('场景 14：非法移动静默忽略（越界 / 原位 / 非整数）', () => {
+    const s = boot()
+    s.queueSlots = 2
+    performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' })
+    performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+    performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+    const before = JSON.stringify(s.actions.queue)
+    performCommand(s, { type: 'moveQueueItem', from: 0, to: 0 })
+    performCommand(s, { type: 'moveQueueItem', from: -1, to: 1 })
+    performCommand(s, { type: 'moveQueueItem', from: 0, to: 9 })
+    performCommand(s, { type: 'moveQueueItem', from: 0.5, to: 1 })
+    expect(JSON.stringify(s.actions.queue), '非法移动不应改动队列').toBe(before)
+  })
+
+  it('场景 15：调整后按新顺序执行（对照实验：顺序真的影响执行，不只是显示）', () => {
+    // 两项都可行（给 2 矿石让熔炼可行）→ 用"谁先启动"证明顺序生效
+    const run = (swap: boolean): string[] => {
+      const s = boot()
+      s.queueSlots = 2
+      s.materials['ore_copper'] = 2
+      performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' }) // ∞ 占住
+      performCommand(s, {
+        type: 'startAction',
+        ref: { kind: 'craft', recipeId: 'smelt_copper' },
+        count: 1,
+        mode: 'enqueue',
+      })
+      performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+      if (swap) performCommand(s, { type: 'moveQueueItem', from: 0, to: 1 }) // 熔炼置底
+      applyCommand(s, { type: 'stopAction' }, 0)
+      const all: GameEvent[] = []
+      for (let t = 500; t <= 20_000; t += 250) {
+        simulate(s, t, { mode: 'online', rng: mulberry32(t), events: all })
+      }
+      return all
+        .filter((e) => e.type === 'actionStarted')
+        .map((e) => ((e as { ref: ActionRef }).ref.kind === 'craft' ? 'smelt' : 'mine'))
+    }
+    expect(run(false), '未调整：熔炼（队首）先执行').toEqual(['smelt', 'mine'])
+    expect(run(true), '熔炼置底后：挖掘先执行（顺序生效）').toEqual(['mine', 'smelt'])
+  })
+
   it('场景 5：队列里有 2 项（两个队列位）', () => {
     const s = boot()
     s.queueSlots = 2

@@ -79,6 +79,8 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
     case 'clearQueue':
       state.actions.queue = []
       return []
+    case 'moveQueueItem':
+      return moveQueueItem(state, cmd.from, cmd.to)
     case 'equip':
       return equip(state, cmd.instanceId)
     case 'unequip': {
@@ -268,6 +270,21 @@ function startAction(
         : `已加入队列：${refLabel(ref)}`,
     },
   ]
+}
+
+/**
+ * 调整队列顺序（v3.7.22，用户要求：上移/下移/置顶/置底）。
+ * UI 把四种操作换算成 from→to：上移 = to-1、下移 = to+1、置顶 = 0、置底 = len-1。
+ * 越界或原位不动静默忽略（返回空事件），合法移动给出明确反馈。
+ */
+function moveQueueItem(state: GameState, from: number, to: number): GameEvent[] {
+  const q = state.actions.queue
+  const n = q.length
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return []
+  if (from < 0 || from >= n || to < 0 || to >= n || from === to) return []
+  const [item] = q.splice(from, 1)
+  q.splice(to, 0, item)
+  return [{ type: 'notice', text: `队列已调整：${refLabel(item.ref)} → 第 ${to + 1} 位` }]
 }
 
 function stopAction(state: GameState): GameEvent[] {

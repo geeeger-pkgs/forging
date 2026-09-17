@@ -63,6 +63,14 @@ const buffs = computed(() =>
           {{ refLabel(q.ref) }}<em v-if="q.remaining !== null">×{{ q.remaining }}</em>
         </span>
         <span v-if="overflow" class="qitem">+{{ overflow }} 项</span>
+        <!-- v3.7.22：队列顺序管理（上移/下移/置顶/置底；顶栏只看得到前几项，弹窗里是全部） -->
+        <button
+          class="btn sm"
+          :title="`调整队列顺序（共 ${queue.length} 项，可上移/下移/置顶/置底）`"
+          @click="store.ui.queueOpen = true"
+        >
+          调整
+        </button>
         <button class="btn sm" @click="cmd({ type: 'clearQueue' })">清空</button>
       </div>
     </div>

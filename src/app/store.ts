@@ -60,6 +60,8 @@ export const store = reactive({
     /** v3.4.4：一次性请求——让右栏切换到指定分区（教程「前往」用；右栏消费后置回 null） */
     rightTabWanted: null as null | 'gear' | 'bag' | 'mats',
     dialogRef: null as ActionRef | null,
+    /** v3.7.22：队列管理弹窗（调整顺序：上移/下移/置顶/置底） */
+    queueOpen: false,
     forgeCategory: 'tool' as ForgeCategory,
     searchText: '',
     inspectItemId: null as string | null,
