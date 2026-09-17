@@ -278,10 +278,10 @@ describe('队列推进复现', () => {
     ).toBe(true)
   })
 
-  it('场景 13（用户要求）：调整队列顺序——置底/置顶/上移/下移', () => {
+  it('场景 13：纯队列内四向移动（空闲态：序列 = 队列，位置 0 无"立刻执行"语义）', () => {
     const s = boot()
     s.queueSlots = 3
-    performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' }) // ∞ 占住 current
+    performCommand(s, { type: 'startAction', ref: A, count: null, mode: 'now' }) // ∞ 占住（只为能入队）
     performCommand(s, {
       type: 'startAction',
       ref: { kind: 'craft', recipeId: 'smelt_copper' },
@@ -295,6 +295,9 @@ describe('队列推进复现', () => {
       mode: 'enqueue',
     })
     performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
+    // v3.7.23：调整对象含"正在执行"→ 本用例先停掉 current，只测空闲态队列移动
+    applyCommand(s, { type: 'stopAction' }, 0)
+    expect(s.actions.current).toBeNull()
     const tag = (q: { ref: ActionRef }): string => (q.ref.kind === 'craft' ? q.ref.recipeId : q.ref.kind)
     const order = (): string[] => s.actions.queue.map(tag)
     expect(order(), '初始顺序').toEqual(['smelt_copper', 'forge_pick_copper', 'mine'])
@@ -337,8 +340,9 @@ describe('队列推进复现', () => {
         mode: 'enqueue',
       })
       performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
-      if (swap) performCommand(s, { type: 'moveQueueItem', from: 0, to: 1 }) // 熔炼置底
+      // v3.7.23：先停掉 current → 空闲态（序列 = 队列）
       applyCommand(s, { type: 'stopAction' }, 0)
+      if (swap) performCommand(s, { type: 'moveQueueItem', from: 0, to: 1 }) // 熔炼置底
       const all: GameEvent[] = []
       for (let t = 500; t <= 20_000; t += 250) {
         simulate(s, t, { mode: 'online', rng: mulberry32(t), events: all })
@@ -349,6 +353,51 @@ describe('队列推进复现', () => {
     }
     expect(run(false), '未调整：熔炼（队首）先执行').toEqual(['smelt', 'mine'])
     expect(run(true), '熔炼置底后：挖掘先执行（顺序生效）').toEqual(['mine', 'smelt'])
+  })
+
+  it('场景 16（用户要求）：置顶队列项 = 立刻开始 + 原执行中的换下入队（保留剩余次数）', () => {
+    const s = boot()
+    s.queueSlots = 2
+    performCommand(s, { type: 'startAction', ref: A, count: 5, mode: 'now' }) // 执行中：mine ×5
+    performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'craft', recipeId: 'smelt_copper' },
+      count: 3,
+      mode: 'enqueue',
+    })
+    // 序列 = [执行中 mine, 队列 smelt]；把 smelt 置顶（索引 1 → 0）
+    const ev = performCommand(s, { type: 'moveQueueItem', from: 1, to: 0 })
+    expect(
+      ev.some((e) => e.type === 'notice' && String((e as { text: string }).text).includes('置顶并立即开始')),
+      '应提示"置顶并立即开始"',
+    ).toBe(true)
+    expect(s.actions.current!.ref, '熔炼立刻成为执行中').toEqual({ kind: 'craft', recipeId: 'smelt_copper' })
+    expect(s.actions.queue[0].ref, '原执行中的被换下、回到队列').toEqual(A)
+    expect(s.actions.queue[0].remaining, '被换下的任务保留剩余次数').toBe(5)
+    expect(s.actions.current!.startedAt, '新执行中从"现在"开始').toBe(0) // performCommand 的 now = 0
+  })
+
+  it('场景 17（用户要求）：队列排头「上移」= 与执行中的交换（替换下来）', () => {
+    const s = boot()
+    s.queueSlots = 1
+    performCommand(s, { type: 'startAction', ref: A, count: 5, mode: 'now' }) // 执行中 mine ×5
+    performCommand(s, { type: 'startAction', ref: B, count: 2, mode: 'enqueue' }) // 队列 [mine ×2]
+    performCommand(s, { type: 'moveQueueItem', from: 1, to: 0 }) // 排头上移
+    expect(s.actions.current!.ref, '排头成为执行中').toEqual(B)
+    expect(s.actions.current!.remaining).toBe(2)
+    expect(s.actions.queue[0].ref, '原执行中被换下').toEqual(A)
+    expect(s.actions.queue[0].remaining, '保留其剩余次数').toBe(5)
+  })
+
+  it('场景 18：执行中的「下移」→ 它入队、队首顶上（对称语义）', () => {
+    const s = boot()
+    s.queueSlots = 1
+    performCommand(s, { type: 'startAction', ref: A, count: 5, mode: 'now' })
+    performCommand(s, { type: 'startAction', ref: B, count: 2, mode: 'enqueue' })
+    performCommand(s, { type: 'moveQueueItem', from: 0, to: 1 }) // 执行中下移
+    expect(s.actions.current!.ref, 'B 顶上执行').toEqual(B)
+    expect(s.actions.queue[0].ref).toEqual(A)
+    expect(s.actions.queue[0].remaining).toBe(5)
   })
 
   it('场景 5：队列里有 2 项（两个队列位）', () => {

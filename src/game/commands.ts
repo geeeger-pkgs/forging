@@ -80,7 +80,7 @@ export function applyCommand(state: GameState, cmd: Command, now: number, rng?: 
       state.actions.queue = []
       return []
     case 'moveQueueItem':
-      return moveQueueItem(state, cmd.from, cmd.to)
+      return moveQueueItem(state, cmd.from, cmd.to, now)
     case 'equip':
       return equip(state, cmd.instanceId)
     case 'unequip': {
@@ -273,18 +273,50 @@ function startAction(
 }
 
 /**
- * 调整队列顺序（v3.7.22，用户要求：上移/下移/置顶/置底）。
+ * 调整执行顺序（v3.7.22；v3.7.23 按用户要求把**正在执行的任务**也纳入）。
+ *
+ * 作用对象是「执行序列」= [正在执行(current, 若有), ...队列]。位置 0 = 立刻执行：
+ *   · 把队列项移到 0（置顶）→ 它立刻开始，原正在执行的被换下、回到队列首位（保留剩余次数）；
+ *   · 队列首项「上移」= 与正在执行的交换 → 同样立刻开始（用户描述的正是这两条）；
+ *   · 正在执行的「下移/置底」→ 它进入队列，队首顶上立刻开始。
+ * 只在「位置 0 换人」时重设新首项的 startedAt（= 现在开始），
+ * 未被打断的当前动作不重设（保住它这一轮的进度）。
  * UI 把四种操作换算成 from→to：上移 = to-1、下移 = to+1、置顶 = 0、置底 = len-1。
- * 越界或原位不动静默忽略（返回空事件），合法移动给出明确反馈。
+ * 越界 / 原位 / 非整数静默忽略。
  */
-function moveQueueItem(state: GameState, from: number, to: number): GameEvent[] {
-  const q = state.actions.queue
-  const n = q.length
+function moveQueueItem(state: GameState, from: number, to: number, now: number): GameEvent[] {
+  const cur = state.actions.current
+  const seq: ActiveAction[] = cur ? [cur, ...state.actions.queue] : [...state.actions.queue]
+  const n = seq.length
   if (!Number.isInteger(from) || !Number.isInteger(to)) return []
   if (from < 0 || from >= n || to < 0 || to >= n || from === to) return []
-  const [item] = q.splice(from, 1)
-  q.splice(to, 0, item)
-  return [{ type: 'notice', text: `队列已调整：${refLabel(item.ref)} → 第 ${to + 1} 位` }]
+
+  const [item] = seq.splice(from, 1)
+  seq.splice(to, 0, item)
+
+  if (!cur) {
+    // 空闲态：序列就是队列（位置 0 = 即将执行，由 simulate 正常启动）——
+    // 不能提前认领成 current（那样会跳过 actionStarted 事件流、队列还会少一项）
+    state.actions.queue = seq
+    return [{ type: 'notice', text: `执行顺序已调整：${refLabel(item.ref)} → 第 ${to + 1} 位` }]
+  }
+
+  const [first, ...rest] = seq
+  if (first !== cur) {
+    // 位置 0 换人：新首项从"现在"开始（立刻执行）；被换下的旧 current 进入队列（remaining 原样保留）
+    first.startedAt = now
+    first.durationMs = durationOf(state, first.ref)
+  }
+  state.actions.current = first
+  state.actions.queue = rest
+
+  const label = refLabel(item.ref)
+  return [
+    {
+      type: 'notice',
+      text: first === item ? `已置顶并立即开始：${label}` : `执行顺序已调整：${label} → 第 ${to + 1} 位`,
+    },
+  ]
 }
 
 function stopAction(state: GameState): GameEvent[] {

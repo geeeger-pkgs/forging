@@ -1,16 +1,29 @@
 <script setup lang="ts">
 // ============================================================
-// 队列管理（v3.7.22，用户要求：队列无法调整顺序 → 补上）
-// 上移 / 下移 / 置顶 / 置底：内核按 from→to 移动（moveQueueItem），
-// 这里负责换算目标位与禁用态（首项不能上移/置顶，末项不能下移/置底）。
-// 顶栏空间有限（窄屏只显示前几项），所以用一个独立弹窗列出**全部**队列项。
+// 执行顺序管理（v3.7.22 创建；v3.7.23 按用户要求把**正在执行的任务**纳入调整）
+//
+// 作用对象是「执行序列」= [正在执行(若有), ...队列]，**位置 0 = 立刻执行**：
+//   · 队列项「置顶」→ 立刻开始，原执行中的被换下、回到队列首位（保留剩余次数）；
+//   · 队列首项「上移」→ 与执行中的交换（立刻开始）；
+//   · 执行中的「下移/置底」→ 它进入队列，队首顶上。
+// 换算与禁用态在本组件：首行禁止上移/置顶，末行禁止下移/置底。
 // ============================================================
 import { computed } from 'vue'
 import { cmd, store } from '../../app/store'
 import { refLabel } from '../../game/refs'
+import type { ActiveAction } from '../../game/types'
 
 const queue = computed(() => store.state.actions.queue)
+const cur = computed(() => store.state.actions.current)
 const slots = computed(() => store.state.queueSlots)
+
+/** 执行序列：位置 0 是正在执行的（若有） */
+const rows = computed<{ act: ActiveAction; running: boolean }[]>(() => {
+  const out: { act: ActiveAction; running: boolean }[] = []
+  if (cur.value) out.push({ act: cur.value, running: true })
+  for (const q of queue.value) out.push({ act: q, running: false })
+  return out
+})
 
 function move(from: number, to: number): void {
   cmd({ type: 'moveQueueItem', from, to })
@@ -23,26 +36,38 @@ function close(): void {
 <template>
   <div v-if="store.ui.queueOpen" class="overlay" @click.self="close">
     <div class="dialog qdialog">
-      <h3>队列顺序（{{ queue.length }} / {{ slots }}）</h3>
-      <p v-if="queue.length === 0" class="dim">队列为空——在动作弹窗里点「加入队列」（材料不足也能先排）。</p>
+      <h3>执行顺序</h3>
+      <p class="dim small">
+        执行中：{{ cur ? refLabel(cur.ref) : '（无）' }} ｜ 队列：{{ queue.length }} / {{ slots }}
+        <br />位置 1 即「立刻执行」：把队列项置顶会换下当前任务（保留其剩余次数）。
+      </p>
+      <p v-if="rows.length === 0" class="dim">当前没有任何动作——在动作弹窗里点「加入队列」。</p>
       <ol v-else class="qlist">
-        <li v-for="(q, i) in queue" :key="i" class="qrow">
+        <li v-for="(r, i) in rows" :key="i" class="qrow" :class="{ running: r.running }">
           <span class="idx">{{ i + 1 }}</span>
           <span class="qname">
-            {{ refLabel(q.ref) }}<em v-if="q.remaining !== null">×{{ q.remaining }}</em
+            <template v-if="r.running">▶ </template>{{ refLabel(r.act.ref)
+            }}<em v-if="r.act.remaining !== null">×{{ r.act.remaining }}</em
             ><em v-else class="dim">∞</em>
           </span>
           <span class="spacer" />
-          <button class="btn sm" :disabled="i === 0" title="置顶" @click="move(i, 0)">⤒</button>
+          <button
+            class="btn sm"
+            :disabled="i === 0"
+            :title="i > 0 && cur ? '置顶并立即开始（换下当前任务）' : '置顶'"
+            @click="move(i, 0)"
+          >
+            ⤒
+          </button>
           <button class="btn sm" :disabled="i === 0" title="上移" @click="move(i, i - 1)">↑</button>
-          <button class="btn sm" :disabled="i === queue.length - 1" title="下移" @click="move(i, i + 1)">
+          <button class="btn sm" :disabled="i === rows.length - 1" title="下移" @click="move(i, i + 1)">
             ↓
           </button>
           <button
             class="btn sm"
-            :disabled="i === queue.length - 1"
+            :disabled="i === rows.length - 1"
             title="置底"
-            @click="move(i, queue.length - 1)"
+            @click="move(i, rows.length - 1)"
           >
             ⤓
           </button>
@@ -57,7 +82,7 @@ function close(): void {
 
 <style scoped>
 .qdialog {
-  min-width: 340px;
+  min-width: 360px;
 }
 .qlist {
   list-style: none;
@@ -78,6 +103,11 @@ function close(): void {
   border-radius: var(--r-sm);
   background: var(--c-panel-2);
   font-size: 13px;
+}
+/* 正在执行的那一项：左侧金色几何条（与侧栏选中态同语言） */
+.qrow.running {
+  box-shadow: inset 3px 0 0 var(--c-accent);
+  border-color: rgba(255, 176, 58, 0.45);
 }
 .idx {
   color: var(--c-text-dim);
