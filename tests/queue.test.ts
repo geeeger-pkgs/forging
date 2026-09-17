@@ -91,15 +91,17 @@ describe('队列推进复现', () => {
 
   it('场景 7：A 因材料不足阻塞停止 → 队列里不依赖材料的 B 应接上（tick 驱动）', () => {
     const s = boot()
-    // A = 熔炼（消耗铜矿石）；只给 1 次的量，却排了 3 次
-    s.materials['ore_copper'] = 1
-    const smelt: ActionRef = { kind: 'smelt', recipeId: 'ingot_copper' }
+    // A = 熔炼铜锭（每轮消耗铜矿石 ×2）：给够 1 轮、第 2 轮中途耗尽 → performRound 阻塞
+    // （注意 ActionRef 只有 mine/craft/enhance 三种；熔炼与锻造同属 craft，由 recipeId 决定技能）
+    s.materials['ore_copper'] = 3
+    const smelt: ActionRef = { kind: 'craft', recipeId: 'smelt_copper' }
     performCommand(s, { type: 'startAction', ref: smelt, count: 3, mode: 'now' })
     performCommand(s, { type: 'startAction', ref: B, count: 1, mode: 'enqueue' })
-    // 真实驱动：250ms tick（A 材料耗尽会被阻塞停下，之后 B 应被接上）
+    // 真实驱动：250ms tick（A 第 2 轮材料不足被阻塞停下，之后 B 应被接上）
     for (let t = 1_000; t <= 60_000; t += 250) {
       simulate(s, t, { mode: 'online', rng: mulberry32(t) })
     }
+    expect(s.stats.totalSmelts, 'A 跑了 1 轮后因材料不足被阻塞').toBe(1)
     expect(s.stats.totalMines, 'B 应被结算（挖掘不需要材料）').toBeGreaterThanOrEqual(1)
     expect(s.actions.queue.length, '队列应被消费').toBe(0)
   })
