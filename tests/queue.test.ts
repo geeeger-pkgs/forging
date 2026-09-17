@@ -1,6 +1,8 @@
 // @vitest-environment node
 // 队列推进回归（v3.7.17 修复：current 为空而队列非空时自动启动首项）
 // 起因：用户报告「两个队列，第一个执行完第二个不执行」——停止/阻塞后队列卡死（场景 6/7）
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { applyCommand } from '../src/game/commands'
 import { settleOffline } from '../src/game/offline'
@@ -212,6 +214,27 @@ describe('队列推进复现', () => {
       (summary!.notes ?? []).some((n) => n.includes('强化')),
       '应有"强化不参与离线"的说明',
     ).toBe(true)
+  })
+
+  it('describe.canQueue 三态：无阻塞 ✔ / 软阻塞 ✔（可预排）/ 硬阻塞 ✘ —— UI 按钮的数据源', async () => {
+    // v3.7.21：初版 canQueue 判定写反，导致"内核已放行、UI 仍禁用按钮"（用户实测发现）。
+    // 本用例锁 UI 数据源；ActionDialog 的按钮绑定另有源码契约断言。
+    const { describeAction } = await import('../src/app/describe')
+    const s = newGame('T', 0)
+    expect(describeAction(s, { kind: 'mine', siteId: 'copper_seam' }, 0).canQueue, '无阻塞：可入队').toBe(true)
+    const smelt = describeAction(s, { kind: 'craft', recipeId: 'smelt_copper' }, 0)
+    expect(smelt.blockReason, '无矿石 → 材料不足').toContain('材料不足')
+    expect(smelt.canStart, '「开始」仍需材料（不变）').toBe(false)
+    expect(smelt.canQueue, '软阻塞：「加入队列」应可点').toBe(true)
+    const iron = describeAction(s, { kind: 'mine', siteId: 'iron_seam' }, 0)
+    expect(iron.blockReason, 'Lv1 → 等级不足').toContain('Lv')
+    expect(iron.canQueue, '硬阻塞：不可入队').toBe(false)
+  })
+
+  it('ActionDialog 的「加入队列」按 canQueue 启用（源码契约）', () => {
+    const src = readFileSync(join(process.cwd(), 'src/ui/components/ActionDialog.vue'), 'utf8')
+    expect(src, '按钮应绑定 canQueue').toContain(':disabled="!desc.canQueue || queueFull"')
+    expect(src, '软阻塞提示应说明可入队').toContain('可先加入队列，轮到时会自动尝试')
   })
 
   it('场景 12（用户验收场景）：无材料预排「挖掘×1 → 熔炼×10 → 锻造×1」，离线 10 分钟后上线', () => {

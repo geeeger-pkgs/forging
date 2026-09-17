@@ -53,7 +53,9 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
   const agg = aggregateEquipment(state)
   const blockReason = startBlockReason(state, ref) ?? undefined
   // v3.7.20：软阻塞（材料/装备不足）可预排入队
-  const canQueue = !isSoftBlock(blockReason ?? null)
+  // v3.7.21：修正判定——初版写成 !isSoftBlock(...) 正好写反（软阻塞被判成"不可入队"、
+  // 硬阻塞反而放行），内核已放行软阻塞而 UI 把按钮禁用 → 用户实测"UI 上还是排不进去"
+  const canQueue = !blockReason || isSoftBlock(blockReason)
   const dur = durationOf(state, ref)
 
   if (ref.kind === 'mine') {
