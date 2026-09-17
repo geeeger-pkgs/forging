@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { cmd, exportCurrent, resolveFxLevel, store } from '../../app/store'
-import { clearSave, importSaveFile, saveGame } from '../../app/persist'
+import { cmd, exportCurrent, resolveFxLevel, store, suppressAutosave } from '../../app/store'
+import type { GameState } from '../../game/types'
+import { clearSave, exportSaveText, importSaveFile, importSaveText, saveGame } from '../../app/persist'
 import { checkLoadout } from '../../game/commands'
 import { totalValue } from '../../game/economy'
 import { CONTENT } from '../../game/content'
@@ -9,6 +10,8 @@ import { audioStatus, cueList, playCue, unlockAudio } from '../../ui/audio'
 import type { FxLevel } from '../../game/types'
 
 const fileInput = ref<HTMLInputElement | null>(null)
+/** v3.8.0：粘贴导入的文本框（剪贴板通道的兜底） */
+const pasteText = ref('')
 const message = ref('')
 const loadoutName = ref('')
 const appVersion = __APP_VERSION__
@@ -105,13 +108,28 @@ function saveLoadout(): void {
   message.value = '已保存当前动作 + 队列为预设'
 }
 
-function onExport(): void {
-  exportCurrent()
-  message.value = '已导出存档文件（浏览器下载目录）'
+async function onExport(): Promise<void> {
+  try {
+    await exportCurrent()
+    message.value = '已导出存档文件（浏览器下载目录，FGS1 加密格式）'
+  } catch (e) {
+    message.value = '导出失败：' + (e as Error).message
+  }
 }
 
 function pickFile(): void {
   fileInput.value?.click()
+}
+
+/** v3.8.0：应用导入结果（文件 / 剪贴板 / 文本框共用） */
+function applyImported(next: GameState | null, failHint: string): void {
+  if (!next) {
+    message.value = failHint
+    return
+  }
+  store.state = next
+  saveGame(next)
+  window.location.reload()
 }
 
 async function onFile(e: Event): Promise<void> {
@@ -123,18 +141,44 @@ async function onFile(e: Event): Promise<void> {
     return
   }
   const next = await importSaveFile(file)
-  if (!next) {
-    message.value = '导入失败：文件无效或版本不兼容'
-    input.value = ''
-    return
+  input.value = ''
+  applyImported(next, '导入失败：文件无效、已损坏或版本不兼容')
+}
+
+/** v3.8.0：导出到剪贴板（移动端无法下载文件时的通道） */
+async function onCopySave(): Promise<void> {
+  try {
+    const text = await exportSaveText(store.state)
+    await navigator.clipboard.writeText(text)
+    message.value = `已复制加密存档到剪贴板（${text.length} 字符）——粘贴到任意能写字的地方即可备份`
+  } catch (e) {
+    message.value = '复制失败：' + (e as Error).message + '（可改用「导出文件」，或在下方粘贴框手动复制）'
   }
-  store.state = next
-  saveGame(next)
-  window.location.reload()
+}
+
+/** v3.8.0：从粘贴框导入（兼容所有环境；文件/剪贴板之外的兜底通道） */
+async function onPasteImport(): Promise<void> {
+  const text = pasteText.value.trim()
+  if (!text) return
+  if (!window.confirm('导入将覆盖当前存档，确定吗？')) return
+  const next = await importSaveText(text)
+  applyImported(next, '导入失败：文本无效、已损坏或版本不兼容（检查是否完整复制）')
+}
+
+/** v3.8.0：尝试读系统剪贴板填入文本框（部分环境需授权，失败则引导手动粘贴） */
+async function onPasteFromClipboard(): Promise<void> {
+  try {
+    pasteText.value = await navigator.clipboard.readText()
+    message.value = '已从剪贴板读入，请核对后点「从文本导入」'
+  } catch {
+    message.value = '无法读取剪贴板（可能未授权）——请在下方文本框里手动粘贴（长按 → 粘贴）'
+  }
 }
 
 function onClear(): void {
   if (!window.confirm('确定清空存档并重新开始吗？此操作不可撤销！')) return
+  // v3.8.0：先抑制兜底保存，否则 reload 的 beforeunload 会把内存旧档写回刚清空的槽（实机发现的缺陷）
+  suppressAutosave()
   clearSave()
   window.location.reload()
 }
@@ -220,11 +264,30 @@ function onClear(): void {
       <p class="dim">
         自动保存：每 {{ CONTENT.config.autosaveSec }} 秒 + 每次操作（含双槽备份，损坏时自动回退）。
       </p>
+      <!-- v3.8.0：导出导入改为「压缩 + 加密」文本（FGS1 格式）；文件与剪贴板双通道，
+           并保留粘贴框作为所有环境的兜底（移动端常无法下载/上传文件） -->
+      <p class="dim small">
+        存档为 <b>压缩 + 加密</b>文本（FGS1），支持文件与剪贴板两条通道，也兼容导入旧版明文 JSON。
+        <b>加密用于防明文与防误改，不是对抗性安全</b>（密钥内置）；改动一个字符会校验失败并明确报错。
+      </p>
       <div class="actions">
-        <button class="btn" @click="onExport">导出存档</button>
-        <button class="btn" @click="pickFile">导入存档</button>
+        <button class="btn" @click="onExport">导出文件</button>
+        <button class="btn" @click="pickFile">导入文件</button>
+        <button class="btn" @click="onCopySave">复制到剪贴板</button>
         <button class="btn danger" @click="onClear">清档重来</button>
-        <input ref="fileInput" type="file" accept="application/json" class="hidden-input" @change="onFile" />
+        <input ref="fileInput" type="file" accept="text/plain,application/json,.txt,.json" class="hidden-input" @change="onFile" />
+      </div>
+      <div class="pastebox">
+        <textarea
+          v-model="pasteText"
+          class="save-paste"
+          rows="3"
+          placeholder="在此粘贴存档文本（FGS1: 开头的加密串，或旧版明文 JSON）"
+        />
+        <div class="actions">
+          <button class="btn" :disabled="!pasteText.trim()" @click="onPasteImport">从文本导入</button>
+          <button class="btn ghost" @click="onPasteFromClipboard">从剪贴板读取</button>
+        </div>
       </div>
       <p v-if="message" class="dim">{{ message }}</p>
     </section>
@@ -345,6 +408,35 @@ function onClear(): void {
 .hidden-input {
   display: none;
 }
+/* v3.8.0：存档粘贴框（剪贴板通道；窄屏可纵向拉伸） */
+.pastebox {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.save-paste {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 62px;
+  resize: vertical;
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: var(--r-sm, 6px);
+  padding: 8px 10px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.save-paste:focus {
+  outline: 1px solid var(--c-accent);
+  border-color: var(--c-accent);
+}
+.dim.small {
+  font-size: 12px;
+}
 .lo-row {
   display: flex;
   align-items: center;
@@ -446,7 +538,8 @@ function onClear(): void {
   /* v3.6.1（评审 B-M4）：输入控件 ≥16px 防 iOS 聚焦放大——必须写在 scoped 块内
      （theme.css 的全局兜底会被这里的 13px 按特异性压过，实机实测过） */
   .select,
-  .text-input {
+  .text-input,
+  .save-paste {
     font-size: 16px;
   }
 }

@@ -9,6 +9,11 @@ import { defineConfig } from 'vitest/config'
  */
 export default defineConfig({
   plugins: [vue()],
+  // 与 vite.config.ts 同源的构建期常量（存在 vitest.config.ts 时不合并 vite.config.ts；
+  // 组件里引用了 __APP_VERSION__，缺它挂载即 ReferenceError）
+  define: {
+    __APP_VERSION__: JSON.stringify('test-build'),
+  },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],

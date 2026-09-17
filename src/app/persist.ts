@@ -7,6 +7,7 @@ import { emptyCodex, normalizeCodex } from '../game/codex-store'
 import { CONTENT } from '../game/content'
 import { totalLevelOf } from '../game/expeditions'
 import { levelInfo } from '../game/level'
+import { encodeSaveText, parseSaveText } from './save-codec'
 import { realignSeasonForEpoch } from '../game/season'
 import type { EquipInstance, FxLevel, FxSetting, GameState, SettingsState } from '../game/types'
 
@@ -338,24 +339,40 @@ export function loadGame(): GameState | null {
   return null
 }
 
-export function exportSave(state: GameState): void {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
+/**
+ * 导出存档文本（v3.8.0：压缩 + 加密，见 save-codec.ts）——剪贴板与文件共用同一份编码。
+ */
+export async function exportSaveText(state: GameState): Promise<string> {
+  return encodeSaveText(JSON.stringify(state, null, 2))
+}
+
+/**
+ * 导入任意受支持的存档文本（加密压缩格式 / 旧版明文 JSON）。
+ * 解析/解密失败、或迁移链拒绝（如未来版本号）→ 返回 null（调用方给提示）。
+ */
+export async function importSaveText(text: string): Promise<GameState | null> {
+  try {
+    return deserializeSave(await parseSaveText(text))
+  } catch {
+    return null
+  }
+}
+
+export async function exportSave(state: GameState): Promise<void> {
+  const text = await exportSaveText(state)
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   const d = new Date()
   const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
   a.href = url
-  a.download = `forging-save-${stamp}.json`
+  a.download = `forging-save-${stamp}.fgs.txt` // 非明文 JSON → 不再用 .json 后缀
   a.click()
   URL.revokeObjectURL(url)
 }
 
 export async function importSaveFile(file: File): Promise<GameState | null> {
-  try {
-    return deserializeSave(await file.text())
-  } catch {
-    return null
-  }
+  return importSaveText(await file.text())
 }
 
 export function clearSave(): void {

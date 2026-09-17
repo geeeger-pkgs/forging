@@ -383,7 +383,19 @@ export function inspectInstance(instanceId: number | null): void {
 
 let lastSaveAt = 0
 
+/**
+ * v3.8.0：抑制兜底保存（清档路径）。
+ * 实机发现的缺陷：清档 = clearSave() + reload，而 reload 会触发 beforeunload 的兜底保存，
+ * 把内存里的旧档**又写回刚清空的槽** —— 表现为「点了清档重来，进度还在」。
+ * 清档/重置这类"即将丢弃内存态"的路径必须先置位，随后任何 saveNow 都直接返回。
+ */
+let saveSuppressed = false
+export function suppressAutosave(): void {
+  saveSuppressed = true
+}
+
 function saveNow(): void {
+  if (saveSuppressed) return
   try {
     saveGame(store.state)
     lastSaveAt = Date.now()
@@ -461,9 +473,9 @@ export function startLoop(): void {
   window.addEventListener('focus', clearUnread)
 }
 
-/** 导出存档（设置面板使用） */
-export function exportCurrent(): void {
-  exportSave(store.state)
+/** 导出存档（设置面板使用）；v3.8.0 起为异步编码（压缩 + 加密），返回 Promise 供调用方捕获失败 */
+export async function exportCurrent(): Promise<void> {
+  await exportSave(store.state)
 }
 
 // 开发模式调试句柄（用于验收与排障；生产构建不暴露）
