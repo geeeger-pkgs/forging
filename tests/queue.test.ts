@@ -214,6 +214,47 @@ describe('队列推进复现', () => {
     ).toBe(true)
   })
 
+  it('场景 12（用户验收场景）：无材料预排「挖掘×1 → 熔炼×10 → 锻造×1」，离线 10 分钟后上线', () => {
+    const s = boot()
+    s.materials = {} // 背包无任何材料
+    s.queueSlots = 2
+    performCommand(s, { type: 'startAction', ref: A, count: 1, mode: 'now' })
+    const e2 = performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'craft', recipeId: 'smelt_copper' },
+      count: 10,
+      mode: 'enqueue',
+    })
+    const e3 = performCommand(s, {
+      type: 'startAction',
+      ref: { kind: 'craft', recipeId: 'forge_pick_copper' },
+      count: 1,
+      mode: 'enqueue',
+    })
+    // v3.7.20：材料不足是"软阻塞"——可预排入队（轮到时自动尝试，仍不足则跳过）
+    expect(
+      e2.some((e) => e.type === 'notice' && String((e as { text: string }).text).includes('自动尝试')),
+      '熔炼（材料不足）可预排',
+    ).toBe(true)
+    expect(e3.some((e) => e.type === 'notice'), '锻造（材料不足）可预排').toBe(true)
+    expect(s.actions.queue.length, '两项都在队列里').toBe(2)
+
+    // 离线 10 分钟后上线
+    const summary = settleOffline(s, 600_000)
+    expect(summary, '离线应结算').not.toBeNull()
+    // 预期：挖掘 ×1 完成；熔炼靠挖掘产出恰好跑 1 轮（离线期望产出 2 矿石）；
+    //       锻造（需 12 铜锭）不可行 → 跳过；队列处理完毕
+    expect(s.stats.totalMines, '挖掘 ×1 完成').toBe(1)
+    expect(s.stats.totalSmelts, '熔炼：挖掘产出恰好够 1 轮（若有材料就正常跑，没有才跳过）').toBe(1)
+    expect(s.stats.totalForges, '锻造：12 铜锭不可能满足 → 未执行').toBe(0)
+    expect(s.actions.queue.length, '队列在同一次离线结算内处理完毕').toBe(0)
+    expect(s.actions.current, '无残留当前动作').toBeNull()
+    expect(
+      summary!.notes.some((n) => n.includes('已跳过队列项')),
+      '跳过有明确说明（显示在离线结算弹窗里）',
+    ).toBe(true)
+  })
+
   it('场景 5：队列里有 2 项（两个队列位）', () => {
     const s = boot()
     s.queueSlots = 2

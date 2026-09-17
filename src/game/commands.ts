@@ -33,7 +33,7 @@ import { recycleGain } from './economy'
 import { refLabel } from './refs'
 import { systemRng, type Rng } from './rng'
 import { durationOf } from './rules'
-import { startBlockReason } from './blocking'
+import { isSoftBlock, startBlockReason } from './blocking'
 import { simulate } from './settle'
 import {
   addGold,
@@ -237,7 +237,11 @@ function startAction(
 ): GameEvent[] {
   if (count !== null && count < 1) return [{ type: 'blocked', reason: '次数必须 ≥ 1 或设为无限' }]
   const reason = startBlockReason(state, ref)
-  if (reason) return [{ type: 'blocked', reason }]
+  const soft = isSoftBlock(reason)
+  // v3.7.20（用户验收场景）：立即开始必须可行；**入队允许软阻塞**（材料/装备暂时不足）——
+  // 玩家要能预排生产链（如无材料时排「挖掘×1 → 熔炼×10 → 锻造×1」，靠上游产出喂下游），
+  // 轮到该项时会自动尝试（仍不足则跳过并提示）。硬阻塞（等级/物品不存在/目标不匹配）仍拒绝。
+  if (reason && (mode === 'now' || !soft)) return [{ type: 'blocked', reason }]
 
   const act: ActiveAction = {
     ref,
@@ -255,8 +259,15 @@ function startAction(
     return [{ type: 'blocked', reason: '队列已满' }]
   }
   state.actions.queue.push(act)
-  // v3.1：加入队列给出明确反馈（此前完全静默，测评 B-5）
-  return [{ type: 'notice', text: `已加入队列：${refLabel(ref)}` }]
+  // v3.1：加入队列给出明确反馈（此前完全静默，测评 B-5）；v3.7.20：软阻塞项的说明
+  return [
+    {
+      type: 'notice',
+      text: soft
+        ? `已加入队列：${refLabel(ref)}（材料不足，轮到时会自动尝试，仍不足则跳过）`
+        : `已加入队列：${refLabel(ref)}`,
+    },
+  ]
 }
 
 function stopAction(state: GameState): GameEvent[] {
@@ -265,7 +276,7 @@ function stopAction(state: GameState): GameEvent[] {
   return [{ type: 'actionStopped', reason: 'user' }]
 }
 
-export { startBlockReason }
+export { startBlockReason, isSoftBlock }
 
 // 动作可行性预检已下沉到 ./blocking（settle 也要用，避免循环依赖）——此处 re-export 保持既有 API
 // ---------------- 装备 ----------------
@@ -459,7 +470,8 @@ function applyLoadout(state: GameState, loadoutId: string, now: number): GameEve
   const skipped: string[] = []
   for (const a of lo.actions) {
     const reason = startBlockReason(state, a.ref)
-    if (reason) {
+    // v3.7.20：硬阻塞跳过；软阻塞（材料/装备不足）照常入队（预排生产链，轮到时自动尝试）
+    if (reason && !isSoftBlock(reason)) {
       skipped.push(reason)
       continue
     }

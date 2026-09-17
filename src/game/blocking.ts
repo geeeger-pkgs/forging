@@ -40,6 +40,18 @@ export function startBlockReason(state: GameState, ref: ActionRef): string | nul
   return null
 }
 
+/**
+ * 软阻塞（材料 / 装备暂时不足）：**可以预排入队**，轮到它时再尝试（仍不足则跳过）。
+ * v3.7.20（用户验收场景）：玩家要能预排一条生产链
+ * （例：无材料时排「挖掘×1 → 熔炼×10 → 锻造×1」，靠上游产出喂下游），
+ * 因此"入队"不再要求材料齐备；等级不足 / 目标物品不存在等**硬阻塞**仍然拒绝入队。
+ * 实现按文案前缀判定（改动见 tests/queue.test.ts 的硬/软阻塞用例；文案改动会红）。
+ */
+export function isSoftBlock(reason: string | null): boolean {
+  if (!reason) return false
+  return reason.startsWith('材料不足') || reason.startsWith('缺少装备') || reason.startsWith('请先卸下')
+}
+
 function inputShortageReason(
   state: GameState,
   inputs: readonly { itemId: ItemId; qty: number }[],

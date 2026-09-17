@@ -3,7 +3,7 @@
 // ============================================================
 import { ENHANCE_BY_TARGET, RECIPES_BY_ID, SITES_BY_ID, itemDef, skillName } from '../game/content'
 import { buffBonuses } from '../game/buffs'
-import { startBlockReason } from '../game/commands'
+import { isSoftBlock, startBlockReason } from '../game/commands'
 import { levelInfo } from '../game/level'
 import { baseTimeOf, durationOf, enhanceCostFor, rareDropsOf, yieldRangeOf } from '../game/rules'
 import { freeInstances, instanceById, materialCount } from '../game/state'
@@ -43,6 +43,8 @@ export interface ActionDesc {
   mineYield?: { min: number; max: number; itemId: ItemId; name: string }
   drops: DropInfo[]
   canStart: boolean
+  /** v3.7.20：可加入队列（软阻塞——材料/装备暂时不足——也允许预排，轮到时自动尝试） */
+  canQueue: boolean
   blockReason?: string
 }
 
@@ -50,6 +52,8 @@ export interface ActionDesc {
 export function describeAction(state: GameState, ref: ActionRef, now: number = Date.now()): ActionDesc {
   const agg = aggregateEquipment(state)
   const blockReason = startBlockReason(state, ref) ?? undefined
+  // v3.7.20：软阻塞（材料/装备不足）可预排入队
+  const canQueue = !isSoftBlock(blockReason ?? null)
   const dur = durationOf(state, ref)
 
   if (ref.kind === 'mine') {
@@ -76,6 +80,7 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
       drops: dropsInfo(ref, effectiveStats(state, now).rareFind, effectiveStats(state, now).stoneFind), // v3.4.5：真接线（此前 stoneFind 参数无人传）
       canStart: !blockReason,
       blockReason,
+      canQueue,
     }
   }
 
@@ -105,6 +110,7 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
       drops: dropsInfo(ref, effectiveStats(state, now).rareFind, effectiveStats(state, now).stoneFind), // v3.4.5：真接线
       canStart: !blockReason,
       blockReason,
+      canQueue,
     }
   }
 
@@ -145,6 +151,7 @@ export function describeAction(state: GameState, ref: ActionRef, now: number = D
     drops: [],
     canStart: !blockReason,
     blockReason,
+    canQueue,
   }
 }
 

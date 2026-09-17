@@ -102,7 +102,9 @@ function start(mode: 'now' | 'enqueue'): void {
         </span>
       </div>
 
-      <p v-if="desc.blockReason" class="reason bad">⚠ {{ desc.blockReason }}</p>
+      <p v-if="desc.blockReason" class="reason bad">
+        ⚠ {{ desc.blockReason }}<template v-if="desc.canQueue">（可先加入队列，轮到时会自动尝试）</template>
+      </p>
 
       <footer>
         <div class="left-actions">
@@ -112,9 +114,10 @@ function start(mode: 'now' | 'enqueue'): void {
         </div>
         <div class="right-actions">
           <button class="btn" @click="closeDialog">取消</button>
+          <!-- v3.7.20：软阻塞（材料/装备暂时不足）也可入队（预排生产链）；「开始」仍需可行 -->
           <button
             class="btn ghost"
-            :disabled="!desc.canStart || queueFull"
+            :disabled="!desc.canQueue || queueFull"
             :title="queueFull ? '队列已满：先升级队列位或清空队列' : ''"
             @click="start('enqueue')"
           >

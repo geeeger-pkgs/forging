@@ -55,42 +55,47 @@ export function simulate(state: GameState, now: number, opts: SimulateOptions): 
   let rounds = 0
 
   /**
-   * v3.7.17（用户报告："两个队列，第一个执行完第二个不执行"）：
-   * current 为空而队列非空时，从队列启动首项。此前**没有任何在线路径**负责这一步 ——
-   * simulate 的 while 要求 current 非空，玩家点「停止」或动作因材料不足被阻塞后，
-   * 队列里剩下的项永远卡住。
-   *
-   * v3.7.18（用户要求："材料不足应移出队列，而不是卡住"）：
-   * 启动前先**预检**（startBlockReason）——不可行的项直接移出队列并明确提示，
-   * 继续尝试下一项直到找到可执行的或队列清空。此前是"启动后立刻失败"，
-   * 项虽最终被丢弃但会闪一下、且没有"已跳过"的说明（玩家看到队列项神秘消失）。
-   * 起点用 lastSeenAt：在线 ≈ 上一 tick（250ms 内立即接续）；离线 = 离开时刻。
+   * 队列推进时刻（v3.7.20）：跟随结算进度 —— 每完成一轮更新为 completeAt，
+   * 队列项从"上一项结束的时刻"起算，离线大跨度结算中时间轴连续推进。
    */
-  if (!state.actions.current && state.actions.queue.length > 0) {
-    // 预检跳过逻辑在 advanceQueue 内（唯一入口；见其注释）
-    advanceQueue(state, state.meta.lastSeenAt, events)
-  }
+  let at = state.meta.lastSeenAt
 
-  while (state.actions.current && rounds < maxRounds) {
+  /**
+   * 循环条件含「队列非空」（v3.7.20，用户验收场景）：
+   * 玩家预期"离线前预排 挖掘→熔炼→锻造，10 分钟后上线应看到三者各自的结果"——
+   * 因此一次大跨度结算要把队列**处理完**，而不是"当前动作阻塞/完成后就收工，
+   * 剩下的留到上线后的下一个 tick"。
+   * 演进：v3.7.17 只处理"进入时 current 为空"（停止/阻塞后卡死）；
+   *       v3.7.18 给 advanceQueue 加预检跳过（不可行项移出并提示）；
+   *       本版把补位移入循环、阻塞后不再 break → 三项在同一次结算内全部有结果。
+   */
+  while (rounds < maxRounds && (state.actions.current || state.actions.queue.length > 0)) {
+    if (!state.actions.current) {
+      // 队列补位（含预检跳过：不可行的项移出并提示；见 advanceQueue）
+      if (!advanceQueue(state, at, events)) break
+      continue
+    }
     const act = state.actions.current
     act.durationMs = durationOf(state, act.ref) // 每轮按当前装备重算（换装下一轮生效）
     const completeAt = act.startedAt + act.durationMs
     if (completeAt > now) break
     act.startedAt = completeAt
+    at = completeAt
     rounds++
 
     const ok = performRound(state, act, events, opts.mode, rng, now)
     if (!ok) {
-      // 阻塞（材料不足等）：停止当前动作；队列保留 ——
-      // v3.7.17 起由本函数入口的「队列自动启动」在下一 tick 接续下一项（不再卡死）
+      // 阻塞（材料不足等）：当前动作已被消费（不再回到队列）→
+      // 继续循环，由 advanceQueue 预检队列中的下一项（可行则启动、不可行则跳过并提示）
       state.actions.current = null
-      break
+      continue
     }
     if (act.remaining !== null) {
       act.remaining -= 1
       if (act.remaining <= 0) {
         state.actions.current = null
-        advanceQueue(state, completeAt, events)
+        // 队尾语义：最后一项完成且队列空 → 明确发出"队列已空"（与旧行为一致）
+        if (state.actions.queue.length === 0) events.push({ type: 'actionStopped', reason: 'queueEmpty' })
       }
     }
   }
